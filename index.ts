@@ -25,12 +25,12 @@ function main() {
     var n = initVertexBuffers(gl);
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.drawArrays(gl.TRIANGLES, 0, n);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, n);
 }
 
 function initVertexBuffers(gl : WebGLBookContext) : number {
-    var vertices : Float32Array = new Float32Array([0.0, 0.5, -0.5, -0.5, 0.5, -0.5]);
-    var n : number = 3;
+    var vertices : Float32Array = new Float32Array([-0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5]);
+    var n : number = 4;
 
     var vertexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);

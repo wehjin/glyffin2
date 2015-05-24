@@ -11,11 +11,11 @@ function main() {
     var n = initVertexBuffers(gl);
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.drawArrays(gl.TRIANGLES, 0, n);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, n);
 }
 function initVertexBuffers(gl) {
-    var vertices = new Float32Array([0.0, 0.5, -0.5, -0.5, 0.5, -0.5]);
-    var n = 3;
+    var vertices = new Float32Array([-0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5]);
+    var n = 4;
     var vertexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
