@@ -49,44 +49,50 @@ var Glyffin;
         return GlAudience;
     })();
     Glyffin.GlAudience = GlAudience;
-    var Show = (function () {
-        function Show(onShow) {
-            this.onShow = onShow;
+    var Glyff = (function () {
+        function Glyff(onPresent) {
+            this.onPresent = onPresent;
         }
-        Show.create = function (onShow) {
-            return new Show(onShow);
+        Glyff.create = function (f) {
+            return new Glyff(f);
         };
-        Show.prototype.open = function (audience, producer) {
-            var curtains = [];
-            this.onShow.onShow({
-                addCurtain: function (curtain) {
-                    curtains.push(curtain);
+        Glyff.prototype.present = function (audience, reaction) {
+            //noinspection JSUnusedLocalSymbols
+            var firmReaction = reaction ? reaction : {
+                onResult: function (result) {
                 },
-                addRel: function (bounds) {
-                    return audience.addRel(bounds);
+                onError: function (error) {
+                }
+            };
+            var presented = [];
+            var presenter = {
+                addPresentation: function (presentation) {
+                    presented.push(presentation);
                 },
                 onResult: function (result) {
-                    if (producer) {
-                        producer.onResult(result);
-                    }
+                    firmReaction.onResult(result);
+                },
+                onError: function (error) {
+                    firmReaction.onError(error);
                 }
-            });
+            };
+            this.onPresent.call(audience, presenter);
             return {
-                close: function () {
-                    while (curtains.length > 0) {
-                        curtains.pop().close();
+                end: function () {
+                    while (presented.length > 0) {
+                        presented.pop().end();
                     }
                 }
             };
         };
-        return Show;
+        return Glyff;
     })();
-    Glyffin.Show = Show;
-    Glyffin.RedShow = Show.create({
-        onShow: function (director) {
-            var rel = director.addRel(null);
-            director.addCurtain({
-                close: function () {
+    Glyffin.Glyff = Glyff;
+    Glyffin.RedShow = Glyff.create({
+        call: function (audience, presenter) {
+            var rel = audience.addRel(null);
+            presenter.addPresentation({
+                end: function () {
                     rel.remove();
                 }
             });

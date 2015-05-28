@@ -76,62 +76,69 @@ module Glyffin {
         }
     }
 
-    export interface Producer<T> {
+    export interface Reaction<T> {
         onResult(result : T);
+        onError(error : Error);
     }
 
-    export interface Curtain {
-        close();
+    export interface Presentation {
+        end();
     }
 
-    export interface Director<T> extends Audience, Producer<T> {
-        addCurtain(curtain : Curtain);
+    export interface Presenter<T> extends Reaction<T> {
+        addPresentation(presentation : Presentation);
     }
 
-    export interface OnShow<T> {
-        onShow(director : Director<T>);
+    export interface OnPresent<T> {
+        call(audience : Audience, presenter : Presenter<T>);
     }
 
 
-    export class Show<T> {
-        static create<U>(onShow : OnShow<U>) : Show<U> {
-            return new Show<U>(onShow);
+    export class Glyff<T> {
+
+        static create<U>(f : OnPresent<U>) : Glyff<U> {
+            return new Glyff<U>(f);
         }
 
-        constructor(private onShow : OnShow<T>) {
+        constructor(private onPresent : OnPresent<T>) {
         }
 
-        open(audience : Audience, producer? : Producer<T>) : Curtain {
-            var curtains : Curtain[] = [];
-            this.onShow.onShow({
-                    addCurtain(curtain : Curtain) {
-                        curtains.push(curtain);
-                    },
-                    addRel(bounds : RelBounds) : Rel {
-                        return audience.addRel(bounds);
-                    },
-                    onResult(result : T) {
-                        if (producer) {
-                            producer.onResult(result);
-                        }
-                    }
+        present(audience : Audience, reaction? : Reaction<T>) : Presentation {
+            //noinspection JSUnusedLocalSymbols
+            var firmReaction = reaction ? reaction : {
+                onResult(result : T) {
+                },
+                onError(error : Error) {
                 }
-            );
-            return {
-                close() {
-                    while (curtains.length > 0) {
-                        curtains.pop().close();
+            };
+            var presented : Presentation[] = [];
+            var presenter = {
+                addPresentation(presentation : Presentation) {
+                    presented.push(presentation);
+                },
+                onResult(result : T) {
+                    firmReaction.onResult(result);
+                },
+                onError(error : Error) {
+                    firmReaction.onError(error);
+                }
+            };
+            this.onPresent.call(audience, presenter);
+            return <Presentation>{
+                end() {
+                    while (presented.length > 0) {
+                        presented.pop().end();
                     }
                 }
             }
         }
     }
 
-    export var RedShow : Show<Void> = Show.create<Void>({
-        onShow(director : Director<Void>) {
-            var rel : Rel = director.addRel(null);
-            director.addCurtain({
-                close() {
+    export var RedShow : Glyff<Void> = Glyff.create<Void>({
+        call(audience : Audience, presenter : Presenter<Void>) {
+            var rel : Rel = audience.addRel(null);
+            presenter.addPresentation({
+                end() {
                     rel.remove();
                 }
             });
