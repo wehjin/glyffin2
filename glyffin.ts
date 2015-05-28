@@ -9,19 +9,19 @@ module Glyffin {
     export class Void {
     }
 
-    export class RelBounds {
-        left : number;
-        right : number;
-        top : number;
-        bottom : number;
+    export class RectangleBounds {
+        constructor(public left : number, public top : number, public right : number,
+                    public bottom : number) {
+        }
     }
 
-    export interface Rel {
+    export interface RectanglePatch {
         remove();
     }
 
     export interface Audience {
-        addRel(bounds : RelBounds):Rel;
+        getPerimeter():RectangleBounds;
+        addRectanglePatch(bounds : RectangleBounds):RectanglePatch;
     }
 
     var VSHADER_SOURCE : string =
@@ -37,43 +37,68 @@ module Glyffin {
         '}\n';
 
     export class GlAudience implements Audience {
-        public gl : WebGLBookContext;
+        private canvas : HTMLCanvasElement;
+        private gl : WebGLBookContext;
         private vertexCount : number;
+        private perimeter : RectangleBounds;
+        private vertices : Float32Array;
 
         constructor() {
-            var canvas : HTMLCanvasElement = <HTMLCanvasElement>document.getElementById('webgl');
-            var gl = getWebGLContext(canvas);
-            initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
+            this.canvas = <HTMLCanvasElement>document.getElementById('webgl');
+            this.perimeter = new RectangleBounds(0, 0, this.canvas.width, this.canvas.height);
 
+            this.gl = getWebGLContext(this.canvas);
+            var gl = this.gl;
+            initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
-            this.gl = gl;
-            this.vertexCount = this.initVertexBuffers(this.gl);
+
+            var maxPatchCount = 8;
+            var verticesPerPatch = 4;
+            this.vertices = new Float32Array(maxPatchCount * verticesPerPatch);
+
+            var vertexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, this.vertices, gl.STATIC_DRAW);
+        }
+
+        getPerimeter() : Glyffin.RectangleBounds {
+            return this.perimeter;
+        }
+
+        addRectanglePatch(bounds : RectangleBounds) : RectanglePatch {
+
+            var stride = 4 * 2 * 4;
+            var patchIndex = 0;
+            var vertices = new Float32Array([bounds.left, bounds.top, bounds.right, bounds.top,
+                                             bounds.left,
+                                             bounds.bottom, bounds.right, bounds.bottom]);
+            var bytesBefore = patchIndex * stride;
+            var gl = this.gl;
+            gl.bufferSubData(gl.ARRAY_BUFFER, bytesBefore, vertices);
+
+            var a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+            gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(a_Position);
+
+            this.scheduleRedraw();
+            return <RectanglePatch>{
+                remove() {
+                }
+            };
         }
 
         initVertexBuffers(gl : WebGLBookContext) : number {
             var vertices : Float32Array = new Float32Array([-0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5,
                                                             -0.5]);
             var n : number = 4;
-
-            var vertexBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-
-            var a_Position = gl.getAttribLocation(gl.program, 'a_Position');
-            gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
-            gl.enableVertexAttribArray(a_Position);
             return n;
         }
 
         scheduleRedraw() {
             this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-            this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, this.vertexCount);
+            this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
         }
 
-        addRel(bounds : RelBounds) : Rel {
-            this.scheduleRedraw();
-            return null;
-        }
     }
 
     export interface Reaction<T> {
@@ -134,12 +159,13 @@ module Glyffin {
         }
     }
 
-    export var RedShow : Glyff<Void> = Glyff.create<Void>({
+    export var RedGlyff : Glyff<Void> = Glyff.create<Void>({
         call(audience : Audience, presenter : Presenter<Void>) {
-            var rel : Rel = audience.addRel(null);
+            var perimeter = audience.getPerimeter();
+            var patch : RectanglePatch = audience.addRectanglePatch(perimeter);
             presenter.addPresentation({
                 end() {
-                    rel.remove();
+                    patch.remove();
                 }
             });
         }

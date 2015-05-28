@@ -8,7 +8,6 @@
 function main() {
     var glAudience = new Glyffin.GlAudience();
 
-    var redShow = Glyffin.RedShow;
-    redShow.present(glAudience);
+    Glyffin.RedGlyff.present(glAudience);
 }
 
