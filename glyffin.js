@@ -22,44 +22,55 @@ var Glyffin;
     Glyffin.RectangleBounds = RectangleBounds;
     var VSHADER_SOURCE = 'attribute vec4 a_Position;\n' + 'void main(){\n' + '  gl_Position = a_Position;\n' + '  gl_PointSize = 10.0;\n' + '}\n';
     var FSHADER_SOURCE = 'void main(){\n' + '  gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n' + '}\n';
+    var Vertices = (function () {
+        function Vertices(maxPatchCount, gl) {
+            this.maxPatchCount = maxPatchCount;
+            this.nextPatchIndex = 0;
+            this.emptyPatchVertices = new Float32Array([0, 0, 0, 0, 0, 0, 0, 0]);
+            this.gl = gl;
+            gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+            var vertices = new Float32Array(maxPatchCount * Vertices.VERTICES_PER_PATCH);
+            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+            var a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+            gl.vertexAttribPointer(a_Position, Vertices.FLOATS_PER_VERTEX, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(a_Position);
+        }
+        Vertices.prototype.getPatch = function (left, top, right, bottom) {
+            var patchIndex = this.nextPatchIndex++;
+            var patchVertices = new Float32Array([left, top, right, top, left, bottom, right, bottom]);
+            this.gl.bufferSubData(this.gl.ARRAY_BUFFER, patchIndex * Vertices.BYTES_PER_PATCH, patchVertices);
+            return patchIndex;
+        };
+        Vertices.prototype.putPatch = function (patchIndex) {
+            this.gl.bufferSubData(this.gl.ARRAY_BUFFER, patchIndex * Vertices.BYTES_PER_PATCH, this.emptyPatchVertices);
+        };
+        Vertices.VERTICES_PER_PATCH = 4;
+        Vertices.FLOATS_PER_VERTEX = 2;
+        Vertices.BYTES_PER_FLOAT = 4;
+        Vertices.BYTES_PER_PATCH = Vertices.VERTICES_PER_PATCH * Vertices.FLOATS_PER_VERTEX * Vertices.BYTES_PER_FLOAT;
+        return Vertices;
+    })();
     var GlAudience = (function () {
         function GlAudience() {
             this.canvas = document.getElementById('webgl');
             this.perimeter = new RectangleBounds(0, 0, this.canvas.width, this.canvas.height);
-            this.gl = getWebGLContext(this.canvas);
-            var gl = this.gl;
+            var gl = getWebGLContext(this.canvas);
             initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
-            var maxPatchCount = 8;
-            var verticesPerPatch = 4;
-            this.vertices = new Float32Array(maxPatchCount * verticesPerPatch);
-            var vertexBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, this.vertices, gl.STATIC_DRAW);
+            this.vertices = new Vertices(8, gl);
+            this.gl = gl;
         }
         GlAudience.prototype.getPerimeter = function () {
             return this.perimeter;
         };
         GlAudience.prototype.addRectanglePatch = function (bounds) {
-            var stride = 4 * 2 * 4;
-            var patchIndex = 0;
-            var vertices = new Float32Array([bounds.left, bounds.top, bounds.right, bounds.top, bounds.left, bounds.bottom, bounds.right, bounds.bottom]);
-            var bytesBefore = patchIndex * stride;
-            var gl = this.gl;
-            gl.bufferSubData(gl.ARRAY_BUFFER, bytesBefore, vertices);
-            var a_Position = gl.getAttribLocation(gl.program, 'a_Position');
-            gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
-            gl.enableVertexAttribArray(a_Position);
+            var patch = this.vertices.getPatch(bounds.left, bounds.top, bounds.right, bounds.bottom);
             this.scheduleRedraw();
             return {
                 remove: function () {
+                    this.vertices.putPatch(patch);
                 }
             };
-        };
-        GlAudience.prototype.initVertexBuffers = function (gl) {
-            var vertices = new Float32Array([-0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5]);
-            var n = 4;
-            return n;
         };
         GlAudience.prototype.scheduleRedraw = function () {
             this.gl.clear(this.gl.COLOR_BUFFER_BIT);

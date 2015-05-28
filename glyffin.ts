@@ -36,29 +36,63 @@ module Glyffin {
         '  gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n' +
         '}\n';
 
+    class Vertices {
+
+        private static VERTICES_PER_PATCH : number = 4;
+        private static FLOATS_PER_VERTEX : number = 2;
+        private static BYTES_PER_FLOAT : number = 4;
+        private static BYTES_PER_PATCH = Vertices.VERTICES_PER_PATCH * Vertices.FLOATS_PER_VERTEX *
+            Vertices.BYTES_PER_FLOAT;
+
+        private nextPatchIndex = 0;
+        private gl;
+        private emptyPatchVertices = new Float32Array([0, 0, 0, 0, 0, 0, 0, 0]);
+
+
+        constructor(private maxPatchCount : number, gl : WebGLBookContext) {
+            this.gl = gl;
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+
+            var vertices = new Float32Array(maxPatchCount * Vertices.VERTICES_PER_PATCH);
+            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+            var a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+            gl.vertexAttribPointer(a_Position, Vertices.FLOATS_PER_VERTEX, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(a_Position);
+        }
+
+        getPatch(left : number, top : number, right : number, bottom : number) : number {
+            var patchIndex = this.nextPatchIndex++;
+            var patchVertices = new Float32Array([left, top, right, top, left, bottom, right,
+                                                  bottom]);
+            this.gl.bufferSubData(this.gl.ARRAY_BUFFER, patchIndex * Vertices.BYTES_PER_PATCH,
+                patchVertices);
+            return patchIndex;
+        }
+
+        putPatch(patchIndex : number) {
+            this.gl.bufferSubData(this.gl.ARRAY_BUFFER, patchIndex * Vertices.BYTES_PER_PATCH,
+                this.emptyPatchVertices);
+        }
+    }
+
     export class GlAudience implements Audience {
         private canvas : HTMLCanvasElement;
         private gl : WebGLBookContext;
-        private vertexCount : number;
         private perimeter : RectangleBounds;
-        private vertices : Float32Array;
+        private vertices : Vertices;
 
         constructor() {
             this.canvas = <HTMLCanvasElement>document.getElementById('webgl');
             this.perimeter = new RectangleBounds(0, 0, this.canvas.width, this.canvas.height);
 
-            this.gl = getWebGLContext(this.canvas);
-            var gl = this.gl;
+            var gl = getWebGLContext(this.canvas);
             initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
-            var maxPatchCount = 8;
-            var verticesPerPatch = 4;
-            this.vertices = new Float32Array(maxPatchCount * verticesPerPatch);
-
-            var vertexBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, this.vertices, gl.STATIC_DRAW);
+            this.vertices = new Vertices(8, gl);
+            this.gl = gl;
         }
 
         getPerimeter() : Glyffin.RectangleBounds {
@@ -66,32 +100,14 @@ module Glyffin {
         }
 
         addRectanglePatch(bounds : RectangleBounds) : RectanglePatch {
-
-            var stride = 4 * 2 * 4;
-            var patchIndex = 0;
-            var vertices = new Float32Array([bounds.left, bounds.top, bounds.right, bounds.top,
-                                             bounds.left,
-                                             bounds.bottom, bounds.right, bounds.bottom]);
-            var bytesBefore = patchIndex * stride;
-            var gl = this.gl;
-            gl.bufferSubData(gl.ARRAY_BUFFER, bytesBefore, vertices);
-
-            var a_Position = gl.getAttribLocation(gl.program, 'a_Position');
-            gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
-            gl.enableVertexAttribArray(a_Position);
-
+            var patch = this.vertices.getPatch(bounds.left, bounds.top, bounds.right,
+                bounds.bottom);
             this.scheduleRedraw();
             return <RectanglePatch>{
                 remove() {
+                    this.vertices.putPatch(patch);
                 }
             };
-        }
-
-        initVertexBuffers(gl : WebGLBookContext) : number {
-            var vertices : Float32Array = new Float32Array([-0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5,
-                                                            -0.5]);
-            var n : number = 4;
-            return n;
         }
 
         scheduleRedraw() {
@@ -130,7 +146,7 @@ module Glyffin {
 
         present(audience : Audience, reaction? : Reaction<T>) : Presentation {
             //noinspection JSUnusedLocalSymbols
-            var firmReaction = reaction ? reaction : {
+            var firmReaction : Reaction<T> = reaction ? reaction : {
                 onResult(result : T) {
                 },
                 onError(error : Error) {
