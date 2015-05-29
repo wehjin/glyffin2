@@ -15,13 +15,88 @@ module Glyffin {
         }
     }
 
-    export interface RectanglePatch {
-        remove();
+    export class Color {
+
+        constructor(public red : number, public green : number, public blue : number,
+                    public alpha : number) {
+        }
     }
 
     export interface Audience {
         getPerimeter():RectangleBounds;
+        getPalette():Palette;
         addRectanglePatch(bounds : RectangleBounds):RectanglePatch;
+    }
+
+    export class Palette {
+        public static RED = new Color(1, 0, 0, 1);
+        public static GREEN = new Color(0, 1, 0, 1);
+        public static BLUE = new Color(0, 0, 1, 1);
+        public static BEIGE = new Color(245 / 255, 245 / 255, 220 / 255, 1);
+    }
+
+    export interface RectanglePatch {
+        remove();
+    }
+
+    export class GlAudience implements Audience {
+        private canvas : HTMLCanvasElement;
+        private gl : WebGLBookContext;
+        private perimeter : RectangleBounds;
+        private vertices : Vertices;
+        private palette;
+
+        constructor() {
+            var canvas = <HTMLCanvasElement>document.getElementById('webgl');
+            this.canvas = canvas;
+
+            this.perimeter = new RectangleBounds(0, 0, canvas.width, canvas.height);
+
+            this.palette = new Palette();
+
+            var gl = getWebGLContext(canvas);
+            initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+
+            this.vertices = new Vertices(8, gl);
+            this.gl = gl;
+
+            var viewMatrix = new Matrix4();
+            viewMatrix.setTranslate(-1, 1, 0);
+            viewMatrix.scale(2 / canvas.width, -2 / canvas.height, 1);
+            var u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_viewMatrix');
+            gl.uniformMatrix4fv(u_ModelMatrix, false, viewMatrix.elements);
+
+            var color = Palette.BEIGE;
+            var u_FragColor = gl.getUniformLocation(gl.program, 'u_FragColor');
+            gl.uniform4f(u_FragColor, color.red, color.green, color.blue,
+                color.alpha);
+        }
+
+        getPerimeter() : Glyffin.RectangleBounds {
+            return this.perimeter;
+        }
+
+        getPalette() : Glyffin.Palette {
+            return this.palette;
+        }
+
+        addRectanglePatch(bounds : RectangleBounds) : RectanglePatch {
+            var patch = this.vertices.getPatch(bounds.left, bounds.top, bounds.right,
+                bounds.bottom);
+            this.scheduleRedraw();
+            return <RectanglePatch>{
+                remove() {
+                    this.vertices.putPatch(patch);
+                }
+            };
+        }
+
+        scheduleRedraw() {
+            this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+            this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
+        }
+
     }
 
     var VSHADER_SOURCE : string =
@@ -32,8 +107,10 @@ module Glyffin {
         '}\n';
 
     var FSHADER_SOURCE : string =
+        'precision mediump float;' +
+        'uniform vec4 u_FragColor;\n' +
         'void main(){\n' +
-        '  gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n' +
+        '  gl_FragColor = u_FragColor;\n' +
         '}\n';
 
     class Vertices {
@@ -47,7 +124,6 @@ module Glyffin {
         private nextPatchIndex = 0;
         private gl;
         private emptyPatchVertices = new Float32Array([0, 0, 0, 0, 0, 0, 0, 0]);
-
 
         constructor(private maxPatchCount : number, gl : WebGLBookContext) {
             this.gl = gl;
@@ -75,54 +151,6 @@ module Glyffin {
             this.gl.bufferSubData(this.gl.ARRAY_BUFFER, patchIndex * Vertices.BYTES_PER_PATCH,
                 this.emptyPatchVertices);
         }
-    }
-
-    export class GlAudience implements Audience {
-        private canvas : HTMLCanvasElement;
-        private gl : WebGLBookContext;
-        private perimeter : RectangleBounds;
-        private vertices : Vertices;
-
-        constructor() {
-            var canvas = <HTMLCanvasElement>document.getElementById('webgl');
-            this.canvas = canvas;
-
-            this.perimeter = new RectangleBounds(0, 0, canvas.width, canvas.height);
-
-            var gl = getWebGLContext(canvas);
-            initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
-            gl.clearColor(0.0, 0.0, 0.0, 1.0);
-
-            this.vertices = new Vertices(8, gl);
-            this.gl = gl;
-
-            var viewMatrix = new Matrix4();
-            viewMatrix.setTranslate(-1, 1, 0);
-            viewMatrix.scale(2 / canvas.width, -2 / canvas.height, 1);
-            var u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_viewMatrix');
-            gl.uniformMatrix4fv(u_ModelMatrix, false, viewMatrix.elements);
-        }
-
-        getPerimeter() : Glyffin.RectangleBounds {
-            return this.perimeter;
-        }
-
-        addRectanglePatch(bounds : RectangleBounds) : RectanglePatch {
-            var patch = this.vertices.getPatch(bounds.left, bounds.top, bounds.right,
-                bounds.bottom);
-            this.scheduleRedraw();
-            return <RectanglePatch>{
-                remove() {
-                    this.vertices.putPatch(patch);
-                }
-            };
-        }
-
-        scheduleRedraw() {
-            this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-            this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
-        }
-
     }
 
     export interface Reaction<T> {

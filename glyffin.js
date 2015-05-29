@@ -20,8 +20,70 @@ var Glyffin;
         return RectangleBounds;
     })();
     Glyffin.RectangleBounds = RectangleBounds;
+    var Color = (function () {
+        function Color(red, green, blue, alpha) {
+            this.red = red;
+            this.green = green;
+            this.blue = blue;
+            this.alpha = alpha;
+        }
+        return Color;
+    })();
+    Glyffin.Color = Color;
+    var Palette = (function () {
+        function Palette() {
+        }
+        Palette.RED = new Color(1, 0, 0, 1);
+        Palette.GREEN = new Color(0, 1, 0, 1);
+        Palette.BLUE = new Color(0, 0, 1, 1);
+        Palette.BEIGE = new Color(245 / 255, 245 / 255, 220 / 255, 1);
+        return Palette;
+    })();
+    Glyffin.Palette = Palette;
+    var GlAudience = (function () {
+        function GlAudience() {
+            var canvas = document.getElementById('webgl');
+            this.canvas = canvas;
+            this.perimeter = new RectangleBounds(0, 0, canvas.width, canvas.height);
+            this.palette = new Palette();
+            var gl = getWebGLContext(canvas);
+            initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            this.vertices = new Vertices(8, gl);
+            this.gl = gl;
+            var viewMatrix = new Matrix4();
+            viewMatrix.setTranslate(-1, 1, 0);
+            viewMatrix.scale(2 / canvas.width, -2 / canvas.height, 1);
+            var u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_viewMatrix');
+            gl.uniformMatrix4fv(u_ModelMatrix, false, viewMatrix.elements);
+            var color = Palette.BEIGE;
+            var u_FragColor = gl.getUniformLocation(gl.program, 'u_FragColor');
+            gl.uniform4f(u_FragColor, color.red, color.green, color.blue, color.alpha);
+        }
+        GlAudience.prototype.getPerimeter = function () {
+            return this.perimeter;
+        };
+        GlAudience.prototype.getPalette = function () {
+            return this.palette;
+        };
+        GlAudience.prototype.addRectanglePatch = function (bounds) {
+            var patch = this.vertices.getPatch(bounds.left, bounds.top, bounds.right, bounds.bottom);
+            this.scheduleRedraw();
+            return {
+                remove: function () {
+                    this.vertices.putPatch(patch);
+                }
+            };
+        };
+        GlAudience.prototype.scheduleRedraw = function () {
+            this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+            this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
+        };
+        return GlAudience;
+    })();
+    Glyffin.GlAudience = GlAudience;
     var VSHADER_SOURCE = 'attribute vec4 a_Position;\n' + 'uniform mat4 u_viewMatrix;\n' + 'void main(){\n' + '  gl_Position = u_viewMatrix * a_Position;\n' + '}\n';
-    var FSHADER_SOURCE = 'void main(){\n' + '  gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n' + '}\n';
+    var FSHADER_SOURCE = 'precision mediump float;' + 'uniform vec4 u_FragColor;\n' + 'void main(){\n' + '  gl_FragColor = u_FragColor;\n' + '}\n';
     var Vertices = (function () {
         function Vertices(maxPatchCount, gl) {
             this.maxPatchCount = maxPatchCount;
@@ -50,41 +112,6 @@ var Glyffin;
         Vertices.BYTES_PER_PATCH = Vertices.VERTICES_PER_PATCH * Vertices.FLOATS_PER_VERTEX * Vertices.BYTES_PER_FLOAT;
         return Vertices;
     })();
-    var GlAudience = (function () {
-        function GlAudience() {
-            var canvas = document.getElementById('webgl');
-            this.canvas = canvas;
-            this.perimeter = new RectangleBounds(0, 0, canvas.width, canvas.height);
-            var gl = getWebGLContext(canvas);
-            initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
-            gl.clearColor(0.0, 0.0, 0.0, 1.0);
-            this.vertices = new Vertices(8, gl);
-            this.gl = gl;
-            var viewMatrix = new Matrix4();
-            viewMatrix.setTranslate(-1, 1, 0);
-            viewMatrix.scale(2 / canvas.width, -2 / canvas.height, 1);
-            var u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_viewMatrix');
-            gl.uniformMatrix4fv(u_ModelMatrix, false, viewMatrix.elements);
-        }
-        GlAudience.prototype.getPerimeter = function () {
-            return this.perimeter;
-        };
-        GlAudience.prototype.addRectanglePatch = function (bounds) {
-            var patch = this.vertices.getPatch(bounds.left, bounds.top, bounds.right, bounds.bottom);
-            this.scheduleRedraw();
-            return {
-                remove: function () {
-                    this.vertices.putPatch(patch);
-                }
-            };
-        };
-        GlAudience.prototype.scheduleRedraw = function () {
-            this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-            this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
-        };
-        return GlAudience;
-    })();
-    Glyffin.GlAudience = GlAudience;
     var Glyff = (function () {
         function Glyff(onPresent) {
             this.onPresent = onPresent;
