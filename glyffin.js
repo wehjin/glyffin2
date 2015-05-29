@@ -17,6 +17,12 @@ var Glyffin;
             this.right = right;
             this.bottom = bottom;
         }
+        RectangleBounds.prototype.getHeight = function () {
+            return this.bottom - this.top;
+        };
+        RectangleBounds.prototype.getWidth = function () {
+            return this.right - this.left;
+        };
         RectangleBounds.prototype.inset = function (pixels) {
             return new RectangleBounds(this.left + pixels, this.top + pixels, this.right - pixels, this.bottom - pixels);
         };
@@ -52,7 +58,7 @@ var Glyffin;
             var gl = getWebGLContext(canvas);
             initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
-            this.vertices = new Vertices(8, gl);
+            this.vertices = new Vertices(100, gl);
             this.gl = gl;
             var viewMatrix = new Matrix4();
             viewMatrix.setTranslate(-1, 1, 0);
@@ -80,7 +86,7 @@ var Glyffin;
         };
         GlAudience.prototype.scheduleRedraw = function () {
             this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-            this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
+            this.gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
         };
         return GlAudience;
     })();
@@ -91,7 +97,7 @@ var Glyffin;
         function Vertices(maxPatchCount, gl) {
             this.maxPatchCount = maxPatchCount;
             this.nextPatchIndex = 0;
-            this.emptyPatchVertices = new Float32Array([0, 0, 0, 0, 0, 0, 0, 0]);
+            this.emptyPatchVertices = new Float32Array(Vertices.FLOATS_PER_PATCH);
             this.gl = gl;
             gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
             var vertices = new Float32Array(maxPatchCount * Vertices.VERTICES_PER_PATCH);
@@ -100,19 +106,23 @@ var Glyffin;
             gl.vertexAttribPointer(a_Position, Vertices.FLOATS_PER_VERTEX, gl.FLOAT, false, 0, 0);
             gl.enableVertexAttribArray(a_Position);
         }
+        Vertices.prototype.getActiveVertexCount = function () {
+            return this.nextPatchIndex * Vertices.VERTICES_PER_PATCH;
+        };
         Vertices.prototype.getPatch = function (left, top, right, bottom) {
             var patchIndex = this.nextPatchIndex++;
-            var patchVertices = new Float32Array([left, top, right, top, left, bottom, right, bottom]);
+            var patchVertices = new Float32Array([left, top, right, top, left, bottom, left, bottom, right, top, right, bottom]);
             this.gl.bufferSubData(this.gl.ARRAY_BUFFER, patchIndex * Vertices.BYTES_PER_PATCH, patchVertices);
             return patchIndex;
         };
         Vertices.prototype.putPatch = function (patchIndex) {
             this.gl.bufferSubData(this.gl.ARRAY_BUFFER, patchIndex * Vertices.BYTES_PER_PATCH, this.emptyPatchVertices);
         };
-        Vertices.VERTICES_PER_PATCH = 4;
+        Vertices.VERTICES_PER_PATCH = 6;
         Vertices.FLOATS_PER_VERTEX = 2;
         Vertices.BYTES_PER_FLOAT = 4;
         Vertices.BYTES_PER_PATCH = Vertices.VERTICES_PER_PATCH * Vertices.FLOATS_PER_VERTEX * Vertices.BYTES_PER_FLOAT;
+        Vertices.FLOATS_PER_PATCH = Vertices.VERTICES_PER_PATCH * Vertices.FLOATS_PER_VERTEX;
         return Vertices;
     })();
     var Glyff = (function () {
@@ -122,9 +132,34 @@ var Glyffin;
         Glyff.create = function (f) {
             return new Glyff(f);
         };
+        Glyff.prototype.kaleido = function (columns, rows, spots) {
+            var upperGlyff = this;
+            return Glyff.create({
+                call: function (audience, presenter) {
+                    var perimeter = audience.getPerimeter();
+                    var rowHeight = perimeter.getHeight() / rows;
+                    var colWidth = perimeter.getWidth() / columns;
+                    spots.forEach(function (spot) {
+                        presenter.addPresentation(upperGlyff.present({
+                            getPerimeter: function () {
+                                var left = perimeter.left + colWidth * spot[0];
+                                var top = perimeter.top + rowHeight * spot[1];
+                                return new RectangleBounds(left, top, left + colWidth, top + rowHeight);
+                            },
+                            getPalette: function () {
+                                return audience.getPalette();
+                            },
+                            addRectanglePatch: function (bounds) {
+                                return audience.addRectanglePatch(bounds);
+                            }
+                        }, presenter));
+                    });
+                }
+            });
+        };
         Glyff.prototype.inset = function (pixels) {
             return this.compose({
-                getInnerAudience: function (audience, presenter) {
+                getUpperAudience: function (audience, presenter) {
                     return {
                         getPerimeter: function () {
                             return audience.getPerimeter().inset(pixels);
@@ -137,16 +172,16 @@ var Glyffin;
                         }
                     };
                 },
-                getInnerReaction: function (audience, presenter) {
+                getUpperReaction: function (audience, presenter) {
                     return presenter;
                 }
             });
         };
         Glyff.prototype.compose = function (operation) {
-            var innerGlyff = this;
+            var upperGlyff = this;
             return Glyff.create({
                 call: function (audience, presenter) {
-                    innerGlyff.present(operation.getInnerAudience(audience, presenter), operation.getInnerReaction(audience, presenter));
+                    presenter.addPresentation(upperGlyff.present(operation.getUpperAudience(audience, presenter), operation.getUpperReaction(audience, presenter)));
                 }
             });
         };

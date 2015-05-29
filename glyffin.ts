@@ -14,6 +14,14 @@ module Glyffin {
                     public bottom : number) {
         }
 
+        getHeight() : number {
+            return this.bottom - this.top;
+        }
+
+        getWidth() : number {
+            return this.right - this.left;
+        }
+
         inset(pixels : number) : RectangleBounds {
             return new RectangleBounds(this.left + pixels,
                 this.top + pixels, this.right - pixels,
@@ -64,7 +72,7 @@ module Glyffin {
             initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
-            this.vertices = new Vertices(8, gl);
+            this.vertices = new Vertices(100, gl);
             this.gl = gl;
 
             var viewMatrix = new Matrix4();
@@ -100,7 +108,7 @@ module Glyffin {
 
         scheduleRedraw() {
             this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-            this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
+            this.gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
         }
 
     }
@@ -121,15 +129,16 @@ module Glyffin {
 
     class Vertices {
 
-        private static VERTICES_PER_PATCH : number = 4;
+        private static VERTICES_PER_PATCH : number = 6;
         private static FLOATS_PER_VERTEX : number = 2;
         private static BYTES_PER_FLOAT : number = 4;
         private static BYTES_PER_PATCH = Vertices.VERTICES_PER_PATCH * Vertices.FLOATS_PER_VERTEX *
             Vertices.BYTES_PER_FLOAT;
+        private static FLOATS_PER_PATCH = Vertices.VERTICES_PER_PATCH * Vertices.FLOATS_PER_VERTEX;
 
         private nextPatchIndex = 0;
         private gl;
-        private emptyPatchVertices = new Float32Array([0, 0, 0, 0, 0, 0, 0, 0]);
+        private emptyPatchVertices = new Float32Array(Vertices.FLOATS_PER_PATCH);
 
         constructor(private maxPatchCount : number, gl : WebGLBookContext) {
             this.gl = gl;
@@ -144,10 +153,14 @@ module Glyffin {
             gl.enableVertexAttribArray(a_Position);
         }
 
+        getActiveVertexCount() : number {
+            return this.nextPatchIndex * Vertices.VERTICES_PER_PATCH;
+        }
+
         getPatch(left : number, top : number, right : number, bottom : number) : number {
             var patchIndex = this.nextPatchIndex++;
-            var patchVertices = new Float32Array([left, top, right, top, left, bottom, right,
-                                                  bottom]);
+            var patchVertices = new Float32Array([left, top, right, top, left, bottom,
+                                                  left, bottom, right, top, right, bottom]);
             this.gl.bufferSubData(this.gl.ARRAY_BUFFER, patchIndex * Vertices.BYTES_PER_PATCH,
                 patchVertices);
             return patchIndex;
@@ -177,8 +190,8 @@ module Glyffin {
     }
 
     export interface Mogrifier<T,U> {
-        getInnerAudience(audience : Audience, presenter : Presenter<U>):Audience;
-        getInnerReaction(audience : Audience, presenter : Presenter<U>):Reaction<T>;
+        getUpperAudience(audience : Audience, presenter : Presenter<U>):Audience;
+        getUpperReaction(audience : Audience, presenter : Presenter<U>):Reaction<T>;
     }
 
     export class Glyff<T> {
@@ -190,9 +203,37 @@ module Glyffin {
         constructor(private onPresent : OnPresent<T>) {
         }
 
+        kaleido(columns : number, rows : number, spots : number[][]) : Glyffin.Glyff<Glyffin.Void> {
+            var upperGlyff = this;
+            return Glyff.create({
+                call(audience : Audience, presenter : Presenter<Void>) {
+                    var perimeter = audience.getPerimeter();
+                    var rowHeight = perimeter.getHeight() / rows;
+                    var colWidth = perimeter.getWidth() / columns;
+                    spots.forEach(spot=> {
+                        presenter.addPresentation(upperGlyff.present({
+                            getPerimeter() : RectangleBounds {
+                                var left = perimeter.left + colWidth * spot[0];
+                                var top = perimeter.top + rowHeight * spot[1];
+                                return new RectangleBounds(left,
+                                    top, left + colWidth, top + rowHeight
+                                );
+                            },
+                            getPalette() : Palette {
+                                return audience.getPalette();
+                            },
+                            addRectanglePatch(bounds : RectangleBounds) : RectanglePatch {
+                                return audience.addRectanglePatch(bounds);
+                            }
+                        }, presenter));
+                    });
+                }
+            });
+        }
+
         inset(pixels : number) : Glyff<T> {
             return this.compose({
-                getInnerAudience(audience : Audience, presenter : Presenter<T>) : Audience {
+                getUpperAudience(audience : Audience, presenter : Presenter<T>) : Audience {
                     return {
                         getPerimeter() : RectangleBounds {
                             return audience.getPerimeter().inset(pixels);
@@ -205,19 +246,20 @@ module Glyffin {
                         }
                     };
                 },
-                getInnerReaction(audience : Audience, presenter : Presenter<T>) : Reaction<T> {
+                getUpperReaction(audience : Audience, presenter : Presenter<T>) : Reaction<T> {
                     return presenter;
                 }
             });
         }
 
         compose<U>(operation : Mogrifier<T,U>) {
-            var innerGlyff = this;
+            var upperGlyff = this;
             return Glyff.create<U>({
                 call(audience : Audience, presenter : Presenter<U>) {
-                    innerGlyff.present(operation.getInnerAudience(audience, presenter),
-                        operation.getInnerReaction(audience, presenter)
-                    );
+                    presenter.addPresentation(upperGlyff.present(operation.getUpperAudience(audience,
+                            presenter),
+                        operation.getUpperReaction(audience, presenter)
+                    ));
                 }
             });
         }
