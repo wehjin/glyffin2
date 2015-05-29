@@ -11,3 +11,16 @@ function getWebGLContext(canvas : HTMLCanvasElement, debug? : boolean) : WebGLBo
 
 declare
 function initShaders(gl : WebGLBookContext, vshader : string, fshader : string);
+
+declare
+class Matrix4 {
+    elements : Float32Array;
+
+    setTranslate(x : number, y : number, z : number) : Matrix4;
+
+    translate(x : number, y : number, z : number) : Matrix4;
+
+    setScale(x : number, y : number, z : number) : Matrix4;
+
+    scale(x : number, y : number, z : number) : Matrix4;
+}

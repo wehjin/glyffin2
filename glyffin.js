@@ -20,7 +20,7 @@ var Glyffin;
         return RectangleBounds;
     })();
     Glyffin.RectangleBounds = RectangleBounds;
-    var VSHADER_SOURCE = 'attribute vec4 a_Position;\n' + 'void main(){\n' + '  gl_Position = a_Position;\n' + '  gl_PointSize = 10.0;\n' + '}\n';
+    var VSHADER_SOURCE = 'attribute vec4 a_Position;\n' + 'uniform mat4 u_viewMatrix;\n' + 'void main(){\n' + '  gl_Position = u_viewMatrix * a_Position;\n' + '}\n';
     var FSHADER_SOURCE = 'void main(){\n' + '  gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n' + '}\n';
     var Vertices = (function () {
         function Vertices(maxPatchCount, gl) {
@@ -52,13 +52,19 @@ var Glyffin;
     })();
     var GlAudience = (function () {
         function GlAudience() {
-            this.canvas = document.getElementById('webgl');
-            this.perimeter = new RectangleBounds(0, 0, this.canvas.width, this.canvas.height);
-            var gl = getWebGLContext(this.canvas);
+            var canvas = document.getElementById('webgl');
+            this.canvas = canvas;
+            this.perimeter = new RectangleBounds(0, 0, canvas.width, canvas.height);
+            var gl = getWebGLContext(canvas);
             initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
             this.vertices = new Vertices(8, gl);
             this.gl = gl;
+            var viewMatrix = new Matrix4();
+            viewMatrix.setTranslate(-1, 1, 0);
+            viewMatrix.scale(2 / canvas.width, -2 / canvas.height, 1);
+            var u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_viewMatrix');
+            gl.uniformMatrix4fv(u_ModelMatrix, false, viewMatrix.elements);
         }
         GlAudience.prototype.getPerimeter = function () {
             return this.perimeter;
