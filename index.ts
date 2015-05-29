@@ -8,6 +8,6 @@
 function main() {
     var glAudience = new Glyffin.GlAudience();
 
-    Glyffin.RedGlyff.present(glAudience);
+    Glyffin.RedGlyff.inset(22).present(glAudience);
 }
 

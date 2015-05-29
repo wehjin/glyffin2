@@ -13,6 +13,12 @@ module Glyffin {
         constructor(public left : number, public top : number, public right : number,
                     public bottom : number) {
         }
+
+        inset(pixels : number) : RectangleBounds {
+            return new RectangleBounds(this.left + pixels,
+                this.top + pixels, this.right - pixels,
+                this.bottom - pixels);
+        }
     }
 
     export class Color {
@@ -170,6 +176,10 @@ module Glyffin {
         call(audience : Audience, presenter : Presenter<T>);
     }
 
+    export interface Mogrifier<T,U> {
+        getInnerAudience(audience : Audience, presenter : Presenter<U>):Audience;
+        getInnerReaction(audience : Audience, presenter : Presenter<U>):Reaction<T>;
+    }
 
     export class Glyff<T> {
 
@@ -180,7 +190,39 @@ module Glyffin {
         constructor(private onPresent : OnPresent<T>) {
         }
 
-        present(audience : Audience, reaction? : Reaction<T>) : Presentation {
+        inset(pixels : number) : Glyff<T> {
+            return this.compose({
+                getInnerAudience(audience : Audience, presenter : Presenter<T>) : Audience {
+                    return {
+                        getPerimeter() : RectangleBounds {
+                            return audience.getPerimeter().inset(pixels);
+                        },
+                        getPalette() : Palette {
+                            return audience.getPalette();
+                        },
+                        addRectanglePatch(bounds : RectangleBounds) : RectanglePatch {
+                            return audience.addRectanglePatch(bounds);
+                        }
+                    };
+                },
+                getInnerReaction(audience : Audience, presenter : Presenter<T>) : Reaction<T> {
+                    return presenter;
+                }
+            });
+        }
+
+        compose<U>(operation : Mogrifier<T,U>) {
+            var innerGlyff = this;
+            return Glyff.create<U>({
+                call(audience : Audience, presenter : Presenter<U>) {
+                    innerGlyff.present(operation.getInnerAudience(audience, presenter),
+                        operation.getInnerReaction(audience, presenter)
+                    );
+                }
+            });
+        }
+
+        present(audience : Audience, reaction ? : Reaction<T>) : Presentation {
             //noinspection JSUnusedLocalSymbols
             var firmReaction : Reaction<T> = reaction ? reaction : {
                 onResult(result : T) {

@@ -17,6 +17,9 @@ var Glyffin;
             this.right = right;
             this.bottom = bottom;
         }
+        RectangleBounds.prototype.inset = function (pixels) {
+            return new RectangleBounds(this.left + pixels, this.top + pixels, this.right - pixels, this.bottom - pixels);
+        };
         return RectangleBounds;
     })();
     Glyffin.RectangleBounds = RectangleBounds;
@@ -118,6 +121,34 @@ var Glyffin;
         }
         Glyff.create = function (f) {
             return new Glyff(f);
+        };
+        Glyff.prototype.inset = function (pixels) {
+            return this.compose({
+                getInnerAudience: function (audience, presenter) {
+                    return {
+                        getPerimeter: function () {
+                            return audience.getPerimeter().inset(pixels);
+                        },
+                        getPalette: function () {
+                            return audience.getPalette();
+                        },
+                        addRectanglePatch: function (bounds) {
+                            return audience.addRectanglePatch(bounds);
+                        }
+                    };
+                },
+                getInnerReaction: function (audience, presenter) {
+                    return presenter;
+                }
+            });
+        };
+        Glyff.prototype.compose = function (operation) {
+            var innerGlyff = this;
+            return Glyff.create({
+                call: function (audience, presenter) {
+                    innerGlyff.present(operation.getInnerAudience(audience, presenter), operation.getInnerReaction(audience, presenter));
+                }
+            });
         };
         Glyff.prototype.present = function (audience, reaction) {
             //noinspection JSUnusedLocalSymbols
