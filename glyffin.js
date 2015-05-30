@@ -148,12 +148,25 @@ var Glyffin;
         Glyff.create = function (f) {
             return new Glyff(f);
         };
-        Glyff.prototype.insertTop = function (insertHeight, insertGlyff) {
+        Glyff.prototype.insertLeft = function (insertAmount, insertGlyff) {
             var existingGlyff = this;
             return Glyff.create({
                 call: function (audience, presenter) {
                     var perimeter = audience.getPerimeter();
-                    var insertBottom = perimeter.top + insertHeight;
+                    var insertRight = perimeter.left + insertAmount;
+                    var insertPerimeter = new RectangleBounds(perimeter.left, perimeter.top, insertRight, perimeter.bottom);
+                    var modifiedPerimeter = new RectangleBounds(insertRight, perimeter.top, perimeter.right, perimeter.bottom);
+                    presenter.addPresentation(insertGlyff.present(new PerimeterAudience(insertPerimeter, audience), presenter));
+                    presenter.addPresentation(existingGlyff.present(new PerimeterAudience(modifiedPerimeter, audience), presenter));
+                }
+            });
+        };
+        Glyff.prototype.insertTop = function (insertAmount, insertGlyff) {
+            var existingGlyff = this;
+            return Glyff.create({
+                call: function (audience, presenter) {
+                    var perimeter = audience.getPerimeter();
+                    var insertBottom = perimeter.top + insertAmount;
                     var insertPerimeter = new RectangleBounds(perimeter.left, perimeter.top, perimeter.right, insertBottom);
                     var modifiedPerimeter = new RectangleBounds(perimeter.left, insertBottom, perimeter.right, perimeter.bottom);
                     presenter.addPresentation(insertGlyff.present(new PerimeterAudience(insertPerimeter, audience), presenter));

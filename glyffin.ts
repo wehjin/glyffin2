@@ -221,14 +221,31 @@ module Glyffin {
         constructor(private onPresent : OnPresent<T>) {
         }
 
-        insertTop(insertHeight : number, insertGlyff : Glyff<Void>) : Glyff<T> {
+        insertLeft(insertAmount : number, insertGlyff : Glyff<Void>) : Glyff<T> {
             var existingGlyff = this;
             return Glyff.create({
                 call(audience : Audience, presenter : Presenter<Void>) {
                     var perimeter = audience.getPerimeter();
-                    var insertBottom = perimeter.top + insertHeight;
-                    var insertPerimeter = new RectangleBounds(perimeter.left,
-                        perimeter.top,
+                    var insertRight = perimeter.left + insertAmount;
+                    var insertPerimeter = new RectangleBounds(perimeter.left, perimeter.top,
+                        insertRight, perimeter.bottom);
+                    var modifiedPerimeter = new RectangleBounds(insertRight, perimeter.top,
+                        perimeter.right, perimeter.bottom);
+                    presenter.addPresentation(insertGlyff.present(new PerimeterAudience(insertPerimeter,
+                        audience), presenter));
+                    presenter.addPresentation(existingGlyff.present(new PerimeterAudience(modifiedPerimeter,
+                        audience), presenter));
+                }
+            });
+        }
+
+        insertTop(insertAmount : number, insertGlyff : Glyff<Void>) : Glyff<T> {
+            var existingGlyff = this;
+            return Glyff.create({
+                call(audience : Audience, presenter : Presenter<Void>) {
+                    var perimeter = audience.getPerimeter();
+                    var insertBottom = perimeter.top + insertAmount;
+                    var insertPerimeter = new RectangleBounds(perimeter.left, perimeter.top,
                         perimeter.right, insertBottom);
                     var modifiedPerimeter = new RectangleBounds(perimeter.left, insertBottom,
                         perimeter.right, perimeter.bottom);
