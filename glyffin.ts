@@ -71,6 +71,8 @@ module Glyffin {
         remove();
     }
 
+    var MAX_PATCH_COUNT = 1000;
+
     export class GlAudience implements Audience {
         private canvas : HTMLCanvasElement;
         private gl : WebGLBookContext;
@@ -90,7 +92,7 @@ module Glyffin {
             initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
-            this.vertices = new Vertices(1000, gl);
+            this.vertices = new Vertices(MAX_PATCH_COUNT, gl);
             this.gl = gl;
 
             var viewMatrix = new Matrix4();

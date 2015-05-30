@@ -7,7 +7,9 @@
 function main() {
     var glAudience = new Glyffin.GlAudience();
     var redGlyff = Glyffin.RedGlyff;
-    var topGlyff = redGlyff.insertLeft(35, Glyffin.ascii('F')).insertLeft(7, Glyffin.ClearGlyff).insertLeft(35, Glyffin.ascii('E')).insertLeft(7, Glyffin.ClearGlyff).insertLeft(35, Glyffin.ascii('D')).insertLeft(7, Glyffin.ClearGlyff).insertLeft(35, Glyffin.ascii('C')).insertLeft(7, Glyffin.ClearGlyff).insertLeft(35, Glyffin.ascii('B')).insertLeft(7, Glyffin.ClearGlyff).insertLeft(35, Glyffin.ascii('A')).inset(7);
+    var capWidth = 35;
+    var spaceWidth = 9;
+    var topGlyff = redGlyff.insertLeft(capWidth, Glyffin.ascii('F')).insertLeft(spaceWidth, Glyffin.ClearGlyff).insertLeft(capWidth, Glyffin.ascii('E')).insertLeft(spaceWidth, Glyffin.ClearGlyff).insertLeft(capWidth, Glyffin.ascii('D')).insertLeft(spaceWidth, Glyffin.ClearGlyff).insertLeft(capWidth, Glyffin.ascii('C')).insertLeft(spaceWidth, Glyffin.ClearGlyff).insertLeft(capWidth, Glyffin.ascii('B')).insertLeft(spaceWidth, Glyffin.ClearGlyff).insertLeft(capWidth, Glyffin.ascii('A')).inset(spaceWidth);
     redGlyff.insertTop(44, topGlyff).present(glAudience);
 }
 //# sourceMappingURL=index.js.map
