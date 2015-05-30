@@ -93,6 +93,12 @@ module Glyffin {
         getUpperReaction(audience : Audience, presenter : Presenter<U>):Reaction<T>;
     }
 
+    export class Insertion<T> {
+
+        constructor(public amount : number, public glyff : Glyff<T>) {
+        }
+    }
+
     export class Glyff<T> {
 
         static create<U>(f : OnPresent<U>) : Glyff<U> {
@@ -100,6 +106,16 @@ module Glyffin {
         }
 
         constructor(private onPresent : OnPresent<T>) {
+        }
+
+        insertLefts<U>(insertions : Insertion<U>[]) : Glyff<T> {
+            var current : Glyff<T> = this;
+            var todo = insertions.slice();
+            while (todo.length > 0) {
+                var insertion : Insertion<U> = todo.pop();
+                current = current.insertLeft(insertion.amount, insertion.glyff);
+            }
+            return current;
         }
 
         insertLeft(insertAmount : number, insertGlyff : Glyff<Void>) : Glyff<T> {

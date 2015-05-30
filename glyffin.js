@@ -65,12 +65,29 @@ var Glyffin;
         return Palette;
     })();
     Glyffin.Palette = Palette;
+    var Insertion = (function () {
+        function Insertion(amount, glyff) {
+            this.amount = amount;
+            this.glyff = glyff;
+        }
+        return Insertion;
+    })();
+    Glyffin.Insertion = Insertion;
     var Glyff = (function () {
         function Glyff(onPresent) {
             this.onPresent = onPresent;
         }
         Glyff.create = function (f) {
             return new Glyff(f);
+        };
+        Glyff.prototype.insertLefts = function (insertions) {
+            var current = this;
+            var todo = insertions.slice();
+            while (todo.length > 0) {
+                var insertion = todo.pop();
+                current = current.insertLeft(insertion.amount, insertion.glyff);
+            }
+            return current;
         };
         Glyff.prototype.insertLeft = function (insertAmount, insertGlyff) {
             var existingGlyff = this;

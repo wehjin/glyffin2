@@ -7,6 +7,8 @@
 /// <reference path="glyffin-ascii.ts" />
 /// <reference path="glyffin-gl.ts" />
 
+import Insertion = Glyffin.Insertion;
+
 function main() {
     var glAudience = new Glyffin.GlAudience();
     var redGlyff = Glyffin.RedGlyff;
@@ -14,19 +16,21 @@ function main() {
     var capWidth = 25;
     var spaceWidth = 5;
     var lineHeight = 35;
-    var topGlyff = redGlyff
-        .insertLeft(capWidth, Glyffin.ascii('F'))
-        .insertLeft(spaceWidth, Glyffin.ClearGlyff)
-        .insertLeft(capWidth, Glyffin.ascii('E'))
-        .insertLeft(spaceWidth, Glyffin.ClearGlyff)
-        .insertLeft(capWidth, Glyffin.ascii('D'))
-        .insertLeft(spaceWidth, Glyffin.ClearGlyff)
-        .insertLeft(capWidth, Glyffin.ascii('C'))
-        .insertLeft(spaceWidth, Glyffin.ClearGlyff)
-        .insertLeft(capWidth, Glyffin.ascii('B'))
-        .insertLeft(spaceWidth, Glyffin.ClearGlyff)
-        .insertLeft(capWidth, Glyffin.ascii('A'))
-        .inset(spaceWidth);
+
+    var topGlyff = redGlyff.insertLefts([
+        new Insertion(capWidth, Glyffin.ascii('A')),
+        new Insertion(spaceWidth, Glyffin.ClearGlyff),
+        new Insertion(capWidth, Glyffin.ascii('B')),
+        new Insertion(spaceWidth, Glyffin.ClearGlyff),
+        new Insertion(capWidth, Glyffin.ascii('C')),
+        new Insertion(spaceWidth, Glyffin.ClearGlyff),
+        new Insertion(capWidth, Glyffin.ascii('D')),
+        new Insertion(spaceWidth, Glyffin.ClearGlyff),
+        new Insertion(capWidth, Glyffin.ascii('E')),
+        new Insertion(spaceWidth, Glyffin.ClearGlyff),
+        new Insertion(capWidth, Glyffin.ascii('F')),
+        new Insertion(spaceWidth, Glyffin.ClearGlyff)
+    ]).inset(spaceWidth);
     redGlyff.insertTop(lineHeight, topGlyff)
         .present(glAudience);
 }
