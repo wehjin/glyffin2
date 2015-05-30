@@ -42,6 +42,24 @@ module Glyffin {
         addRectanglePatch(bounds : RectangleBounds):RectanglePatch;
     }
 
+    class PerimeterAudience implements Audience {
+
+        constructor(private perimeter : RectangleBounds, private audience : Audience) {
+        }
+
+        getPerimeter() : RectangleBounds {
+            return this.perimeter;
+        }
+
+        getPalette() : Palette {
+            return this.audience.getPalette();
+        }
+
+        addRectanglePatch(bounds : RectangleBounds) : RectanglePatch {
+            return this.audience.addRectanglePatch(bounds);
+        }
+    }
+
     export class Palette {
         public static RED = new Color(1, 0, 0, 1);
         public static GREEN = new Color(0, 1, 0, 1);
@@ -209,30 +227,15 @@ module Glyffin {
                 call(audience : Audience, presenter : Presenter<Void>) {
                     var perimeter = audience.getPerimeter();
                     var insertBottom = perimeter.top + insertHeight;
-                    presenter.addPresentation(insertGlyff.present({
-                        getPerimeter() : RectangleBounds {
-                            return new RectangleBounds(perimeter.left, perimeter.top,
-                                perimeter.right, insertBottom);
-                        },
-                        getPalette() : Palette {
-                            return audience.getPalette();
-                        },
-                        addRectanglePatch(bounds : RectangleBounds) : RectanglePatch {
-                            return audience.addRectanglePatch(bounds);
-                        }
-                    }));
-                    presenter.addPresentation(existingGlyff.present({
-                        getPerimeter() : RectangleBounds {
-                            return new RectangleBounds(perimeter.left, insertBottom,
-                                perimeter.right, perimeter.bottom);
-                        },
-                        getPalette() : Palette {
-                            return audience.getPalette();
-                        },
-                        addRectanglePatch(bounds : RectangleBounds) : RectanglePatch {
-                            return audience.addRectanglePatch(bounds);
-                        }
-                    }));
+                    var insertPerimeter = new RectangleBounds(perimeter.left,
+                        perimeter.top,
+                        perimeter.right, insertBottom);
+                    var modifiedPerimeter = new RectangleBounds(perimeter.left, insertBottom,
+                        perimeter.right, perimeter.bottom);
+                    presenter.addPresentation(insertGlyff.present(new PerimeterAudience(insertPerimeter,
+                        audience), presenter));
+                    presenter.addPresentation(existingGlyff.present(new PerimeterAudience(modifiedPerimeter,
+                        audience), presenter));
                 }
             });
         }
@@ -245,21 +248,13 @@ module Glyffin {
                     var rowHeight = perimeter.getHeight() / rows;
                     var colWidth = perimeter.getWidth() / columns;
                     spots.forEach(spot=> {
-                        presenter.addPresentation(upperGlyff.present({
-                            getPerimeter() : RectangleBounds {
-                                var left = perimeter.left + colWidth * spot[0];
-                                var top = perimeter.top + rowHeight * spot[1];
-                                return new RectangleBounds(left,
-                                    top, left + colWidth, top + rowHeight
-                                );
-                            },
-                            getPalette() : Palette {
-                                return audience.getPalette();
-                            },
-                            addRectanglePatch(bounds : RectangleBounds) : RectanglePatch {
-                                return audience.addRectanglePatch(bounds);
-                            }
-                        }, presenter));
+                        var left = perimeter.left + colWidth * spot[0];
+                        var top = perimeter.top + rowHeight * spot[1];
+                        var spotPerimeter = new RectangleBounds(left,
+                            top, left + colWidth, top + rowHeight
+                        );
+                        presenter.addPresentation(upperGlyff.present(
+                            new PerimeterAudience(spotPerimeter, audience), presenter));
                     });
                 }
             });
@@ -268,17 +263,8 @@ module Glyffin {
         inset(pixels : number) : Glyff<T> {
             return this.compose({
                 getUpperAudience(audience : Audience, presenter : Presenter<T>) : Audience {
-                    return {
-                        getPerimeter() : RectangleBounds {
-                            return audience.getPerimeter().inset(pixels);
-                        },
-                        getPalette() : Palette {
-                            return audience.getPalette();
-                        },
-                        addRectanglePatch(bounds : RectangleBounds) : RectanglePatch {
-                            return audience.addRectanglePatch(bounds);
-                        }
-                    };
+                    var insetPerimeter = audience.getPerimeter().inset(pixels);
+                    return new PerimeterAudience(insetPerimeter, audience);
                 },
                 getUpperReaction(audience : Audience, presenter : Presenter<T>) : Reaction<T> {
                     return presenter;

@@ -39,6 +39,22 @@ var Glyffin;
         return Color;
     })();
     Glyffin.Color = Color;
+    var PerimeterAudience = (function () {
+        function PerimeterAudience(perimeter, audience) {
+            this.perimeter = perimeter;
+            this.audience = audience;
+        }
+        PerimeterAudience.prototype.getPerimeter = function () {
+            return this.perimeter;
+        };
+        PerimeterAudience.prototype.getPalette = function () {
+            return this.audience.getPalette();
+        };
+        PerimeterAudience.prototype.addRectanglePatch = function (bounds) {
+            return this.audience.addRectanglePatch(bounds);
+        };
+        return PerimeterAudience;
+    })();
     var Palette = (function () {
         function Palette() {
         }
@@ -138,28 +154,10 @@ var Glyffin;
                 call: function (audience, presenter) {
                     var perimeter = audience.getPerimeter();
                     var insertBottom = perimeter.top + insertHeight;
-                    presenter.addPresentation(insertGlyff.present({
-                        getPerimeter: function () {
-                            return new RectangleBounds(perimeter.left, perimeter.top, perimeter.right, insertBottom);
-                        },
-                        getPalette: function () {
-                            return audience.getPalette();
-                        },
-                        addRectanglePatch: function (bounds) {
-                            return audience.addRectanglePatch(bounds);
-                        }
-                    }));
-                    presenter.addPresentation(existingGlyff.present({
-                        getPerimeter: function () {
-                            return new RectangleBounds(perimeter.left, insertBottom, perimeter.right, perimeter.bottom);
-                        },
-                        getPalette: function () {
-                            return audience.getPalette();
-                        },
-                        addRectanglePatch: function (bounds) {
-                            return audience.addRectanglePatch(bounds);
-                        }
-                    }));
+                    var insertPerimeter = new RectangleBounds(perimeter.left, perimeter.top, perimeter.right, insertBottom);
+                    var modifiedPerimeter = new RectangleBounds(perimeter.left, insertBottom, perimeter.right, perimeter.bottom);
+                    presenter.addPresentation(insertGlyff.present(new PerimeterAudience(insertPerimeter, audience), presenter));
+                    presenter.addPresentation(existingGlyff.present(new PerimeterAudience(modifiedPerimeter, audience), presenter));
                 }
             });
         };
@@ -171,19 +169,10 @@ var Glyffin;
                     var rowHeight = perimeter.getHeight() / rows;
                     var colWidth = perimeter.getWidth() / columns;
                     spots.forEach(function (spot) {
-                        presenter.addPresentation(upperGlyff.present({
-                            getPerimeter: function () {
-                                var left = perimeter.left + colWidth * spot[0];
-                                var top = perimeter.top + rowHeight * spot[1];
-                                return new RectangleBounds(left, top, left + colWidth, top + rowHeight);
-                            },
-                            getPalette: function () {
-                                return audience.getPalette();
-                            },
-                            addRectanglePatch: function (bounds) {
-                                return audience.addRectanglePatch(bounds);
-                            }
-                        }, presenter));
+                        var left = perimeter.left + colWidth * spot[0];
+                        var top = perimeter.top + rowHeight * spot[1];
+                        var spotPerimeter = new RectangleBounds(left, top, left + colWidth, top + rowHeight);
+                        presenter.addPresentation(upperGlyff.present(new PerimeterAudience(spotPerimeter, audience), presenter));
                     });
                 }
             });
@@ -191,17 +180,8 @@ var Glyffin;
         Glyff.prototype.inset = function (pixels) {
             return this.compose({
                 getUpperAudience: function (audience, presenter) {
-                    return {
-                        getPerimeter: function () {
-                            return audience.getPerimeter().inset(pixels);
-                        },
-                        getPalette: function () {
-                            return audience.getPalette();
-                        },
-                        addRectanglePatch: function (bounds) {
-                            return audience.addRectanglePatch(bounds);
-                        }
-                    };
+                    var insetPerimeter = audience.getPerimeter().inset(pixels);
+                    return new PerimeterAudience(insetPerimeter, audience);
                 },
                 getUpperReaction: function (audience, presenter) {
                     return presenter;
