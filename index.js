@@ -4,6 +4,7 @@
 /// <reference path="webglbook.d.ts" />
 /// <reference path="glyffin.ts" />
 /// <reference path="glyffin-ascii.ts" />
+/// <reference path="glyffin-gl.ts" />
 function main() {
     var glAudience = new Glyffin.GlAudience();
     var redGlyff = Glyffin.RedGlyff;
