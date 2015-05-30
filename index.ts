@@ -29,7 +29,15 @@ function main() {
         new Insertion(capWidth, Glyffin.ascii('E')),
         new Insertion(spaceWidth, Glyffin.ClearGlyff),
         new Insertion(capWidth, Glyffin.ascii('F')),
-        new Insertion(spaceWidth, Glyffin.ClearGlyff)
+        new Insertion(spaceWidth, Glyffin.ClearGlyff),
+        new Insertion(capWidth, Glyffin.ascii('G')),
+        new Insertion(spaceWidth, Glyffin.ClearGlyff),
+        new Insertion(capWidth, Glyffin.ascii('H')),
+        new Insertion(spaceWidth, Glyffin.ClearGlyff),
+        new Insertion(capWidth, Glyffin.ascii('I')),
+        new Insertion(spaceWidth, Glyffin.ClearGlyff),
+        new Insertion(capWidth, Glyffin.ascii('J')),
+        new Insertion(spaceWidth, Glyffin.ClearGlyff),
     ]).inset(spaceWidth);
     redGlyff.insertTop(lineHeight, topGlyff)
         .present(glAudience);
