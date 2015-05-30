@@ -6,6 +6,6 @@
 /// <reference path="glyffin-ascii.ts" />
 function main() {
     var glAudience = new Glyffin.GlAudience();
-    Glyffin.asciiByCode('C'.charCodeAt(0)).inset(55).present(glAudience);
+    Glyffin.asciiByCode('F'.charCodeAt(0)).inset(55).present(glAudience);
 }
 //# sourceMappingURL=index.js.map
