@@ -9,6 +9,10 @@ var Glyffin;
         return Glyffin.RedGlyff.kaleido(5, 7, spots);
     }
     Glyffin.asciiByCode = asciiByCode;
+    function ascii(ch) {
+        return asciiByCode(ch.charCodeAt(0));
+    }
+    Glyffin.ascii = ascii;
     var no_spots = [];
     var A_spots = [
         [1, 0],

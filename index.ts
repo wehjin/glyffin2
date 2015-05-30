@@ -8,6 +8,6 @@
 
 function main() {
     var glAudience = new Glyffin.GlAudience();
-    Glyffin.asciiByCode('F'.charCodeAt(0)).inset(55).present(glAudience);
+    Glyffin.ascii('D').inset(55).present(glAudience);
 }
 

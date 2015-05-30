@@ -10,6 +10,10 @@ module Glyffin {
         return RedGlyff.kaleido(5, 7, spots);
     }
 
+    export function ascii(ch : string) : Glyff<Void> {
+        return asciiByCode(ch.charCodeAt(0));
+    }
+
     var no_spots = [];
     var A_spots = [
         [1, 0], [2, 0], [3, 0],
