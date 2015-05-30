@@ -72,7 +72,7 @@ module Glyffin {
             initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
-            this.vertices = new Vertices(100, gl);
+            this.vertices = new Vertices(1000, gl);
             this.gl = gl;
 
             var viewMatrix = new Matrix4();
