@@ -10,8 +10,9 @@ function main() {
     var glAudience = new Glyffin.GlAudience();
     var redGlyff = Glyffin.RedGlyff;
 
-    var capWidth = 35;
-    var spaceWidth = 9;
+    var capWidth = 25;
+    var spaceWidth = 5;
+    var lineHeight = 35;
     var topGlyff = redGlyff
         .insertLeft(capWidth, Glyffin.ascii('F'))
         .insertLeft(spaceWidth, Glyffin.ClearGlyff)
@@ -25,7 +26,7 @@ function main() {
         .insertLeft(spaceWidth, Glyffin.ClearGlyff)
         .insertLeft(capWidth, Glyffin.ascii('A'))
         .inset(spaceWidth);
-    redGlyff.insertTop(44, topGlyff)
+    redGlyff.insertTop(lineHeight, topGlyff)
         .present(glAudience);
 }
 
