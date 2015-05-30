@@ -87,11 +87,11 @@ module Glyffin {
                 color.alpha);
         }
 
-        getPerimeter() : Glyffin.RectangleBounds {
+        getPerimeter() : RectangleBounds {
             return this.perimeter;
         }
 
-        getPalette() : Glyffin.Palette {
+        getPalette() : Palette {
             return this.palette;
         }
 
@@ -203,7 +203,41 @@ module Glyffin {
         constructor(private onPresent : OnPresent<T>) {
         }
 
-        kaleido(columns : number, rows : number, spots : number[][]) : Glyffin.Glyff<Glyffin.Void> {
+        insertTop(insertHeight : number, insertGlyff : Glyff<Void>) : Glyff<T> {
+            var existingGlyff = this;
+            return Glyff.create({
+                call(audience : Audience, presenter : Presenter<Void>) {
+                    var perimeter = audience.getPerimeter();
+                    var insertBottom = perimeter.top + insertHeight;
+                    presenter.addPresentation(insertGlyff.present({
+                        getPerimeter() : RectangleBounds {
+                            return new RectangleBounds(perimeter.left, perimeter.top,
+                                perimeter.right, insertBottom);
+                        },
+                        getPalette() : Palette {
+                            return audience.getPalette();
+                        },
+                        addRectanglePatch(bounds : RectangleBounds) : RectanglePatch {
+                            return audience.addRectanglePatch(bounds);
+                        }
+                    }));
+                    presenter.addPresentation(existingGlyff.present({
+                        getPerimeter() : RectangleBounds {
+                            return new RectangleBounds(perimeter.left, insertBottom,
+                                perimeter.right, perimeter.bottom);
+                        },
+                        getPalette() : Palette {
+                            return audience.getPalette();
+                        },
+                        addRectanglePatch(bounds : RectangleBounds) : RectanglePatch {
+                            return audience.addRectanglePatch(bounds);
+                        }
+                    }));
+                }
+            });
+        }
+
+        kaleido(columns : number, rows : number, spots : number[][]) : Glyff<Void> {
             var upperGlyff = this;
             return Glyff.create({
                 call(audience : Audience, presenter : Presenter<Void>) {

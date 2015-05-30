@@ -6,6 +6,7 @@
 /// <reference path="glyffin-ascii.ts" />
 function main() {
     var glAudience = new Glyffin.GlAudience();
-    Glyffin.ascii('D').inset(55).present(glAudience);
+    var topGlyff = Glyffin.ascii('D').inset(10);
+    Glyffin.RedGlyff.insertTop(44, topGlyff).present(glAudience);
 }
 //# sourceMappingURL=index.js.map

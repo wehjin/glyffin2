@@ -132,6 +132,37 @@ var Glyffin;
         Glyff.create = function (f) {
             return new Glyff(f);
         };
+        Glyff.prototype.insertTop = function (insertHeight, insertGlyff) {
+            var existingGlyff = this;
+            return Glyff.create({
+                call: function (audience, presenter) {
+                    var perimeter = audience.getPerimeter();
+                    var insertBottom = perimeter.top + insertHeight;
+                    presenter.addPresentation(insertGlyff.present({
+                        getPerimeter: function () {
+                            return new RectangleBounds(perimeter.left, perimeter.top, perimeter.right, insertBottom);
+                        },
+                        getPalette: function () {
+                            return audience.getPalette();
+                        },
+                        addRectanglePatch: function (bounds) {
+                            return audience.addRectanglePatch(bounds);
+                        }
+                    }));
+                    presenter.addPresentation(existingGlyff.present({
+                        getPerimeter: function () {
+                            return new RectangleBounds(perimeter.left, insertBottom, perimeter.right, perimeter.bottom);
+                        },
+                        getPalette: function () {
+                            return audience.getPalette();
+                        },
+                        addRectanglePatch: function (bounds) {
+                            return audience.addRectanglePatch(bounds);
+                        }
+                    }));
+                }
+            });
+        };
         Glyff.prototype.kaleido = function (columns, rows, spots) {
             var upperGlyff = this;
             return Glyff.create({
