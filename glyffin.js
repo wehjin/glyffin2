@@ -252,5 +252,9 @@ var Glyffin;
             });
         }
     });
+    Glyffin.ClearGlyff = Glyff.create({
+        call: function (audience, presenter) {
+        }
+    });
 })(Glyffin || (Glyffin = {}));
 //# sourceMappingURL=glyffin.js.map

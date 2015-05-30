@@ -12,10 +12,15 @@ function main() {
 
     var topGlyff = redGlyff
         .insertLeft(35, Glyffin.ascii('F'))
+        .insertLeft(7, Glyffin.ClearGlyff)
         .insertLeft(35, Glyffin.ascii('E'))
+        .insertLeft(7, Glyffin.ClearGlyff)
         .insertLeft(35, Glyffin.ascii('D'))
+        .insertLeft(7, Glyffin.ClearGlyff)
         .insertLeft(35, Glyffin.ascii('C'))
+        .insertLeft(7, Glyffin.ClearGlyff)
         .insertLeft(35, Glyffin.ascii('B'))
+        .insertLeft(7, Glyffin.ClearGlyff)
         .insertLeft(35, Glyffin.ascii('A'))
         .inset(7);
     redGlyff.insertTop(44, topGlyff)

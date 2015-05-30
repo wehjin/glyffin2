@@ -343,4 +343,9 @@ module Glyffin {
             });
         }
     });
+
+    export var ClearGlyff : Glyff<Void> = Glyff.create<Void>({
+        call(audience : Audience, presenter : Presenter<Void>) {
+        }
+    });
 }
