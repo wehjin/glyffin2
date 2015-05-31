@@ -13,7 +13,7 @@ function main() {
     var glAudience = new Glyffin.GlAudience();
     var spaceWidth = 5;
     var lineHeight = 35;
-    var topGlyff = Glyffin.asciiEntireWord("ABCDEFGHIJKLR").inset(spaceWidth);
+    var topGlyff = Glyffin.asciiEntireWord("ABCDEFGHIJKLMNOPQRSTUVWXYZ").inset(spaceWidth);
     Glyffin.RedGlyff.insertTop(lineHeight, topGlyff)
         .present(glAudience);
 }
