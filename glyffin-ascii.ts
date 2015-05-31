@@ -8,11 +8,12 @@ module Glyffin {
 
     export function asciiString(str : string) : Glyff<Void> {
         var insertions : Insertion<Void>[] = [];
-        var capWidth = 25;
-        var spaceWidth = 5;
+        var xWeightWidth = 5;
         for (var i = 0; i < str.length; i++) {
-            insertions.push(new Insertion(capWidth, Glyffin.asciiByCode(str.charCodeAt(i))));
-            insertions.push(new Insertion(spaceWidth, Glyffin.ClearGlyff));
+            var code = str.charCodeAt(i);
+            var capWidth = xWeightWidth * x_weights[code];
+            insertions.push(new Insertion(capWidth, Glyffin.asciiByCode(code)));
+            insertions.push(new Insertion(xWeightWidth, Glyffin.ClearGlyff));
         }
         return RedGlyff.insertLefts(insertions);
     }
@@ -23,7 +24,7 @@ module Glyffin {
 
     export function asciiByCode(code : number) : Glyff<Void> {
         var spots = ascii_spots[code];
-        return RedGlyff.kaleido(5, 7, spots);
+        return RedGlyff.kaleido(x_weights[code], 7, spots);
     }
 
     var no_spots = [];
@@ -147,4 +148,26 @@ module Glyffin {
         no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
         no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
     ];
+
+    var x_weights = [
+        5, 5, 5, 5, 5, 5, 5, 5,
+        5, 5, 5, 5, 5, 5, 5, 5,
+        5, 5, 5, 5, 5, 5, 5, 5,
+        5, 5, 5, 5, 5, 5, 5, 5,
+
+        5, 5, 5, 5, 5, 5, 5, 5,
+        5, 5, 5, 5, 5, 5, 5, 5,
+        5, 5, 5, 5, 5, 5, 5, 5,
+        5, 5, 5, 5, 5, 5, 5, 5,
+
+        5, 5, 5, 5, 5, 5, 5, 5,
+        5, 3, 5, 5, 5, 5, 5, 5,
+        5, 5, 5, 5, 5, 5, 5, 5,
+        5, 5, 5, 5, 5, 5, 5, 5,
+
+        5, 5, 5, 5, 5, 5, 5, 5,
+        5, 5, 5, 5, 5, 5, 5, 5,
+        5, 5, 5, 5, 5, 5, 5, 5,
+        5, 5, 5, 5, 5, 5, 5, 5,
+    ]
 }

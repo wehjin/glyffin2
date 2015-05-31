@@ -6,11 +6,12 @@ var Glyffin;
 (function (Glyffin) {
     function asciiString(str) {
         var insertions = [];
-        var capWidth = 25;
-        var spaceWidth = 5;
+        var xWeightWidth = 5;
         for (var i = 0; i < str.length; i++) {
-            insertions.push(new Glyffin.Insertion(capWidth, Glyffin.asciiByCode(str.charCodeAt(i))));
-            insertions.push(new Glyffin.Insertion(spaceWidth, Glyffin.ClearGlyff));
+            var code = str.charCodeAt(i);
+            var capWidth = xWeightWidth * x_weights[code];
+            insertions.push(new Glyffin.Insertion(capWidth, Glyffin.asciiByCode(code)));
+            insertions.push(new Glyffin.Insertion(xWeightWidth, Glyffin.ClearGlyff));
         }
         return Glyffin.RedGlyff.insertLefts(insertions);
     }
@@ -21,7 +22,7 @@ var Glyffin;
     Glyffin.asciiChar = asciiChar;
     function asciiByCode(code) {
         var spots = ascii_spots[code];
-        return Glyffin.RedGlyff.kaleido(5, 7, spots);
+        return Glyffin.RedGlyff.kaleido(x_weights[code], 7, spots);
     }
     Glyffin.asciiByCode = asciiByCode;
     var no_spots = [];
@@ -349,6 +350,136 @@ var Glyffin;
         no_spots,
         no_spots,
         no_spots,
+    ];
+    var x_weights = [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        3,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
     ];
 })(Glyffin || (Glyffin = {}));
 //# sourceMappingURL=glyffin-ascii.js.map
