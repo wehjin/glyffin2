@@ -212,18 +212,37 @@ var Glyffin;
 /// <reference path="glyffin.ts" />
 var Glyffin;
 (function (Glyffin) {
-    function asciiString(str) {
-        var insertions = [];
+    function asciiEntireWord(word) {
         var xWeightWidth = 5;
-        for (var i = 0; i < str.length; i++) {
-            var code = str.charCodeAt(i);
+        var spaceWeights = word.length <= 1 ? 0 : (word.length - 1);
+        var letterWeights = 0;
+        for (var i = 0; i < word.length; i++) {
+            letterWeights += x_weights[word.charCodeAt(i)];
+        }
+        var combinedWeights = letterWeights + spaceWeights;
+        return Glyffin.Glyff.create({
+            call: function (audience, presenter) {
+                var perimeter = audience.getPerimeter();
+                var maxWeightWidth = perimeter.getWidth() / combinedWeights;
+                var fittedWeightWidth = Math.min(xWeightWidth, maxWeightWidth);
+                presenter.addPresentation(asciiWord(word, fittedWeightWidth).present(audience, presenter));
+            }
+        });
+    }
+    Glyffin.asciiEntireWord = asciiEntireWord;
+    function asciiWord(word, xWeightWidth) {
+        var insertions = [];
+        for (var i = 0; i < word.length; i++) {
+            var code = word.charCodeAt(i);
             var capWidth = xWeightWidth * x_weights[code];
+            if (i > 0) {
+                insertions.push(new Glyffin.Insertion(xWeightWidth, Glyffin.ClearGlyff));
+            }
             insertions.push(new Glyffin.Insertion(capWidth, Glyffin.asciiByCode(code)));
-            insertions.push(new Glyffin.Insertion(xWeightWidth, Glyffin.ClearGlyff));
         }
         return Glyffin.GreenGlyff.insertLefts(insertions);
     }
-    Glyffin.asciiString = asciiString;
+    Glyffin.asciiWord = asciiWord;
     function asciiChar(ch) {
         return asciiByCode(ch.charCodeAt(0));
     }
@@ -824,7 +843,7 @@ function main() {
     var glAudience = new Glyffin.GlAudience();
     var spaceWidth = 5;
     var lineHeight = 35;
-    var topGlyff = Glyffin.asciiString("ABCDEFGHIJKL").inset(spaceWidth);
+    var topGlyff = Glyffin.asciiEntireWord("ABCDEFGHIJKLR").inset(spaceWidth);
     Glyffin.RedGlyff.insertTop(lineHeight, topGlyff).present(glAudience);
 }
 //# sourceMappingURL=combined.js.map

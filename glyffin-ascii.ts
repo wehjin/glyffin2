@@ -6,14 +6,34 @@
 
 module Glyffin {
 
-    export function asciiString(str : string) : Glyff<Void> {
-        var insertions : Insertion<Void>[] = [];
+    export function asciiEntireWord(word : string) : Glyff<Void> {
         var xWeightWidth = 5;
-        for (var i = 0; i < str.length; i++) {
-            var code = str.charCodeAt(i);
+        var spaceWeights = word.length <= 1 ? 0 : (word.length - 1);
+        var letterWeights = 0;
+        for (var i = 0; i < word.length; i++) {
+            letterWeights += x_weights[word.charCodeAt(i)];
+        }
+        var combinedWeights = letterWeights + spaceWeights;
+        return Glyff.create({
+            call(audience : Audience, presenter : Presenter<Void>) {
+                var perimeter = audience.getPerimeter();
+                var maxWeightWidth = perimeter.getWidth() / combinedWeights;
+                var fittedWeightWidth = Math.min(xWeightWidth, maxWeightWidth);
+                presenter.addPresentation(asciiWord(word,
+                    fittedWeightWidth).present(audience, presenter));
+            }
+        });
+    }
+
+    export function asciiWord(word : string, xWeightWidth : number) {
+        var insertions : Insertion<Void>[] = [];
+        for (var i = 0; i < word.length; i++) {
+            var code = word.charCodeAt(i);
             var capWidth = xWeightWidth * x_weights[code];
+            if (i > 0) {
+                insertions.push(new Insertion(xWeightWidth, Glyffin.ClearGlyff));
+            }
             insertions.push(new Insertion(capWidth, Glyffin.asciiByCode(code)));
-            insertions.push(new Insertion(xWeightWidth, Glyffin.ClearGlyff));
         }
         return GreenGlyff.insertLefts(insertions);
     }
