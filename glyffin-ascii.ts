@@ -127,6 +127,15 @@ module Glyffin {
         [0, 5], [4, 5],
         [0, 6], [4, 6]
     ];
+    var L_spots = [
+        [0, 0],
+        [0, 1],
+        [0, 2],
+        [0, 3],
+        [0, 4],
+        [0, 5],
+        [0, 6], [1, 6], [2, 6], [3, 6], [4, 6]
+    ];
     var R_spots = [
         [0, 0], [1, 0], [2, 0], [3, 0],
         [0, 1], [4, 1],
@@ -148,7 +157,7 @@ module Glyffin {
         no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
 
         no_spots, A_spots, B_spots, C_spots, D_spots, E_spots, F_spots, G_spots,
-        H_spots, I_spots, J_spots, K_spots, no_spots, no_spots, no_spots, no_spots,
+        H_spots, I_spots, J_spots, K_spots, L_spots, no_spots, no_spots, no_spots,
         no_spots, no_spots, R_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
         no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
 

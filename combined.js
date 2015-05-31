@@ -426,6 +426,19 @@ var Glyffin;
         [0, 6],
         [4, 6]
     ];
+    var L_spots = [
+        [0, 0],
+        [0, 1],
+        [0, 2],
+        [0, 3],
+        [0, 4],
+        [0, 5],
+        [0, 6],
+        [1, 6],
+        [2, 6],
+        [3, 6],
+        [4, 6]
+    ];
     var R_spots = [
         [0, 0],
         [1, 0],
@@ -523,7 +536,7 @@ var Glyffin;
         I_spots,
         J_spots,
         K_spots,
-        no_spots,
+        L_spots,
         no_spots,
         no_spots,
         no_spots,
@@ -811,7 +824,7 @@ function main() {
     var glAudience = new Glyffin.GlAudience();
     var spaceWidth = 5;
     var lineHeight = 35;
-    var topGlyff = Glyffin.asciiString("ABCDEFGHIJK").inset(spaceWidth);
+    var topGlyff = Glyffin.asciiString("ABCDEFGHIJKL").inset(spaceWidth);
     Glyffin.RedGlyff.insertTop(lineHeight, topGlyff).present(glAudience);
 }
 //# sourceMappingURL=combined.js.map
