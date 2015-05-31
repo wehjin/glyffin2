@@ -4,15 +4,26 @@
 /// <reference path="glyffin.ts" />
 var Glyffin;
 (function (Glyffin) {
+    function asciiString(str) {
+        var insertions = [];
+        var capWidth = 25;
+        var spaceWidth = 5;
+        for (var i = 0; i < str.length; i++) {
+            insertions.push(new Glyffin.Insertion(capWidth, Glyffin.asciiByCode(str.charCodeAt(i))));
+            insertions.push(new Glyffin.Insertion(spaceWidth, Glyffin.ClearGlyff));
+        }
+        return Glyffin.RedGlyff.insertLefts(insertions);
+    }
+    Glyffin.asciiString = asciiString;
+    function asciiChar(ch) {
+        return asciiByCode(ch.charCodeAt(0));
+    }
+    Glyffin.asciiChar = asciiChar;
     function asciiByCode(code) {
         var spots = ascii_spots[code];
         return Glyffin.RedGlyff.kaleido(5, 7, spots);
     }
     Glyffin.asciiByCode = asciiByCode;
-    function ascii(ch) {
-        return asciiByCode(ch.charCodeAt(0));
-    }
-    Glyffin.ascii = ascii;
     var no_spots = [];
     var A_spots = [
         [1, 0],

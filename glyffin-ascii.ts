@@ -5,13 +5,25 @@
 /// <reference path="glyffin.ts" />
 
 module Glyffin {
+
+    export function asciiString(str : string) : Glyff<Void> {
+        var insertions : Insertion<Void>[] = [];
+        var capWidth = 25;
+        var spaceWidth = 5;
+        for (var i = 0; i < str.length; i++) {
+            insertions.push(new Insertion(capWidth, Glyffin.asciiByCode(str.charCodeAt(i))));
+            insertions.push(new Insertion(spaceWidth, Glyffin.ClearGlyff));
+        }
+        return RedGlyff.insertLefts(insertions);
+    }
+
+    export function asciiChar(ch : string) : Glyff<Void> {
+        return asciiByCode(ch.charCodeAt(0));
+    }
+
     export function asciiByCode(code : number) : Glyff<Void> {
         var spots = ascii_spots[code];
         return RedGlyff.kaleido(5, 7, spots);
-    }
-
-    export function ascii(ch : string) : Glyff<Void> {
-        return asciiByCode(ch.charCodeAt(0));
     }
 
     var no_spots = [];
