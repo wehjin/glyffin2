@@ -13,7 +13,7 @@ var Glyffin;
             insertions.push(new Glyffin.Insertion(capWidth, Glyffin.asciiByCode(code)));
             insertions.push(new Glyffin.Insertion(xWeightWidth, Glyffin.ClearGlyff));
         }
-        return Glyffin.RedGlyff.insertLefts(insertions);
+        return Glyffin.GreenGlyff.insertLefts(insertions);
     }
     Glyffin.asciiString = asciiString;
     function asciiChar(ch) {

@@ -199,6 +199,7 @@ var Glyffin;
     })();
     Glyffin.Glyff = Glyff;
     Glyffin.RedGlyff = Glyff.fromColor(Palette.RED);
+    Glyffin.GreenGlyff = Glyff.fromColor(Palette.GREEN);
     Glyffin.BeigeGlyff = Glyff.fromColor(Palette.BEIGE);
     Glyffin.ClearGlyff = Glyff.create({
         call: function (audience, presenter) {

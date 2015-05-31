@@ -15,7 +15,7 @@ module Glyffin {
             insertions.push(new Insertion(capWidth, Glyffin.asciiByCode(code)));
             insertions.push(new Insertion(xWeightWidth, Glyffin.ClearGlyff));
         }
-        return RedGlyff.insertLefts(insertions);
+        return GreenGlyff.insertLefts(insertions);
     }
 
     export function asciiChar(ch : string) : Glyff<Void> {
