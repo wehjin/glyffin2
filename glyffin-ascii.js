@@ -201,6 +201,23 @@ var Glyffin;
         [2, 6],
         [3, 6]
     ];
+    var K_spots = [
+        [0, 0],
+        [4, 0],
+        [0, 1],
+        [3, 1],
+        [0, 2],
+        [1, 2],
+        [2, 2],
+        [0, 3],
+        [3, 3],
+        [0, 4],
+        [4, 4],
+        [0, 5],
+        [4, 5],
+        [0, 6],
+        [4, 6]
+    ];
     var R_spots = [
         [0, 0],
         [1, 0],
@@ -297,7 +314,7 @@ var Glyffin;
         H_spots,
         I_spots,
         J_spots,
-        no_spots,
+        K_spots,
         no_spots,
         no_spots,
         no_spots,
