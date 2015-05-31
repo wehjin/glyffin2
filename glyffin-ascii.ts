@@ -24,7 +24,7 @@ module Glyffin {
 
     export function asciiByCode(code : number) : Glyff<Void> {
         var spots = ascii_spots[code];
-        return RedGlyff.kaleido(x_weights[code], 7, spots);
+        return BeigeGlyff.kaleido(x_weights[code], 7, spots);
     }
 
     var no_spots = [];

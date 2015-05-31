@@ -39,7 +39,7 @@ module Glyffin {
     export interface Audience {
         getPerimeter():RectangleBounds;
         getPalette():Palette;
-        addRectanglePatch(bounds : RectangleBounds):RectanglePatch;
+        addRectanglePatch(bounds : RectangleBounds, color : Color):RectanglePatch;
     }
 
     class PerimeterAudience implements Audience {
@@ -55,8 +55,8 @@ module Glyffin {
             return this.audience.getPalette();
         }
 
-        addRectanglePatch(bounds : RectangleBounds) : RectanglePatch {
-            return this.audience.addRectanglePatch(bounds);
+        addRectanglePatch(bounds : RectangleBounds, color : Color) : RectanglePatch {
+            return this.audience.addRectanglePatch(bounds, color);
         }
     }
 
@@ -70,6 +70,11 @@ module Glyffin {
     export interface RectanglePatch {
         remove();
     }
+
+    export var EMPTY_PATCH : RectanglePatch = {
+        remove() {
+        }
+    };
 
     export interface Reaction<T> {
         onResult(result : T);
@@ -100,10 +105,6 @@ module Glyffin {
     }
 
     export class Glyff<T> {
-
-        static create<U>(f : OnPresent<U>) : Glyff<U> {
-            return new Glyff<U>(f);
-        }
 
         constructor(private onPresent : OnPresent<T>) {
         }
@@ -227,21 +228,29 @@ module Glyffin {
                 }
             }
         }
-    }
 
-    export var RedGlyff : Glyff<Void> = Glyff.create<Void>({
-        call(audience : Audience, presenter : Presenter<Void>) {
-            var perimeter = audience.getPerimeter();
-            var patch : RectanglePatch = audience.addRectanglePatch(perimeter);
-            presenter.addPresentation({
-                end() {
-                    patch.remove();
+        static fromColor(color : Color) : Glyff<Void> {
+            return Glyff.create<Void>({
+                call(audience : Audience, presenter : Presenter<Void>) {
+                    var patch = audience.addRectanglePatch(audience.getPerimeter(), color);
+                    presenter.addPresentation({
+                        end() {
+                            patch.remove();
+                        }
+                    });
                 }
             });
         }
-    });
 
-    export var ClearGlyff : Glyff<Void> = Glyff.create<Void>({
+        static create<U>(f : OnPresent<U>) : Glyff<U> {
+            return new Glyff<U>(f);
+        }
+    }
+
+    export var RedGlyff = Glyff.fromColor(Palette.RED);
+    export var BeigeGlyff = Glyff.fromColor(Palette.BEIGE);
+
+    export var ClearGlyff = Glyff.create<Void>({
         call(audience : Audience, presenter : Presenter<Void>) {
         }
     });

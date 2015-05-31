@@ -50,8 +50,8 @@ var Glyffin;
         PerimeterAudience.prototype.getPalette = function () {
             return this.audience.getPalette();
         };
-        PerimeterAudience.prototype.addRectanglePatch = function (bounds) {
-            return this.audience.addRectanglePatch(bounds);
+        PerimeterAudience.prototype.addRectanglePatch = function (bounds, color) {
+            return this.audience.addRectanglePatch(bounds, color);
         };
         return PerimeterAudience;
     })();
@@ -65,6 +65,10 @@ var Glyffin;
         return Palette;
     })();
     Glyffin.Palette = Palette;
+    Glyffin.EMPTY_PATCH = {
+        remove: function () {
+        }
+    };
     var Insertion = (function () {
         function Insertion(amount, glyff) {
             this.amount = amount;
@@ -77,9 +81,6 @@ var Glyffin;
         function Glyff(onPresent) {
             this.onPresent = onPresent;
         }
-        Glyff.create = function (f) {
-            return new Glyff(f);
-        };
         Glyff.prototype.insertLefts = function (insertions) {
             var current = this;
             var todo = insertions.slice();
@@ -179,20 +180,26 @@ var Glyffin;
                 }
             };
         };
+        Glyff.fromColor = function (color) {
+            return Glyff.create({
+                call: function (audience, presenter) {
+                    var patch = audience.addRectanglePatch(audience.getPerimeter(), color);
+                    presenter.addPresentation({
+                        end: function () {
+                            patch.remove();
+                        }
+                    });
+                }
+            });
+        };
+        Glyff.create = function (f) {
+            return new Glyff(f);
+        };
         return Glyff;
     })();
     Glyffin.Glyff = Glyff;
-    Glyffin.RedGlyff = Glyff.create({
-        call: function (audience, presenter) {
-            var perimeter = audience.getPerimeter();
-            var patch = audience.addRectanglePatch(perimeter);
-            presenter.addPresentation({
-                end: function () {
-                    patch.remove();
-                }
-            });
-        }
-    });
+    Glyffin.RedGlyff = Glyff.fromColor(Palette.RED);
+    Glyffin.BeigeGlyff = Glyff.fromColor(Palette.BEIGE);
     Glyffin.ClearGlyff = Glyff.create({
         call: function (audience, presenter) {
         }

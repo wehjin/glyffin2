@@ -22,7 +22,7 @@ var Glyffin;
     Glyffin.asciiChar = asciiChar;
     function asciiByCode(code) {
         var spots = ascii_spots[code];
-        return Glyffin.RedGlyff.kaleido(x_weights[code], 7, spots);
+        return Glyffin.BeigeGlyff.kaleido(x_weights[code], 7, spots);
     }
     Glyffin.asciiByCode = asciiByCode;
     var no_spots = [];
