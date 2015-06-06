@@ -9,16 +9,36 @@ module Glyffin {
 
     var MAX_PATCH_COUNT = 1000;
 
+    class Interactive {
+        constructor(public bounds : RectangleBounds, public touchProvider : TouchProvider) {
+        }
+    }
+
     export class GlAudience implements Audience {
         private canvas : HTMLCanvasElement;
         private gl : WebGLBookContext;
         private perimeter : RectangleBounds;
         private vertices : VerticesAndColor;
         private palette;
+        private interactives : Interactive[] = [];
 
         constructor() {
             var canvas = <HTMLCanvasElement>document.getElementById('webgl');
             this.canvas = canvas;
+
+            canvas.onmousedown = ()=> {
+                if (this.interactives.length > 0) {
+                    var touch = this.interactives[0].touchProvider.getTouch(null);
+                    canvas.onmouseout = ()=> {
+                        touch.onCancel();
+                        canvas.onmouseout = canvas.onmouseup = null;
+                    };
+                    canvas.onmouseup = ()=> {
+                        touch.onRelease();
+                        canvas.onmouseout = canvas.onmouseup = null;
+                    };
+                }
+            };
 
             this.perimeter = new RectangleBounds(0, 0, canvas.width, canvas.height);
 
@@ -55,7 +75,7 @@ module Glyffin {
                 bounds.bottom, color);
             this.scheduleRedraw();
             return <RectanglePatch>{
-                remove() {
+                remove: ()=> {
                     this.vertices.putPatch(patch);
                 }
             };
@@ -63,7 +83,14 @@ module Glyffin {
 
         addRectangleActive(bounds : Glyffin.RectangleBounds,
                            touchProvider : Glyffin.TouchProvider) : Glyffin.RectangleActive {
-            return EMPTY_ACTIVE;
+            var interactive = new Interactive(bounds, touchProvider);
+            this.interactives.push(interactive);
+            var interactives = this.interactives;
+            return {
+                remove: ()=> {
+                    interactives.splice(interactives.indexOf(interactive), 1);
+                }
+            };
         }
 
         scheduleRedraw() {

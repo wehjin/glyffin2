@@ -112,8 +112,17 @@ module Glyffin {
             };
             var presented : Presentation[] = [];
             var presenter = {
-                addPresentation(presentation : Presentation) {
+                addPresentation(presentation : Presentation) : Removable {
                     presented.push(presentation);
+                    return {
+                        remove() {
+                            var index = presented.indexOf(presentation);
+                            if (index >= 0) {
+                                presented.splice(index, 1);
+                            }
+                            presentation.end();
+                        }
+                    }
                 },
                 onResult(result : T) {
                     firmReaction.onResult(result);

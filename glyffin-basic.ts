@@ -36,31 +36,33 @@ module Glyffin {
         }
     }
 
-    export interface RectanglePatch {
+    export interface Removable {
         remove();
     }
 
-    export var EMPTY_PATCH : RectanglePatch = {
+    export var EMPTY_REMOVABLE = {
         remove() {
         }
     };
 
-    export interface RectangleActive {
-        remove();
+    export interface RectanglePatch extends Removable {
     }
 
-    export var EMPTY_ACTIVE : RectangleActive = {
-        remove() {
-        }
-    };
+    export var EMPTY_PATCH : RectanglePatch = EMPTY_REMOVABLE;
+
+    export interface RectangleActive extends Removable {
+    }
+
+    export var EMPTY_ACTIVE : RectangleActive = EMPTY_REMOVABLE;
 
     export interface TouchProvider {
-        getTouch(spot : Spot):Touch;
+        getTouch(spot : Spot): Touch;
     }
 
     export interface Touch {
         onMove(spot : Spot);
         onRelease();
+        onCancel();
     }
 
     export interface Reaction<T> {
@@ -73,7 +75,7 @@ module Glyffin {
     }
 
     export interface Presenter<T> extends Reaction<T> {
-        addPresentation(presentation : Presentation);
+        addPresentation(presentation : Presentation):Removable;
     }
 
     export interface OnPresent<T> {

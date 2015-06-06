@@ -23,14 +23,12 @@ var Glyffin;
         return PerimeterAudience;
     })();
     Glyffin.PerimeterAudience = PerimeterAudience;
-    Glyffin.EMPTY_PATCH = {
+    Glyffin.EMPTY_REMOVABLE = {
         remove: function () {
         }
     };
-    Glyffin.EMPTY_ACTIVE = {
-        remove: function () {
-        }
-    };
+    Glyffin.EMPTY_PATCH = Glyffin.EMPTY_REMOVABLE;
+    Glyffin.EMPTY_ACTIVE = Glyffin.EMPTY_REMOVABLE;
     var Insertion = (function () {
         function Insertion(amount, glyff) {
             this.amount = amount;
@@ -186,6 +184,15 @@ var Glyffin;
             var presenter = {
                 addPresentation: function (presentation) {
                     presented.push(presentation);
+                    return {
+                        remove: function () {
+                            var index = presented.indexOf(presentation);
+                            if (index >= 0) {
+                                presented.splice(index, 1);
+                            }
+                            presentation.end();
+                        }
+                    };
                 },
                 onResult: function (result) {
                     firmReaction.onResult(result);
@@ -1355,10 +1362,32 @@ var Glyffin;
 var Glyffin;
 (function (Glyffin) {
     var MAX_PATCH_COUNT = 1000;
+    var Interactive = (function () {
+        function Interactive(bounds, touchProvider) {
+            this.bounds = bounds;
+            this.touchProvider = touchProvider;
+        }
+        return Interactive;
+    })();
     var GlAudience = (function () {
         function GlAudience() {
+            var _this = this;
+            this.interactives = [];
             var canvas = document.getElementById('webgl');
             this.canvas = canvas;
+            canvas.onmousedown = function () {
+                if (_this.interactives.length > 0) {
+                    var touch = _this.interactives[0].touchProvider.getTouch(null);
+                    canvas.onmouseout = function () {
+                        touch.onCancel();
+                        canvas.onmouseout = canvas.onmouseup = null;
+                    };
+                    canvas.onmouseup = function () {
+                        touch.onRelease();
+                        canvas.onmouseout = canvas.onmouseup = null;
+                    };
+                }
+            };
             this.perimeter = new Glyffin.RectangleBounds(0, 0, canvas.width, canvas.height);
             this.palette = new Glyffin.Palette();
             var gl = getWebGLContext(canvas);
@@ -1379,6 +1408,7 @@ var Glyffin;
             return this.palette;
         };
         GlAudience.prototype.addRectanglePatch = function (bounds, color) {
+            var _this = this;
             if (bounds.left >= bounds.right || bounds.top >= bounds.bottom || color.alpha == 0) {
                 return Glyffin.EMPTY_PATCH;
             }
@@ -1386,12 +1416,19 @@ var Glyffin;
             this.scheduleRedraw();
             return {
                 remove: function () {
-                    this.vertices.putPatch(patch);
+                    _this.vertices.putPatch(patch);
                 }
             };
         };
         GlAudience.prototype.addRectangleActive = function (bounds, touchProvider) {
-            return Glyffin.EMPTY_ACTIVE;
+            var interactive = new Interactive(bounds, touchProvider);
+            this.interactives.push(interactive);
+            var interactives = this.interactives;
+            return {
+                remove: function () {
+                    interactives.splice(interactives.indexOf(interactive), 1);
+                }
+            };
         };
         GlAudience.prototype.scheduleRedraw = function () {
             this.gl.clear(this.gl.COLOR_BUFFER_BIT);
@@ -1443,15 +1480,58 @@ var Glyffin;
     })();
 })(Glyffin || (Glyffin = {}));
 /**
+ * Created by wehjin on 6/6/15.
+ */
+/// <reference path="glyffin.ts" />
+var Glyffin;
+(function (Glyffin) {
+    var Start = (function () {
+        function Start(time) {
+            this.time = time;
+        }
+        return Start;
+    })();
+    Glyffin.Start = Start;
+    function button() {
+        return Glyffin.Glyff.create({
+            call: function (audience, presenter) {
+                var removable = presenter.addPresentation(Glyffin.GreenGlyff.present(audience));
+                audience.addRectangleActive(audience.getPerimeter(), {
+                    getTouch: function (spot) {
+                        removable.remove();
+                        removable = presenter.addPresentation(Glyffin.BlueGlyff.present(audience));
+                        function unpress() {
+                            removable.remove();
+                            removable = presenter.addPresentation(Glyffin.GreenGlyff.present(audience));
+                        }
+                        return {
+                            onMove: function (spot) {
+                            },
+                            onRelease: function () {
+                                unpress();
+                            },
+                            onCancel: function () {
+                                unpress();
+                            }
+                        };
+                    }
+                });
+            }
+        });
+    }
+    Glyffin.button = button;
+})(Glyffin || (Glyffin = {}));
+/**
  * Created by wehjin on 5/24/15.
  */
 /// <reference path="webglbook.d.ts" />
 /// <reference path="glyffin.ts" />
 /// <reference path="glyffin-ascii.ts" />
 /// <reference path="glyffin-gl.ts" />
+/// <reference path="glyffin-touch.ts" />
 var Insertion = Glyffin.Insertion;
 function main() {
     var glAudience = new Glyffin.GlAudience();
-    Glyffin.RedGlyff.insertTop(35, Glyffin.asciiEntireWord("ABCDEFGHIJKLMNOPQRSTUVWXYZ").inset(5)).insertTop(35, Glyffin.asciiEntireWord("abcdefghijklmnopqrstuvwxyz").inset(5)).insertTop(44, Glyffin.BlueGlyff).present(glAudience);
+    Glyffin.RedGlyff.insertTop(35, Glyffin.asciiEntireWord("ABCDEFGHIJKLMNOPQRSTUVWXYZ").inset(5)).insertTop(35, Glyffin.asciiEntireWord("abcdefghijklmnopqrstuvwxyz").inset(5)).insertTop(44, Glyffin.button()).present(glAudience);
 }
 //# sourceMappingURL=combined.js.map

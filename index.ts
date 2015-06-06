@@ -6,6 +6,7 @@
 /// <reference path="glyffin.ts" />
 /// <reference path="glyffin-ascii.ts" />
 /// <reference path="glyffin-gl.ts" />
+/// <reference path="glyffin-touch.ts" />
 
 import Insertion = Glyffin.Insertion;
 
@@ -14,7 +15,7 @@ function main() {
     Glyffin.RedGlyff
         .insertTop(35, Glyffin.asciiEntireWord("ABCDEFGHIJKLMNOPQRSTUVWXYZ").inset(5))
         .insertTop(35, Glyffin.asciiEntireWord("abcdefghijklmnopqrstuvwxyz").inset(5))
-        .insertTop(44, Glyffin.BlueGlyff)
+        .insertTop(44, Glyffin.button())
         .present(glAudience);
 }
 
