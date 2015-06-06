@@ -10,11 +10,10 @@
 import Insertion = Glyffin.Insertion;
 
 function main() {
-    var glAudience = new Glyffin.GlAudience();
-    var spaceWidth = 5;
-    var lineHeight = 35;
-    var topGlyff = Glyffin.asciiEntireWord("ABCDEFGHIJKLMNOPQRSTUVWXYZ").inset(spaceWidth);
-    Glyffin.RedGlyff.insertTop(lineHeight, topGlyff)
+    var glAudience : Glyffin.Audience = new Glyffin.GlAudience();
+    Glyffin.RedGlyff
+        .insertTop(35, Glyffin.asciiEntireWord("ABCDEFGHIJKLMNOPQRSTUVWXYZ").inset(5))
+        .insertTop(35, Glyffin.asciiEntireWord("abcdefghijklmnopqrstuvwxyz").inset(5))
         .present(glAudience);
 }
 

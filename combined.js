@@ -200,6 +200,7 @@ var Glyffin;
     Glyffin.Glyff = Glyff;
     Glyffin.RedGlyff = Glyff.fromColor(Palette.RED);
     Glyffin.GreenGlyff = Glyff.fromColor(Palette.GREEN);
+    Glyffin.BlueGlyff = Glyff.fromColor(Palette.BLUE);
     Glyffin.BeigeGlyff = Glyff.fromColor(Palette.BEIGE);
     Glyffin.ClearGlyff = Glyff.create({
         call: function (audience, presenter) {
@@ -692,6 +693,376 @@ var Glyffin;
         [3, 6],
         [4, 6]
     ];
+    var a_spots = [
+        [1, 2],
+        [2, 2],
+        [3, 2],
+        [4, 3],
+        [1, 4],
+        [2, 4],
+        [3, 4],
+        [4, 4],
+        [0, 5],
+        [4, 5],
+        [1, 6],
+        [2, 6],
+        [3, 6],
+        [4, 6]
+    ];
+    var b_spots = [
+        [0, 0],
+        [0, 1],
+        [0, 2],
+        [2, 2],
+        [3, 2],
+        [0, 3],
+        [1, 3],
+        [4, 3],
+        [0, 4],
+        [4, 4],
+        [0, 5],
+        [4, 5],
+        [0, 6],
+        [1, 6],
+        [2, 6],
+        [3, 6]
+    ];
+    var c_spots = [
+        [1, 2],
+        [2, 2],
+        [3, 2],
+        [0, 3],
+        [4, 3],
+        [0, 4],
+        [0, 5],
+        [4, 5],
+        [1, 6],
+        [2, 6],
+        [3, 6]
+    ];
+    var d_spots = [
+        [4, 0],
+        [4, 1],
+        [1, 2],
+        [2, 2],
+        [4, 2],
+        [0, 3],
+        [3, 3],
+        [4, 3],
+        [0, 4],
+        [4, 4],
+        [0, 5],
+        [4, 5],
+        [1, 6],
+        [2, 6],
+        [3, 6],
+        [4, 6]
+    ];
+    var e_spots = [
+        [1, 2],
+        [2, 2],
+        [3, 2],
+        [0, 3],
+        [4, 3],
+        [0, 4],
+        [1, 4],
+        [2, 4],
+        [3, 4],
+        [4, 4],
+        [0, 5],
+        [1, 6],
+        [2, 6],
+        [3, 6],
+        [4, 6]
+    ];
+    var f_spots = [
+        [2, 0],
+        [3, 0],
+        [1, 1],
+        [0, 2],
+        [1, 2],
+        [2, 2],
+        [3, 2],
+        [1, 3],
+        [1, 4],
+        [1, 5],
+        [1, 6]
+    ];
+    var g_spots = [
+        [1, 2],
+        [2, 2],
+        [3, 2],
+        [4, 2],
+        [0, 3],
+        [4, 3],
+        [0, 4],
+        [4, 4],
+        [1, 5],
+        [2, 5],
+        [3, 5],
+        [4, 5],
+        [4, 6],
+        [0, 7],
+        [1, 7],
+        [2, 7],
+        [3, 7]
+    ];
+    var h_spots = [
+        [0, 0],
+        [0, 1],
+        [0, 2],
+        [2, 2],
+        [3, 2],
+        [0, 3],
+        [1, 3],
+        [4, 3],
+        [0, 4],
+        [4, 4],
+        [0, 5],
+        [4, 5],
+        [0, 6],
+        [4, 6]
+    ];
+    var i_spots = [
+        [0, 0],
+        [0, 2],
+        [0, 3],
+        [0, 4],
+        [0, 5],
+        [0, 6]
+    ];
+    var j_spots = [
+        [4, 0],
+        [4, 2],
+        [4, 3],
+        [4, 4],
+        [0, 5],
+        [4, 5],
+        [0, 6],
+        [4, 6],
+        [1, 7],
+        [2, 7],
+        [3, 7]
+    ];
+    var k_spots = [
+        [0, 0],
+        [0, 1],
+        [0, 2],
+        [3, 2],
+        [0, 3],
+        [2, 3],
+        [0, 4],
+        [1, 4],
+        [0, 5],
+        [2, 5],
+        [0, 6],
+        [3, 6]
+    ];
+    var l_spots = [
+        [0, 0],
+        [0, 1],
+        [0, 2],
+        [0, 3],
+        [0, 4],
+        [0, 5],
+        [1, 6]
+    ];
+    var m_spots = [
+        [0, 2],
+        [1, 2],
+        [3, 2],
+        [0, 3],
+        [2, 3],
+        [4, 3],
+        [0, 4],
+        [2, 4],
+        [4, 4],
+        [0, 5],
+        [4, 5],
+        [0, 6],
+        [4, 6]
+    ];
+    var n_spots = [
+        [0, 2],
+        [1, 2],
+        [2, 2],
+        [3, 2],
+        [0, 3],
+        [4, 3],
+        [0, 4],
+        [4, 4],
+        [0, 5],
+        [4, 5],
+        [0, 6],
+        [4, 6]
+    ];
+    var o_spots = [
+        [1, 2],
+        [2, 2],
+        [3, 2],
+        [0, 3],
+        [4, 3],
+        [0, 4],
+        [4, 4],
+        [0, 5],
+        [4, 5],
+        [1, 6],
+        [2, 6],
+        [3, 6]
+    ];
+    var p_spots = [
+        [0, 2],
+        [2, 2],
+        [3, 2],
+        [0, 3],
+        [1, 3],
+        [4, 3],
+        [0, 4],
+        [4, 4],
+        [0, 5],
+        [1, 5],
+        [2, 5],
+        [3, 5],
+        [0, 6],
+        [0, 7]
+    ];
+    var q_spots = [
+        [1, 2],
+        [2, 2],
+        [4, 2],
+        [0, 3],
+        [3, 3],
+        [4, 3],
+        [0, 4],
+        [4, 4],
+        [1, 5],
+        [2, 5],
+        [3, 5],
+        [4, 5],
+        [4, 6],
+        [4, 7],
+    ];
+    var r_spots = [
+        [0, 2],
+        [2, 2],
+        [3, 2],
+        [0, 3],
+        [1, 3],
+        [4, 3],
+        [0, 4],
+        [0, 5],
+        [0, 6]
+    ];
+    var s_spots = [
+        [1, 2],
+        [2, 2],
+        [3, 2],
+        [4, 2],
+        [0, 3],
+        [1, 4],
+        [2, 4],
+        [3, 4],
+        [4, 5],
+        [0, 6],
+        [1, 6],
+        [2, 6],
+        [3, 6]
+    ];
+    var t_spots = [
+        [1, 0],
+        [0, 1],
+        [1, 1],
+        [2, 1],
+        [1, 2],
+        [1, 3],
+        [1, 4],
+        [1, 5],
+        [2, 6]
+    ];
+    var u_spots = [
+        [0, 2],
+        [4, 2],
+        [0, 3],
+        [4, 3],
+        [0, 4],
+        [4, 4],
+        [0, 5],
+        [4, 5],
+        [1, 6],
+        [2, 6],
+        [3, 6],
+        [4, 6]
+    ];
+    var v_spots = [
+        [0, 2],
+        [4, 2],
+        [0, 3],
+        [4, 3],
+        [0, 4],
+        [4, 4],
+        [1, 5],
+        [3, 5],
+        [2, 6]
+    ];
+    var w_spots = [
+        [0, 2],
+        [4, 2],
+        [0, 3],
+        [4, 3],
+        [0, 4],
+        [2, 4],
+        [4, 4],
+        [0, 5],
+        [2, 5],
+        [4, 5],
+        [1, 6],
+        [2, 6],
+        [3, 6],
+        [4, 6]
+    ];
+    var x_spots = [
+        [0, 2],
+        [4, 2],
+        [1, 3],
+        [3, 3],
+        [2, 4],
+        [1, 5],
+        [3, 5],
+        [0, 6],
+        [4, 6]
+    ];
+    var y_spots = [
+        [0, 2],
+        [4, 2],
+        [0, 3],
+        [4, 3],
+        [0, 4],
+        [4, 4],
+        [1, 5],
+        [2, 5],
+        [3, 5],
+        [4, 5],
+        [4, 6],
+        [0, 7],
+        [1, 7],
+        [2, 7],
+        [3, 7]
+    ];
+    var z_spots = [
+        [0, 2],
+        [1, 2],
+        [2, 2],
+        [3, 2],
+        [4, 2],
+        [3, 3],
+        [2, 4],
+        [1, 5],
+        [0, 6],
+        [1, 6],
+        [2, 6],
+        [3, 6],
+        [4, 6]
+    ];
     var ascii_spots = [
         no_spots,
         no_spots,
@@ -790,32 +1161,32 @@ var Glyffin;
         no_spots,
         no_spots,
         no_spots,
-        no_spots,
-        no_spots,
-        no_spots,
-        no_spots,
-        no_spots,
-        no_spots,
-        no_spots,
-        no_spots,
-        no_spots,
-        no_spots,
-        no_spots,
-        no_spots,
-        no_spots,
-        no_spots,
-        no_spots,
-        no_spots,
-        no_spots,
-        no_spots,
-        no_spots,
-        no_spots,
-        no_spots,
-        no_spots,
-        no_spots,
-        no_spots,
-        no_spots,
-        no_spots,
+        a_spots,
+        b_spots,
+        c_spots,
+        d_spots,
+        e_spots,
+        f_spots,
+        g_spots,
+        h_spots,
+        i_spots,
+        j_spots,
+        k_spots,
+        l_spots,
+        m_spots,
+        n_spots,
+        o_spots,
+        p_spots,
+        q_spots,
+        r_spots,
+        s_spots,
+        t_spots,
+        u_spots,
+        v_spots,
+        w_spots,
+        x_spots,
+        y_spots,
+        z_spots,
         no_spots,
         no_spots,
         no_spots,
@@ -925,6 +1296,13 @@ var Glyffin;
         5,
         5,
         5,
+        4,
+        5,
+        5,
+        1,
+        5,
+        4,
+        2,
         5,
         5,
         5,
@@ -932,14 +1310,7 @@ var Glyffin;
         5,
         5,
         5,
-        5,
-        5,
-        5,
-        5,
-        5,
-        5,
-        5,
-        5,
+        3,
         5,
         5,
         5,
@@ -1055,9 +1426,6 @@ var Glyffin;
 var Insertion = Glyffin.Insertion;
 function main() {
     var glAudience = new Glyffin.GlAudience();
-    var spaceWidth = 5;
-    var lineHeight = 35;
-    var topGlyff = Glyffin.asciiEntireWord("ABCDEFGHIJKLMNOPQRSTUVWXYZ").inset(spaceWidth);
-    Glyffin.RedGlyff.insertTop(lineHeight, topGlyff).present(glAudience);
+    Glyffin.RedGlyff.insertTop(35, Glyffin.asciiEntireWord("ABCDEFGHIJKLMNOPQRSTUVWXYZ").inset(5)).insertTop(35, Glyffin.asciiEntireWord("abcdefghijklmnopqrstuvwxyz").inset(5)).present(glAudience);
 }
 //# sourceMappingURL=combined.js.map

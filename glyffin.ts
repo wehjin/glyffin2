@@ -249,6 +249,7 @@ module Glyffin {
 
     export var RedGlyff = Glyff.fromColor(Palette.RED);
     export var GreenGlyff = Glyff.fromColor(Palette.GREEN);
+    export var BlueGlyff = Glyff.fromColor(Palette.BLUE);
     export var BeigeGlyff = Glyff.fromColor(Palette.BEIGE);
 
     export var ClearGlyff = Glyff.create<Void>({
