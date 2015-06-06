@@ -1,7 +1,6 @@
 /**
  * Created by wehjin on 5/24/15.
  */
-/// <reference path="webglbook.d.ts" />
 var Glyffin;
 (function (Glyffin) {
     var Void = (function () {
@@ -55,6 +54,7 @@ var Glyffin;
         };
         return PerimeterAudience;
     })();
+    Glyffin.PerimeterAudience = PerimeterAudience;
     var Palette = (function () {
         function Palette() {
         }
@@ -77,6 +77,14 @@ var Glyffin;
         return Insertion;
     })();
     Glyffin.Insertion = Insertion;
+})(Glyffin || (Glyffin = {}));
+/**
+ * Created by wehjin on 5/24/15.
+ */
+/// <reference path="webglbook.d.ts" />
+/// <reference path="glyffin-basic.ts" />
+var Glyffin;
+(function (Glyffin) {
     var Glyff = (function () {
         function Glyff(onPresent) {
             this.onPresent = onPresent;
@@ -96,10 +104,10 @@ var Glyffin;
                 call: function (audience, presenter) {
                     var perimeter = audience.getPerimeter();
                     var insertRight = perimeter.left + insertAmount;
-                    var insertPerimeter = new RectangleBounds(perimeter.left, perimeter.top, insertRight, perimeter.bottom);
-                    var modifiedPerimeter = new RectangleBounds(insertRight, perimeter.top, perimeter.right, perimeter.bottom);
-                    presenter.addPresentation(insertGlyff.present(new PerimeterAudience(insertPerimeter, audience), presenter));
-                    presenter.addPresentation(existingGlyff.present(new PerimeterAudience(modifiedPerimeter, audience), presenter));
+                    var insertPerimeter = new Glyffin.RectangleBounds(perimeter.left, perimeter.top, insertRight, perimeter.bottom);
+                    var modifiedPerimeter = new Glyffin.RectangleBounds(insertRight, perimeter.top, perimeter.right, perimeter.bottom);
+                    presenter.addPresentation(insertGlyff.present(new Glyffin.PerimeterAudience(insertPerimeter, audience), presenter));
+                    presenter.addPresentation(existingGlyff.present(new Glyffin.PerimeterAudience(modifiedPerimeter, audience), presenter));
                 }
             });
         };
@@ -109,10 +117,10 @@ var Glyffin;
                 call: function (audience, presenter) {
                     var perimeter = audience.getPerimeter();
                     var insertBottom = perimeter.top + insertAmount;
-                    var insertPerimeter = new RectangleBounds(perimeter.left, perimeter.top, perimeter.right, insertBottom);
-                    var modifiedPerimeter = new RectangleBounds(perimeter.left, insertBottom, perimeter.right, perimeter.bottom);
-                    presenter.addPresentation(insertGlyff.present(new PerimeterAudience(insertPerimeter, audience), presenter));
-                    presenter.addPresentation(existingGlyff.present(new PerimeterAudience(modifiedPerimeter, audience), presenter));
+                    var insertPerimeter = new Glyffin.RectangleBounds(perimeter.left, perimeter.top, perimeter.right, insertBottom);
+                    var modifiedPerimeter = new Glyffin.RectangleBounds(perimeter.left, insertBottom, perimeter.right, perimeter.bottom);
+                    presenter.addPresentation(insertGlyff.present(new Glyffin.PerimeterAudience(insertPerimeter, audience), presenter));
+                    presenter.addPresentation(existingGlyff.present(new Glyffin.PerimeterAudience(modifiedPerimeter, audience), presenter));
                 }
             });
         };
@@ -126,8 +134,8 @@ var Glyffin;
                     spots.forEach(function (spot) {
                         var left = perimeter.left + colWidth * spot[0];
                         var top = perimeter.top + rowHeight * spot[1];
-                        var spotPerimeter = new RectangleBounds(left, top, left + colWidth, top + rowHeight);
-                        presenter.addPresentation(upperGlyff.present(new PerimeterAudience(spotPerimeter, audience), presenter));
+                        var spotPerimeter = new Glyffin.RectangleBounds(left, top, left + colWidth, top + rowHeight);
+                        presenter.addPresentation(upperGlyff.present(new Glyffin.PerimeterAudience(spotPerimeter, audience), presenter));
                     });
                 }
             });
@@ -136,7 +144,7 @@ var Glyffin;
             return this.compose({
                 getUpperAudience: function (audience, presenter) {
                     var insetPerimeter = audience.getPerimeter().inset(pixels);
-                    return new PerimeterAudience(insetPerimeter, audience);
+                    return new Glyffin.PerimeterAudience(insetPerimeter, audience);
                 },
                 getUpperReaction: function (audience, presenter) {
                     return presenter;
@@ -198,10 +206,10 @@ var Glyffin;
         return Glyff;
     })();
     Glyffin.Glyff = Glyff;
-    Glyffin.RedGlyff = Glyff.fromColor(Palette.RED);
-    Glyffin.GreenGlyff = Glyff.fromColor(Palette.GREEN);
-    Glyffin.BlueGlyff = Glyff.fromColor(Palette.BLUE);
-    Glyffin.BeigeGlyff = Glyff.fromColor(Palette.BEIGE);
+    Glyffin.RedGlyff = Glyff.fromColor(Glyffin.Palette.RED);
+    Glyffin.GreenGlyff = Glyff.fromColor(Glyffin.Palette.GREEN);
+    Glyffin.BlueGlyff = Glyff.fromColor(Glyffin.Palette.BLUE);
+    Glyffin.BeigeGlyff = Glyff.fromColor(Glyffin.Palette.BEIGE);
     Glyffin.ClearGlyff = Glyff.create({
         call: function (audience, presenter) {
         }
@@ -1426,6 +1434,6 @@ var Glyffin;
 var Insertion = Glyffin.Insertion;
 function main() {
     var glAudience = new Glyffin.GlAudience();
-    Glyffin.RedGlyff.insertTop(35, Glyffin.asciiEntireWord("ABCDEFGHIJKLMNOPQRSTUVWXYZ").inset(5)).insertTop(35, Glyffin.asciiEntireWord("abcdefghijklmnopqrstuvwxyz").inset(5)).present(glAudience);
+    Glyffin.RedGlyff.insertTop(35, Glyffin.asciiEntireWord("ABCDEFGHIJKLMNOPQRSTUVWXYZ").inset(5)).insertTop(35, Glyffin.asciiEntireWord("abcdefghijklmnopqrstuvwxyz").inset(5)).insertTop(44, Glyffin.BlueGlyff).present(glAudience);
 }
 //# sourceMappingURL=combined.js.map

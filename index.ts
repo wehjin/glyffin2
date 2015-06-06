@@ -14,6 +14,7 @@ function main() {
     Glyffin.RedGlyff
         .insertTop(35, Glyffin.asciiEntireWord("ABCDEFGHIJKLMNOPQRSTUVWXYZ").inset(5))
         .insertTop(35, Glyffin.asciiEntireWord("abcdefghijklmnopqrstuvwxyz").inset(5))
+        .insertTop(44, Glyffin.BlueGlyff)
         .present(glAudience);
 }
 
