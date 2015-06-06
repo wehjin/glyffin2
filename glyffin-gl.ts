@@ -61,6 +61,11 @@ module Glyffin {
             };
         }
 
+        addRectangleActive(bounds : Glyffin.RectangleBounds,
+                           touchProvider : Glyffin.TouchProvider) : Glyffin.RectangleActive {
+            return EMPTY_ACTIVE;
+        }
+
         scheduleRedraw() {
             this.gl.clear(this.gl.COLOR_BUFFER_BIT);
             this.gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());

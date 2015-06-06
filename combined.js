@@ -3,12 +3,42 @@
  */
 var Glyffin;
 (function (Glyffin) {
-    var Void = (function () {
-        function Void() {
+    var PerimeterAudience = (function () {
+        function PerimeterAudience(perimeter, audience) {
+            this.perimeter = perimeter;
+            this.audience = audience;
         }
-        return Void;
+        PerimeterAudience.prototype.getPerimeter = function () {
+            return this.perimeter;
+        };
+        PerimeterAudience.prototype.getPalette = function () {
+            return this.audience.getPalette();
+        };
+        PerimeterAudience.prototype.addRectanglePatch = function (bounds, color) {
+            return this.audience.addRectanglePatch(bounds, color);
+        };
+        PerimeterAudience.prototype.addRectangleActive = function (bounds, touchProvider) {
+            return this.audience.addRectangleActive(bounds, touchProvider);
+        };
+        return PerimeterAudience;
     })();
-    Glyffin.Void = Void;
+    Glyffin.PerimeterAudience = PerimeterAudience;
+    Glyffin.EMPTY_PATCH = {
+        remove: function () {
+        }
+    };
+    Glyffin.EMPTY_ACTIVE = {
+        remove: function () {
+        }
+    };
+    var Insertion = (function () {
+        function Insertion(amount, glyff) {
+            this.amount = amount;
+            this.glyff = glyff;
+        }
+        return Insertion;
+    })();
+    Glyffin.Insertion = Insertion;
     var RectangleBounds = (function () {
         function RectangleBounds(left, top, right, bottom) {
             this.left = left;
@@ -38,23 +68,6 @@ var Glyffin;
         return Color;
     })();
     Glyffin.Color = Color;
-    var PerimeterAudience = (function () {
-        function PerimeterAudience(perimeter, audience) {
-            this.perimeter = perimeter;
-            this.audience = audience;
-        }
-        PerimeterAudience.prototype.getPerimeter = function () {
-            return this.perimeter;
-        };
-        PerimeterAudience.prototype.getPalette = function () {
-            return this.audience.getPalette();
-        };
-        PerimeterAudience.prototype.addRectanglePatch = function (bounds, color) {
-            return this.audience.addRectanglePatch(bounds, color);
-        };
-        return PerimeterAudience;
-    })();
-    Glyffin.PerimeterAudience = PerimeterAudience;
     var Palette = (function () {
         function Palette() {
         }
@@ -65,18 +78,20 @@ var Glyffin;
         return Palette;
     })();
     Glyffin.Palette = Palette;
-    Glyffin.EMPTY_PATCH = {
-        remove: function () {
+    var Spot = (function () {
+        function Spot(x, y) {
+            this.x = x;
+            this.y = y;
         }
-    };
-    var Insertion = (function () {
-        function Insertion(amount, glyff) {
-            this.amount = amount;
-            this.glyff = glyff;
-        }
-        return Insertion;
+        return Spot;
     })();
-    Glyffin.Insertion = Insertion;
+    Glyffin.Spot = Spot;
+    var Void = (function () {
+        function Void() {
+        }
+        return Void;
+    })();
+    Glyffin.Void = Void;
 })(Glyffin || (Glyffin = {}));
 /**
  * Created by wehjin on 5/24/15.
@@ -1374,6 +1389,9 @@ var Glyffin;
                     this.vertices.putPatch(patch);
                 }
             };
+        };
+        GlAudience.prototype.addRectangleActive = function (bounds, touchProvider) {
+            return Glyffin.EMPTY_ACTIVE;
         };
         GlAudience.prototype.scheduleRedraw = function () {
             this.gl.clear(this.gl.COLOR_BUFFER_BIT);
