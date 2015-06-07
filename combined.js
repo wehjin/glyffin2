@@ -1395,6 +1395,7 @@ var Glyffin;
                     canvas.addEventListener("touchcancel", ontouchcancel, false);
                 }
                 ev.stopPropagation();
+                ev.preventDefault();
             }, false);
             canvas.onmousedown = function () {
                 if (_this.interactives.length > 0) {

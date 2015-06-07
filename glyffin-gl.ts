@@ -46,6 +46,7 @@ module Glyffin {
                     canvas.addEventListener("touchcancel", ontouchcancel, false);
                 }
                 ev.stopPropagation();
+                ev.preventDefault();
             }, false);
 
             canvas.onmousedown = ()=> {
