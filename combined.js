@@ -1375,15 +1375,35 @@ var Glyffin;
             this.interactives = [];
             var canvas = document.getElementById('webgl');
             this.canvas = canvas;
+            canvas.addEventListener("touchstart", function () {
+                if (_this.interactives.length > 0) {
+                    var touch = _this.interactives[0].touchProvider.getTouch(null);
+                    var ontouchcancel;
+                    var ontouchend = function () {
+                        touch.onRelease();
+                        canvas.removeEventListener("touchend", ontouchend, false);
+                        canvas.removeEventListener("touchcancel", ontouchcancel, false);
+                        ontouchcancel = ontouchend = null;
+                    };
+                    ontouchcancel = function () {
+                        touch.onCancel();
+                        canvas.removeEventListener("touchend", ontouchend, false);
+                        canvas.removeEventListener("touchcancel", ontouchcancel, false);
+                        ontouchcancel = ontouchend = null;
+                    };
+                    canvas.addEventListener("touchend", ontouchend, false);
+                    canvas.addEventListener("touchcancel", ontouchcancel, false);
+                }
+            }, false);
             canvas.onmousedown = function () {
                 if (_this.interactives.length > 0) {
                     var touch = _this.interactives[0].touchProvider.getTouch(null);
-                    canvas.onmouseout = function () {
-                        touch.onCancel();
-                        canvas.onmouseout = canvas.onmouseup = null;
-                    };
                     canvas.onmouseup = function () {
                         touch.onRelease();
+                        canvas.onmouseout = canvas.onmouseup = null;
+                    };
+                    canvas.onmouseout = function () {
+                        touch.onCancel();
                         canvas.onmouseout = canvas.onmouseup = null;
                     };
                 }

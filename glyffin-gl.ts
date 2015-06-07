@@ -26,15 +26,36 @@ module Glyffin {
             var canvas = <HTMLCanvasElement>document.getElementById('webgl');
             this.canvas = canvas;
 
+            canvas.addEventListener("touchstart", () => {
+                if (this.interactives.length > 0) {
+                    var touch = this.interactives[0].touchProvider.getTouch(null);
+                    var ontouchcancel;
+                    var ontouchend = function () {
+                        touch.onRelease();
+                        canvas.removeEventListener("touchend", ontouchend, false);
+                        canvas.removeEventListener("touchcancel", ontouchcancel, false);
+                        ontouchcancel = ontouchend = null;
+                    };
+                    ontouchcancel = function () {
+                        touch.onCancel();
+                        canvas.removeEventListener("touchend", ontouchend, false);
+                        canvas.removeEventListener("touchcancel", ontouchcancel, false);
+                        ontouchcancel = ontouchend = null;
+                    };
+                    canvas.addEventListener("touchend", ontouchend, false);
+                    canvas.addEventListener("touchcancel", ontouchcancel, false);
+                }
+            }, false);
+
             canvas.onmousedown = ()=> {
                 if (this.interactives.length > 0) {
                     var touch = this.interactives[0].touchProvider.getTouch(null);
-                    canvas.onmouseout = ()=> {
-                        touch.onCancel();
-                        canvas.onmouseout = canvas.onmouseup = null;
-                    };
                     canvas.onmouseup = ()=> {
                         touch.onRelease();
+                        canvas.onmouseout = canvas.onmouseup = null;
+                    };
+                    canvas.onmouseout = ()=> {
+                        touch.onCancel();
                         canvas.onmouseout = canvas.onmouseup = null;
                     };
                 }
