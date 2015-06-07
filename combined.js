@@ -1375,7 +1375,7 @@ var Glyffin;
             this.interactives = [];
             var canvas = document.getElementById('webgl');
             this.canvas = canvas;
-            canvas.addEventListener("touchstart", function () {
+            canvas.addEventListener("touchstart", function (ev) {
                 if (_this.interactives.length > 0) {
                     var touch = _this.interactives[0].touchProvider.getTouch(null);
                     var ontouchcancel;
@@ -1394,6 +1394,7 @@ var Glyffin;
                     canvas.addEventListener("touchend", ontouchend, false);
                     canvas.addEventListener("touchcancel", ontouchcancel, false);
                 }
+                ev.stopPropagation();
             }, false);
             canvas.onmousedown = function () {
                 if (_this.interactives.length > 0) {

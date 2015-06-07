@@ -26,7 +26,7 @@ module Glyffin {
             var canvas = <HTMLCanvasElement>document.getElementById('webgl');
             this.canvas = canvas;
 
-            canvas.addEventListener("touchstart", () => {
+            canvas.addEventListener("touchstart", (ev:Event) => {
                 if (this.interactives.length > 0) {
                     var touch = this.interactives[0].touchProvider.getTouch(null);
                     var ontouchcancel;
@@ -45,6 +45,7 @@ module Glyffin {
                     canvas.addEventListener("touchend", ontouchend, false);
                     canvas.addEventListener("touchcancel", ontouchcancel, false);
                 }
+                ev.stopPropagation();
             }, false);
 
             canvas.onmousedown = ()=> {
