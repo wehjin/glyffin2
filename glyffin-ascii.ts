@@ -7,7 +7,26 @@
 module Glyffin {
 
     export function asciiMultiLine(lines : number, paragraph : string) : Glyff<Void> {
-        return asciiEntireWord(paragraph);
+        return Glyff.create({
+            call(audience : Audience, presenter : Presenter<Void>) {
+                var perimeter = audience.getPerimeter();
+                var linesAndLeadings = (lines * 2 - 1);
+                var ascentPixels = perimeter.getHeight() / linesAndLeadings;
+                var lineHeight = ascentPixels * 2;
+
+                var lineContents : string[] = [];
+                lineContents[0] = paragraph;
+
+                var lineNumber = 0;
+                lineContents.forEach((line : string)=> {
+                    var lineAudience = new PerimeterAudience(perimeter.downFromTop(lineNumber *
+                        lineHeight, ascentPixels), audience);
+                    presenter.addPresentation(asciiEntireWord(line).present(lineAudience,
+                        presenter));
+                    lineNumber++;
+                });
+            }
+        });
     }
 
     export function asciiEntireWord(word : string) : Glyff<Void> {

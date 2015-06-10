@@ -111,6 +111,11 @@ module Glyffin {
                 this.top + pixelsY, this.right - pixelsX,
                 this.bottom - pixelsY);
         }
+
+        downFromTop(pixelsY : number, pixelsHigh : number) : RectangleBounds {
+            var inTop = this.top + pixelsY;
+            return new RectangleBounds(this.left, inTop, this.right, inTop + pixelsHigh);
+        }
     }
 
     export class Color {

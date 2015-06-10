@@ -53,6 +53,10 @@ var Glyffin;
         RectangleBounds.prototype.inset = function (pixelsX, pixelsY) {
             return new RectangleBounds(this.left + pixelsX, this.top + pixelsY, this.right - pixelsX, this.bottom - pixelsY);
         };
+        RectangleBounds.prototype.downFromTop = function (pixelsY, pixelsHigh) {
+            var inTop = this.top + pixelsY;
+            return new RectangleBounds(this.left, inTop, this.right, inTop + pixelsHigh);
+        };
         return RectangleBounds;
     })();
     Glyffin.RectangleBounds = RectangleBounds;
@@ -244,7 +248,22 @@ var Glyffin;
 var Glyffin;
 (function (Glyffin) {
     function asciiMultiLine(lines, paragraph) {
-        return asciiEntireWord(paragraph);
+        return Glyffin.Glyff.create({
+            call: function (audience, presenter) {
+                var perimeter = audience.getPerimeter();
+                var linesAndLeadings = (lines * 2 - 1);
+                var ascentPixels = perimeter.getHeight() / linesAndLeadings;
+                var lineHeight = ascentPixels * 2;
+                var lineContents = [];
+                lineContents[0] = paragraph;
+                var lineNumber = 0;
+                lineContents.forEach(function (line) {
+                    var lineAudience = new Glyffin.PerimeterAudience(perimeter.downFromTop(lineNumber * lineHeight, ascentPixels), audience);
+                    presenter.addPresentation(asciiEntireWord(line).present(lineAudience, presenter));
+                    lineNumber++;
+                });
+            }
+        });
     }
     Glyffin.asciiMultiLine = asciiMultiLine;
     function asciiEntireWord(word) {
