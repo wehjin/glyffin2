@@ -78,10 +78,10 @@ module Glyffin {
             });
         }
 
-        inset(pixels : number) : Glyff<T> {
+        inset(xPixels : number, yPixels : number) : Glyff<T> {
             return this.compose({
                 getUpperAudience(audience : Audience, presenter : Presenter<T>) : Audience {
-                    var insetPerimeter = audience.getPerimeter().inset(pixels);
+                    var insetPerimeter = audience.getPerimeter().inset(xPixels, yPixels);
                     return new PerimeterAudience(insetPerimeter, audience);
                 },
                 getUpperReaction(audience : Audience, presenter : Presenter<T>) : Reaction<T> {

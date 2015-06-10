@@ -106,10 +106,10 @@ module Glyffin {
             return this.right - this.left;
         }
 
-        inset(pixels : number) : RectangleBounds {
-            return new RectangleBounds(this.left + pixels,
-                this.top + pixels, this.right - pixels,
-                this.bottom - pixels);
+        inset(pixelsX : number, pixelsY : number) : RectangleBounds {
+            return new RectangleBounds(this.left + pixelsX,
+                this.top + pixelsY, this.right - pixelsX,
+                this.bottom - pixelsY);
         }
     }
 

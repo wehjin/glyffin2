@@ -50,8 +50,8 @@ var Glyffin;
         RectangleBounds.prototype.getWidth = function () {
             return this.right - this.left;
         };
-        RectangleBounds.prototype.inset = function (pixels) {
-            return new RectangleBounds(this.left + pixels, this.top + pixels, this.right - pixels, this.bottom - pixels);
+        RectangleBounds.prototype.inset = function (pixelsX, pixelsY) {
+            return new RectangleBounds(this.left + pixelsX, this.top + pixelsY, this.right - pixelsX, this.bottom - pixelsY);
         };
         return RectangleBounds;
     })();
@@ -153,10 +153,10 @@ var Glyffin;
                 }
             });
         };
-        Glyff.prototype.inset = function (pixels) {
+        Glyff.prototype.inset = function (xPixels, yPixels) {
             return this.compose({
                 getUpperAudience: function (audience, presenter) {
-                    var insetPerimeter = audience.getPerimeter().inset(pixels);
+                    var insetPerimeter = audience.getPerimeter().inset(xPixels, yPixels);
                     return new Glyffin.PerimeterAudience(insetPerimeter, audience);
                 },
                 getUpperReaction: function (audience, presenter) {
@@ -1554,6 +1554,6 @@ var Glyffin;
 var Insertion = Glyffin.Insertion;
 function main() {
     var glAudience = new Glyffin.GlAudience();
-    Glyffin.RedGlyff.insertTop(35, Glyffin.asciiEntireWord("ABCDEFGHIJKLMNOPQRSTUVWXYZ").inset(5)).insertTop(35, Glyffin.asciiEntireWord("abcdefghijklmnopqrstuvwxyz").inset(5)).insertTop(44, Glyffin.button()).present(glAudience);
+    Glyffin.RedGlyff.insertTop(50, Glyffin.BlueGlyff.insertTop(10, Glyffin.ClearGlyff).insertTop(10, Glyffin.asciiEntireWord("ABCDEFGHIJKLMNOPQRSTUVWXYZ")).insertTop(10, Glyffin.ClearGlyff).insertTop(10, Glyffin.asciiEntireWord("abcdefghijklmnopqrstuvwxyz")).insertTop(10, Glyffin.ClearGlyff).inset(10, 0)).insertTop(44, Glyffin.button()).present(glAudience);
 }
 //# sourceMappingURL=combined.js.map

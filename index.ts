@@ -13,8 +13,12 @@ import Insertion = Glyffin.Insertion;
 function main() {
     var glAudience : Glyffin.Audience = new Glyffin.GlAudience();
     Glyffin.RedGlyff
-        .insertTop(35, Glyffin.asciiEntireWord("ABCDEFGHIJKLMNOPQRSTUVWXYZ").inset(5))
-        .insertTop(35, Glyffin.asciiEntireWord("abcdefghijklmnopqrstuvwxyz").inset(5))
+        .insertTop(50, Glyffin.BlueGlyff
+            .insertTop(10, Glyffin.ClearGlyff)
+            .insertTop(10, Glyffin.asciiEntireWord("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+            .insertTop(10, Glyffin.ClearGlyff)
+            .insertTop(10, Glyffin.asciiEntireWord("abcdefghijklmnopqrstuvwxyz"))
+            .insertTop(10, Glyffin.ClearGlyff).inset(10, 0))
         .insertTop(44, Glyffin.button())
         .present(glAudience);
 }
