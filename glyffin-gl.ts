@@ -7,7 +7,7 @@
 
 module Glyffin {
 
-    var MAX_PATCH_COUNT = 1000;
+    var MAX_PATCH_COUNT = 2000;
 
     class Interactive {
         constructor(public bounds : RectangleBounds, public touchProvider : TouchProvider) {

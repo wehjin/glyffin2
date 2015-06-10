@@ -243,6 +243,10 @@ var Glyffin;
 /// <reference path="glyffin.ts" />
 var Glyffin;
 (function (Glyffin) {
+    function asciiMultiLine(lines, paragraph) {
+        return asciiEntireWord(paragraph);
+    }
+    Glyffin.asciiMultiLine = asciiMultiLine;
     function asciiEntireWord(word) {
         var xWeightWidth = 5;
         var spaceWeights = word.length <= 1 ? 0 : (word.length - 1);
@@ -1361,7 +1365,7 @@ var Glyffin;
 /// <reference path="glyffin.ts" />
 var Glyffin;
 (function (Glyffin) {
-    var MAX_PATCH_COUNT = 1000;
+    var MAX_PATCH_COUNT = 2000;
     var Interactive = (function () {
         function Interactive(bounds, touchProvider) {
             this.bounds = bounds;
@@ -1554,6 +1558,7 @@ var Glyffin;
 var Insertion = Glyffin.Insertion;
 function main() {
     var glAudience = new Glyffin.GlAudience();
-    Glyffin.RedGlyff.insertTop(50, Glyffin.BlueGlyff.insertTop(10, Glyffin.ClearGlyff).insertTop(10, Glyffin.asciiEntireWord("ABCDEFGHIJKLMNOPQRSTUVWXYZ")).insertTop(10, Glyffin.ClearGlyff).insertTop(10, Glyffin.asciiEntireWord("abcdefghijklmnopqrstuvwxyz")).insertTop(10, Glyffin.ClearGlyff).inset(10, 0)).insertTop(44, Glyffin.button()).present(glAudience);
+    var headline = "Bidding for the 2026 World Cup is suspended by FIFA as Valcke denies wrongdoing";
+    Glyffin.RedGlyff.insertTop(50, Glyffin.BlueGlyff.insertTop(10, Glyffin.asciiEntireWord("ABCDEFGHIJKLMNOPQRSTUVWXYZ")).insertTop(10, Glyffin.ClearGlyff).insertTop(10, Glyffin.asciiEntireWord("abcdefghijklmnopqrstuvwxyz")).inset(10, 10)).insertTop(44, Glyffin.button()).insertTop(50, Glyffin.BlueGlyff.insertTop(30, Glyffin.asciiMultiLine(2, headline)).inset(10, 10)).present(glAudience);
 }
 //# sourceMappingURL=combined.js.map

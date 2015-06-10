@@ -6,6 +6,10 @@
 
 module Glyffin {
 
+    export function asciiMultiLine(lines : number, paragraph : string) : Glyff<Void> {
+        return asciiEntireWord(paragraph);
+    }
+
     export function asciiEntireWord(word : string) : Glyff<Void> {
         var xWeightWidth = 5;
         var spaceWeights = word.length <= 1 ? 0 : (word.length - 1);
