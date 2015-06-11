@@ -12,17 +12,17 @@ module Glyffin {
         constructor(private onPresent : OnPresent<T>) {
         }
 
-        insertLefts<U>(insertions : Insertion<U>[]) : Glyff<T> {
+        addLefts<U>(insertions : Insertion<U>[]) : Glyff<T> {
             var current : Glyff<T> = this;
             var todo = insertions.slice();
             while (todo.length > 0) {
                 var insertion : Insertion<U> = todo.pop();
-                current = current.insertLeft(insertion.amount, insertion.glyff);
+                current = current.addLeft(insertion.amount, insertion.glyff);
             }
             return current;
         }
 
-        insertLeft(insertAmount : number, insertGlyff : Glyff<Void>) : Glyff<T> {
+        addLeft(insertAmount : number, insertGlyff : Glyff<Void>) : Glyff<T> {
             var existingGlyff = this;
             return Glyff.create({
                 call(audience : Audience, presenter : Presenter<Void>) {
@@ -40,7 +40,7 @@ module Glyffin {
             });
         }
 
-        insertTop(insertAmount : number, insertGlyff : Glyff<Void>) : Glyff<T> {
+        addTop(insertAmount : number, insertGlyff : Glyff<Void>) : Glyff<T> {
             var existingGlyff = this;
             return Glyff.create({
                 call(audience : Audience, presenter : Presenter<Void>) {
@@ -58,7 +58,7 @@ module Glyffin {
             });
         }
 
-        kaleido(columns : number, rows : number, spots : number[][]) : Glyff<Void> {
+        kaleid(columns : number, rows : number, spots : number[][]) : Glyff<Void> {
             var upperGlyff = this;
             return Glyff.create({
                 call(audience : Audience, presenter : Presenter<Void>) {
@@ -78,7 +78,7 @@ module Glyffin {
             });
         }
 
-        inset(xPixels : number, yPixels : number) : Glyff<T> {
+        pad(xPixels : number, yPixels : number) : Glyff<T> {
             return this.compose({
                 getUpperAudience(audience : Audience, presenter : Presenter<T>) : Audience {
                     var insetPerimeter = audience.getPerimeter().inset(xPixels, yPixels);

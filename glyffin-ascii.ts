@@ -91,7 +91,7 @@ module Glyffin {
             }
             insertions.push(new Insertion(capWidth, Glyffin.asciiByCode(code)));
         }
-        return GreenGlyff.insertLefts(insertions);
+        return GreenGlyff.addLefts(insertions);
     }
 
     export function asciiChar(ch : string) : Glyff<Void> {
@@ -100,7 +100,7 @@ module Glyffin {
 
     export function asciiByCode(code : number) : Glyff<Void> {
         var spots = ascii_spots[code];
-        return BeigeGlyff.kaleido(x_weights[code], 7, spots);
+        return BeigeGlyff.kaleid(x_weights[code], 7, spots);
     }
 
     var no_spots = [];
