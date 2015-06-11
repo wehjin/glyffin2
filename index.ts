@@ -15,8 +15,8 @@ function main() {
     var headline = "Bidding for the 2026 World Cup is suspended by FIFA as Valcke denies wrongdoing";
     var alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz";
     Glyffin.RedGlyff
-        .insertTop(50, Glyffin.BlueGlyff
-            .insertTop(30, Glyffin.asciiMultiLine(2, alphabet))
+        .insertTop(100, Glyffin.BlueGlyff
+            .insertTop(80, Glyffin.asciiMultiLine(2, alphabet))
             .inset(10, 10))
         .insertTop(50, Glyffin.BlueGlyff
             .insertTop(30, Glyffin.asciiMultiLine(2, headline))

@@ -302,25 +302,25 @@ var Glyffin;
     }
     Glyffin.asciiMultiLine = asciiMultiLine;
     function asciiEntireWord(word) {
-        var xWeightWidth = 5;
         var wordXWeight = getWordXWeight(word);
         return Glyffin.Glyff.create({
             call: function (audience, presenter) {
                 var perimeter = audience.getPerimeter();
-                var maxWeightWidth = perimeter.getWidth() / wordXWeight;
-                var fittedWeightWidth = Math.min(xWeightWidth, maxWeightWidth);
-                presenter.addPresentation(asciiWord(word, fittedWeightWidth).present(audience, presenter));
+                var wordXWeightPixels = perimeter.getWidth() / wordXWeight;
+                var preferredWeightPixels = perimeter.getHeight() / 7;
+                var fittedWeightPixels = Math.min(preferredWeightPixels, wordXWeightPixels);
+                presenter.addPresentation(asciiWord(word, fittedWeightPixels).present(audience, presenter));
             }
         });
     }
     Glyffin.asciiEntireWord = asciiEntireWord;
-    function asciiWord(word, xWeightWidth) {
+    function asciiWord(word, xWeightPixels) {
         var insertions = [];
         for (var i = 0; i < word.length; i++) {
             var code = word.charCodeAt(i);
-            var capWidth = xWeightWidth * x_weights[code];
+            var capWidth = xWeightPixels * x_weights[code];
             if (i > 0) {
-                insertions.push(new Glyffin.Insertion(xWeightWidth, Glyffin.ClearGlyff));
+                insertions.push(new Glyffin.Insertion(xWeightPixels, Glyffin.ClearGlyff));
             }
             insertions.push(new Glyffin.Insertion(capWidth, Glyffin.asciiByCode(code)));
         }
@@ -1619,6 +1619,6 @@ function main() {
     var glAudience = new Glyffin.GlAudience();
     var headline = "Bidding for the 2026 World Cup is suspended by FIFA as Valcke denies wrongdoing";
     var alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz";
-    Glyffin.RedGlyff.insertTop(50, Glyffin.BlueGlyff.insertTop(30, Glyffin.asciiMultiLine(2, alphabet)).inset(10, 10)).insertTop(50, Glyffin.BlueGlyff.insertTop(30, Glyffin.asciiMultiLine(2, headline)).inset(10, 10)).insertTop(70, Glyffin.BlueGlyff.insertTop(50, Glyffin.asciiMultiLine(3, headline)).inset(10, 10)).insertTop(44, Glyffin.button()).present(glAudience);
+    Glyffin.RedGlyff.insertTop(100, Glyffin.BlueGlyff.insertTop(80, Glyffin.asciiMultiLine(2, alphabet)).inset(10, 10)).insertTop(50, Glyffin.BlueGlyff.insertTop(30, Glyffin.asciiMultiLine(2, headline)).inset(10, 10)).insertTop(70, Glyffin.BlueGlyff.insertTop(50, Glyffin.asciiMultiLine(3, headline)).inset(10, 10)).insertTop(44, Glyffin.button()).present(glAudience);
 }
 //# sourceMappingURL=combined.js.map
