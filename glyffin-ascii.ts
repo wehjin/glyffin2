@@ -541,6 +541,97 @@ module Glyffin {
         [1, 5],
         [0, 6], [1, 6], [2, 6], [3, 6], [4, 6]
     ];
+    var d0_spots = [
+        [1, 0], [2, 0], [3, 0],
+        [0, 1], [4, 1],
+        [0, 2], [3, 2], [4, 2],
+        [0, 3], [2, 3], [4, 3],
+        [0, 4], [1, 4], [4, 4],
+        [0, 5], [4, 5],
+        [1, 6], [2, 6], [3, 6]
+    ];
+    var d1_spots = [
+        [2, 0],
+        [1, 1], [2, 1],
+        [2, 2],
+        [2, 3],
+        [2, 4],
+        [2, 5],
+        [0, 6], [1, 6], [2, 6], [3, 6], [4, 6]
+    ];
+    var d2_spots = [
+        [1, 0], [2, 0], [3, 0],
+        [0, 1], [4, 1],
+        [4, 2],
+        [2, 3], [3, 3],
+        [1, 4],
+        [0, 5],
+        [0, 6], [1, 6], [2, 6], [3, 6], [4, 6]
+    ];
+    var d3_spots = [
+        [1, 0], [2, 0], [3, 0],
+        [0, 1], [4, 1],
+        [4, 2],
+        [2, 3], [3, 3],
+        [4, 4],
+        [0, 5], [4, 5],
+        [1, 6], [2, 6], [3, 6]
+    ];
+    var d4_spots = [
+        [3, 0], [4, 0],
+        [2, 1], [4, 1],
+        [1, 2], [4, 2],
+        [0, 3], [4, 3],
+        [0, 4], [1, 4], [2, 4], [3, 4], [4, 4],
+        [4, 5],
+        [4, 6]
+    ];
+    var d5_spots = [
+        [0, 0], [1, 0], [2, 0], [3, 0], [4, 0],
+        [0, 1],
+        [0, 2], [1, 2], [2, 2], [3, 2],
+        [4, 3],
+        [4, 4],
+        [0, 5], [4, 5],
+        [1, 6], [2, 6], [3, 6]
+    ];
+    var d6_spots = [
+        [2, 0], [3, 0],
+        [1, 1],
+        [0, 2],
+        [0, 3], [1, 3], [2, 3], [3, 3],
+        [0, 4], [4, 4],
+        [0, 5], [4, 5],
+        [1, 6], [2, 6], [3, 6]
+    ];
+    var d7_spots = [
+        [0, 0], [1, 0], [2, 0], [3, 0], [4, 0],
+        [0, 1], [4, 1],
+        [4, 2],
+        [3, 3],
+        [2, 4],
+        [2, 5],
+        [2, 6]
+    ];
+    var d8_spots = [
+        [1, 0], [2, 0], [3, 0],
+        [0, 1], [4, 1],
+        [0, 2], [4, 2],
+        [1, 3], [2, 3], [3, 3],
+        [0, 4], [4, 4],
+        [0, 5], [4, 5],
+        [1, 6], [2, 6], [3, 6]
+    ];
+    var d9_spots = [
+        [1, 0], [2, 0], [3, 0],
+        [0, 1], [4, 1],
+        [0, 2], [4, 2],
+        [1, 3], [2, 3], [3, 3], [4, 3],
+        [4, 4],
+        [3, 5],
+        [1, 6], [2, 6]
+    ];
+
     var ascii_spots = [
         no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
         no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
@@ -549,8 +640,8 @@ module Glyffin {
 
         no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
         no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
-        no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
-        no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
+        d0_spots, d1_spots, d2_spots, d3_spots, d4_spots, d5_spots, d6_spots, d7_spots,
+        d8_spots, d9_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
 
         no_spots, A_spots, B_spots, C_spots, D_spots, E_spots, F_spots, G_spots,
         H_spots, I_spots, J_spots, K_spots, L_spots, M_spots, N_spots, O_spots,
