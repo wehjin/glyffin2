@@ -247,6 +247,13 @@ var Glyffin;
 /// <reference path="glyffin.ts" />
 var Glyffin;
 (function (Glyffin) {
+    var LineContent = (function () {
+        function LineContent(weight, text) {
+            this.weight = weight;
+            this.text = text;
+        }
+        return LineContent;
+    })();
     function asciiMultiLine(lines, paragraph) {
         return Glyffin.Glyff.create({
             call: function (audience, presenter) {
@@ -254,12 +261,40 @@ var Glyffin;
                 var linesAndLeadings = (lines * 2 - 1);
                 var ascentPixels = perimeter.getHeight() / linesAndLeadings;
                 var lineHeight = ascentPixels * 2;
+                var xWeightPixels = ascentPixels / 7;
+                var width = perimeter.getWidth();
+                var xWeightsPerLine = Math.floor(width / xWeightPixels);
                 var lineContents = [];
-                lineContents[0] = paragraph;
+                var currentLine = null;
+                var beginLine = function (wordWeight, word) {
+                    currentLine = new LineContent(wordWeight, word);
+                    lineContents.push(currentLine);
+                    if (wordWeight >= xWeightsPerLine && lineContents.length < lines) {
+                        currentLine = null;
+                    }
+                };
+                var words = paragraph.trim().split(/\s+/);
+                words.forEach(function (word) {
+                    var wordWeight = getWordXWeight(word);
+                    if (wordWeight == 0) {
+                        return;
+                    }
+                    if (!currentLine) {
+                        beginLine(wordWeight, word);
+                        return;
+                    }
+                    var newLineWeight = spaceWeight + wordWeight + currentLine.weight;
+                    if (newLineWeight < xWeightsPerLine || lineContents.length == lines) {
+                        currentLine.weight = newLineWeight;
+                        currentLine.text += ' ' + word;
+                        return;
+                    }
+                    beginLine(wordWeight, word);
+                });
                 var lineNumber = 0;
-                lineContents.forEach(function (line) {
+                lineContents.forEach(function (lineContent) {
                     var lineAudience = new Glyffin.PerimeterAudience(perimeter.downFromTop(lineNumber * lineHeight, ascentPixels), audience);
-                    presenter.addPresentation(asciiEntireWord(line).present(lineAudience, presenter));
+                    presenter.addPresentation(asciiEntireWord(lineContent.text).present(lineAudience, presenter));
                     lineNumber++;
                 });
             }
@@ -268,16 +303,11 @@ var Glyffin;
     Glyffin.asciiMultiLine = asciiMultiLine;
     function asciiEntireWord(word) {
         var xWeightWidth = 5;
-        var spaceWeights = word.length <= 1 ? 0 : (word.length - 1);
-        var letterWeights = 0;
-        for (var i = 0; i < word.length; i++) {
-            letterWeights += x_weights[word.charCodeAt(i)];
-        }
-        var combinedWeights = letterWeights + spaceWeights;
+        var wordXWeight = getWordXWeight(word);
         return Glyffin.Glyff.create({
             call: function (audience, presenter) {
                 var perimeter = audience.getPerimeter();
-                var maxWeightWidth = perimeter.getWidth() / combinedWeights;
+                var maxWeightWidth = perimeter.getWidth() / wordXWeight;
                 var fittedWeightWidth = Math.min(xWeightWidth, maxWeightWidth);
                 presenter.addPresentation(asciiWord(word, fittedWeightWidth).present(audience, presenter));
             }
@@ -1376,6 +1406,16 @@ var Glyffin;
         5,
         5,
     ];
+    function getWordXWeight(word) {
+        var spaceWeights = word.length <= 1 ? 0 : (word.length - 1);
+        var letterWeights = 0;
+        for (var i = 0; i < word.length; i++) {
+            var charCode = word.charCodeAt(i);
+            letterWeights += x_weights[charCode];
+        }
+        return letterWeights + spaceWeights;
+    }
+    var spaceWeight = getWordXWeight(' ');
 })(Glyffin || (Glyffin = {}));
 /**
  * Created by wehjin on 5/24/15.
@@ -1384,7 +1424,7 @@ var Glyffin;
 /// <reference path="glyffin.ts" />
 var Glyffin;
 (function (Glyffin) {
-    var MAX_PATCH_COUNT = 2000;
+    var MAX_PATCH_COUNT = 5000;
     var Interactive = (function () {
         function Interactive(bounds, touchProvider) {
             this.bounds = bounds;
@@ -1578,6 +1618,7 @@ var Insertion = Glyffin.Insertion;
 function main() {
     var glAudience = new Glyffin.GlAudience();
     var headline = "Bidding for the 2026 World Cup is suspended by FIFA as Valcke denies wrongdoing";
-    Glyffin.RedGlyff.insertTop(50, Glyffin.BlueGlyff.insertTop(10, Glyffin.asciiEntireWord("ABCDEFGHIJKLMNOPQRSTUVWXYZ")).insertTop(10, Glyffin.ClearGlyff).insertTop(10, Glyffin.asciiEntireWord("abcdefghijklmnopqrstuvwxyz")).inset(10, 10)).insertTop(44, Glyffin.button()).insertTop(50, Glyffin.BlueGlyff.insertTop(30, Glyffin.asciiMultiLine(2, headline)).inset(10, 10)).present(glAudience);
+    var alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz";
+    Glyffin.RedGlyff.insertTop(50, Glyffin.BlueGlyff.insertTop(30, Glyffin.asciiMultiLine(2, alphabet)).inset(10, 10)).insertTop(50, Glyffin.BlueGlyff.insertTop(30, Glyffin.asciiMultiLine(2, headline)).inset(10, 10)).insertTop(70, Glyffin.BlueGlyff.insertTop(50, Glyffin.asciiMultiLine(3, headline)).inset(10, 10)).insertTop(44, Glyffin.button()).present(glAudience);
 }
 //# sourceMappingURL=combined.js.map
