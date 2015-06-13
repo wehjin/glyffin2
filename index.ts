@@ -14,6 +14,7 @@ import Audience = Glyffin.Audience;
 import Presenter = Glyffin.Presenter;
 import Void = Glyffin.Void;
 import Reaction = Glyffin.Reaction;
+import Presentation = Glyffin.Presentation;
 
 function main() {
     var glAudience : Glyffin.Audience = new Glyffin.GlAudience();
@@ -29,15 +30,22 @@ function main() {
         .addTop(70, Glyffin.BlueGlyff
             .addTop(50, Glyffin.asciiMultiLine(3, headline))
             .pad(10, 10))
-        .addTop(44, Glyffin.button());
+        .addTopReact(44, Glyffin.button());
 
     var app = Glyff.create((audience : Audience, presenter : Presenter<Void>)=> {
         var page = Glyffin.BeigeGlyff.addTopReact(44, Glyffin.button());
-        var presented = presenter.addPresentation(page.present(audience, ()=> {
-            console.log("Descend");
-            presented.remove();
-            presenter.addPresentation(demo.present(audience));
-        }));
+        var presented;
+
+        function setPresented(glyff : Glyff<number>, next : Glyff<number>) {
+            if (presented) {
+                presented.remove();
+            }
+            presented = presenter.addPresentation(glyff.present(audience, ()=> {
+                setPresented(next, glyff);
+            }));
+        }
+
+        setPresented(page, demo);
     });
     app.present(glAudience);
 }
