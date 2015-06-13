@@ -33,13 +33,12 @@ function main() {
 
     var app = Glyff.create((audience : Audience, presenter : Presenter<Void>)=> {
         var page = Glyffin.BeigeGlyff.addTopReact(44, Glyffin.button());
-        presenter.addPresentation(page.present(audience, (click : number)=> {
-            console.log("Click time:", click);
+
+        var presented = presenter.addPresentation(page.present(audience, ()=> {
+            presented.remove();
+            presenter.addPresentation(demo.present(audience));
         }));
     });
-
     app.present(glAudience);
-
-    console.log("reaction: ", typeof x);
 }
 

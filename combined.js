@@ -1591,7 +1591,7 @@ var Glyffin;
 /// <reference path="glyffin.ts" />
 var Glyffin;
 (function (Glyffin) {
-    var MAX_PATCH_COUNT = 5000;
+    var MAX_PATCH_COUNT = 10000;
     var Interactive = (function () {
         function Interactive(bounds, touchProvider) {
             this.bounds = bounds;
@@ -1793,11 +1793,11 @@ function main() {
     var demo = Glyffin.RedGlyff.addTop(100, Glyffin.BlueGlyff.addTop(80, Glyffin.asciiMultiLine(3, alphabet)).pad(10, 10)).addTop(50, Glyffin.BlueGlyff.addTop(30, Glyffin.asciiMultiLine(2, headline)).pad(10, 10)).addTop(70, Glyffin.BlueGlyff.addTop(50, Glyffin.asciiMultiLine(3, headline)).pad(10, 10)).addTop(44, Glyffin.button());
     var app = Glyff.create(function (audience, presenter) {
         var page = Glyffin.BeigeGlyff.addTopReact(44, Glyffin.button());
-        presenter.addPresentation(page.present(audience, function (click) {
-            console.log("Click time:", click);
+        var presented = presenter.addPresentation(page.present(audience, function () {
+            presented.remove();
+            presenter.addPresentation(demo.present(audience));
         }));
     });
     app.present(glAudience);
-    console.log("reaction: ", typeof x);
 }
 //# sourceMappingURL=combined.js.map
