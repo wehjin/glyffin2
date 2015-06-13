@@ -1764,11 +1764,13 @@ var Glyffin;
         };
         VerticesAndColor.prototype.clearFreePatches = function () {
             var _this = this;
-            this.freePatchIndices.forEach(function (patchIndex) {
-                _this.gl.bufferSubData(_this.gl.ARRAY_BUFFER, patchIndex * BYTES_PER_PATCH, _this.emptyPatchVertices);
-            });
-            this.clearedPatchIndices = this.freePatchIndices;
-            this.freePatchIndices = [];
+            if (this.freePatchIndices.length > 0) {
+                this.freePatchIndices.forEach(function (patchIndex) {
+                    _this.gl.bufferSubData(_this.gl.ARRAY_BUFFER, patchIndex * BYTES_PER_PATCH, _this.emptyPatchVertices);
+                });
+                this.clearedPatchIndices = this.clearedPatchIndices.concat(this.freePatchIndices);
+                this.freePatchIndices = [];
+            }
         };
         return VerticesAndColor;
     })();
