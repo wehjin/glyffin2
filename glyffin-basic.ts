@@ -78,10 +78,6 @@ module Glyffin {
         addPresentation(presentation : Presentation):Removable;
     }
 
-    export interface OnPresent<T> {
-        call(audience : Audience, presenter : Presenter<T>);
-    }
-
     export interface Mogrifier<T,U> {
         getUpperAudience(audience : Audience, presenter : Presenter<U>):Audience;
         getUpperReaction(audience : Audience, presenter : Presenter<U>):Reaction<T>;

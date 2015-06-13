@@ -117,44 +117,38 @@ var Glyffin;
         };
         Glyff.prototype.addLeft = function (insertAmount, insertGlyff) {
             var existingGlyff = this;
-            return Glyff.create({
-                call: function (audience, presenter) {
-                    var perimeter = audience.getPerimeter();
-                    var insertRight = perimeter.left + insertAmount;
-                    var insertPerimeter = new Glyffin.RectangleBounds(perimeter.left, perimeter.top, insertRight, perimeter.bottom);
-                    var modifiedPerimeter = new Glyffin.RectangleBounds(insertRight, perimeter.top, perimeter.right, perimeter.bottom);
-                    presenter.addPresentation(insertGlyff.present(new Glyffin.PerimeterAudience(insertPerimeter, audience), presenter));
-                    presenter.addPresentation(existingGlyff.present(new Glyffin.PerimeterAudience(modifiedPerimeter, audience), presenter));
-                }
+            return Glyff.create(function (audience, presenter) {
+                var perimeter = audience.getPerimeter();
+                var insertRight = perimeter.left + insertAmount;
+                var insertPerimeter = new Glyffin.RectangleBounds(perimeter.left, perimeter.top, insertRight, perimeter.bottom);
+                var modifiedPerimeter = new Glyffin.RectangleBounds(insertRight, perimeter.top, perimeter.right, perimeter.bottom);
+                presenter.addPresentation(insertGlyff.present(new Glyffin.PerimeterAudience(insertPerimeter, audience), presenter));
+                presenter.addPresentation(existingGlyff.present(new Glyffin.PerimeterAudience(modifiedPerimeter, audience), presenter));
             });
         };
         Glyff.prototype.addTop = function (insertAmount, insertGlyff) {
             var existingGlyff = this;
-            return Glyff.create({
-                call: function (audience, presenter) {
-                    var perimeter = audience.getPerimeter();
-                    var insertBottom = perimeter.top + insertAmount;
-                    var insertPerimeter = new Glyffin.RectangleBounds(perimeter.left, perimeter.top, perimeter.right, insertBottom);
-                    var modifiedPerimeter = new Glyffin.RectangleBounds(perimeter.left, insertBottom, perimeter.right, perimeter.bottom);
-                    presenter.addPresentation(insertGlyff.present(new Glyffin.PerimeterAudience(insertPerimeter, audience), presenter));
-                    presenter.addPresentation(existingGlyff.present(new Glyffin.PerimeterAudience(modifiedPerimeter, audience), presenter));
-                }
+            return Glyff.create(function (audience, presenter) {
+                var perimeter = audience.getPerimeter();
+                var insertBottom = perimeter.top + insertAmount;
+                var insertPerimeter = new Glyffin.RectangleBounds(perimeter.left, perimeter.top, perimeter.right, insertBottom);
+                var modifiedPerimeter = new Glyffin.RectangleBounds(perimeter.left, insertBottom, perimeter.right, perimeter.bottom);
+                presenter.addPresentation(insertGlyff.present(new Glyffin.PerimeterAudience(insertPerimeter, audience), presenter));
+                presenter.addPresentation(existingGlyff.present(new Glyffin.PerimeterAudience(modifiedPerimeter, audience), presenter));
             });
         };
         Glyff.prototype.kaleid = function (columns, rows, spots) {
             var upperGlyff = this;
-            return Glyff.create({
-                call: function (audience, presenter) {
-                    var perimeter = audience.getPerimeter();
-                    var rowHeight = perimeter.getHeight() / rows;
-                    var colWidth = perimeter.getWidth() / columns;
-                    spots.forEach(function (spot) {
-                        var left = perimeter.left + colWidth * spot[0];
-                        var top = perimeter.top + rowHeight * spot[1];
-                        var spotPerimeter = new Glyffin.RectangleBounds(left, top, left + colWidth, top + rowHeight);
-                        presenter.addPresentation(upperGlyff.present(new Glyffin.PerimeterAudience(spotPerimeter, audience), presenter));
-                    });
-                }
+            return Glyff.create(function (audience, presenter) {
+                var perimeter = audience.getPerimeter();
+                var rowHeight = perimeter.getHeight() / rows;
+                var colWidth = perimeter.getWidth() / columns;
+                spots.forEach(function (spot) {
+                    var left = perimeter.left + colWidth * spot[0];
+                    var top = perimeter.top + rowHeight * spot[1];
+                    var spotPerimeter = new Glyffin.RectangleBounds(left, top, left + colWidth, top + rowHeight);
+                    presenter.addPresentation(upperGlyff.present(new Glyffin.PerimeterAudience(spotPerimeter, audience), presenter));
+                });
             });
         };
         Glyff.prototype.pad = function (xPixels, yPixels) {
@@ -170,10 +164,8 @@ var Glyffin;
         };
         Glyff.prototype.compose = function (operation) {
             var upperGlyff = this;
-            return Glyff.create({
-                call: function (audience, presenter) {
-                    presenter.addPresentation(upperGlyff.present(operation.getUpperAudience(audience, presenter), operation.getUpperReaction(audience, presenter)));
-                }
+            return Glyff.create(function (audience, presenter) {
+                presenter.addPresentation(upperGlyff.present(operation.getUpperAudience(audience, presenter), operation.getUpperReaction(audience, presenter)));
             });
         };
         Glyff.prototype.present = function (audience, reaction) {
@@ -205,7 +197,7 @@ var Glyffin;
                     firmReaction.onError(error);
                 }
             };
-            this.onPresent.call(audience, presenter);
+            this.onPresent(audience, presenter);
             return {
                 end: function () {
                     while (presented.length > 0) {
@@ -215,15 +207,13 @@ var Glyffin;
             };
         };
         Glyff.fromColor = function (color) {
-            return Glyff.create({
-                call: function (audience, presenter) {
-                    var patch = audience.addRectanglePatch(audience.getPerimeter(), color);
-                    presenter.addPresentation({
-                        end: function () {
-                            patch.remove();
-                        }
-                    });
-                }
+            return Glyff.create(function (audience, presenter) {
+                var patch = audience.addRectanglePatch(audience.getPerimeter(), color);
+                presenter.addPresentation({
+                    end: function () {
+                        patch.remove();
+                    }
+                });
             });
         };
         Glyff.create = function (f) {
@@ -232,14 +222,12 @@ var Glyffin;
         return Glyff;
     })();
     Glyffin.Glyff = Glyff;
+    Glyffin.ClearGlyff = Glyff.create(function () {
+    });
     Glyffin.RedGlyff = Glyff.fromColor(Glyffin.Palette.RED);
     Glyffin.GreenGlyff = Glyff.fromColor(Glyffin.Palette.GREEN);
     Glyffin.BlueGlyff = Glyff.fromColor(Glyffin.Palette.BLUE);
     Glyffin.BeigeGlyff = Glyff.fromColor(Glyffin.Palette.BEIGE);
-    Glyffin.ClearGlyff = Glyff.create({
-        call: function (audience, presenter) {
-        }
-    });
 })(Glyffin || (Glyffin = {}));
 /**
  * Created by wehjin on 5/24/15.
@@ -255,62 +243,58 @@ var Glyffin;
         return LineContent;
     })();
     function asciiMultiLine(lines, paragraph) {
-        return Glyffin.Glyff.create({
-            call: function (audience, presenter) {
-                var perimeter = audience.getPerimeter();
-                var linesAndLeadings = (lines * 2 - 1);
-                var ascentPixels = perimeter.getHeight() / linesAndLeadings;
-                var lineHeight = ascentPixels * 2;
-                var xWeightPixels = ascentPixels / 7;
-                var width = perimeter.getWidth();
-                var xWeightsPerLine = Math.floor(width / xWeightPixels);
-                var lineContents = [];
-                var currentLine = null;
-                var beginLine = function (wordWeight, word) {
-                    currentLine = new LineContent(wordWeight, word);
-                    lineContents.push(currentLine);
-                    if (wordWeight >= xWeightsPerLine && lineContents.length < lines) {
-                        currentLine = null;
-                    }
-                };
-                var words = paragraph.trim().split(/\s+/);
-                words.forEach(function (word) {
-                    var wordWeight = getWordXWeight(word);
-                    if (wordWeight == 0) {
-                        return;
-                    }
-                    if (!currentLine) {
-                        beginLine(wordWeight, word);
-                        return;
-                    }
-                    var newLineWeight = spaceWeight + wordWeight + currentLine.weight;
-                    if (newLineWeight < xWeightsPerLine || lineContents.length == lines) {
-                        currentLine.weight = newLineWeight;
-                        currentLine.text += ' ' + word;
-                        return;
-                    }
+        return Glyffin.Glyff.create(function (audience, presenter) {
+            var perimeter = audience.getPerimeter();
+            var linesAndLeadings = (lines * 2 - 1);
+            var ascentPixels = perimeter.getHeight() / linesAndLeadings;
+            var lineHeight = ascentPixels * 2;
+            var xWeightPixels = ascentPixels / 7;
+            var width = perimeter.getWidth();
+            var xWeightsPerLine = Math.floor(width / xWeightPixels);
+            var lineContents = [];
+            var currentLine = null;
+            var beginLine = function (wordWeight, word) {
+                currentLine = new LineContent(wordWeight, word);
+                lineContents.push(currentLine);
+                if (wordWeight >= xWeightsPerLine && lineContents.length < lines) {
+                    currentLine = null;
+                }
+            };
+            var words = paragraph.trim().split(/\s+/);
+            words.forEach(function (word) {
+                var wordWeight = getWordXWeight(word);
+                if (wordWeight == 0) {
+                    return;
+                }
+                if (!currentLine) {
                     beginLine(wordWeight, word);
-                });
-                var lineNumber = 0;
-                lineContents.forEach(function (lineContent) {
-                    var lineAudience = new Glyffin.PerimeterAudience(perimeter.downFromTop(lineNumber * lineHeight, ascentPixels), audience);
-                    presenter.addPresentation(asciiEntireWord(lineContent.text).present(lineAudience, presenter));
-                    lineNumber++;
-                });
-            }
+                    return;
+                }
+                var newLineWeight = spaceWeight + wordWeight + currentLine.weight;
+                if (newLineWeight < xWeightsPerLine || lineContents.length == lines) {
+                    currentLine.weight = newLineWeight;
+                    currentLine.text += ' ' + word;
+                    return;
+                }
+                beginLine(wordWeight, word);
+            });
+            var lineNumber = 0;
+            lineContents.forEach(function (lineContent) {
+                var lineAudience = new Glyffin.PerimeterAudience(perimeter.downFromTop(lineNumber * lineHeight, ascentPixels), audience);
+                presenter.addPresentation(asciiEntireWord(lineContent.text).present(lineAudience, presenter));
+                lineNumber++;
+            });
         });
     }
     Glyffin.asciiMultiLine = asciiMultiLine;
     function asciiEntireWord(word) {
         var wordXWeight = getWordXWeight(word);
-        return Glyffin.Glyff.create({
-            call: function (audience, presenter) {
-                var perimeter = audience.getPerimeter();
-                var wordXWeightPixels = perimeter.getWidth() / wordXWeight;
-                var preferredWeightPixels = perimeter.getHeight() / 7;
-                var fittedWeightPixels = Math.min(preferredWeightPixels, wordXWeightPixels);
-                presenter.addPresentation(asciiWord(word, fittedWeightPixels).present(audience, presenter));
-            }
+        return Glyffin.Glyff.create(function (audience, presenter) {
+            var perimeter = audience.getPerimeter();
+            var wordXWeightPixels = perimeter.getWidth() / wordXWeight;
+            var preferredWeightPixels = perimeter.getHeight() / 7;
+            var fittedWeightPixels = Math.min(preferredWeightPixels, wordXWeightPixels);
+            presenter.addPresentation(asciiWord(word, fittedWeightPixels).present(audience, presenter));
         });
     }
     Glyffin.asciiEntireWord = asciiEntireWord;
@@ -1759,30 +1743,28 @@ var Glyffin;
     })();
     Glyffin.Start = Start;
     function button() {
-        return Glyffin.Glyff.create({
-            call: function (audience, presenter) {
-                var removable = presenter.addPresentation(Glyffin.GreenGlyff.present(audience));
-                audience.addRectangleActive(audience.getPerimeter(), {
-                    getTouch: function (spot) {
+        return Glyffin.Glyff.create(function (audience, presenter) {
+            var removable = presenter.addPresentation(Glyffin.GreenGlyff.present(audience));
+            audience.addRectangleActive(audience.getPerimeter(), {
+                getTouch: function (spot) {
+                    removable.remove();
+                    removable = presenter.addPresentation(Glyffin.BlueGlyff.present(audience));
+                    function unpress() {
                         removable.remove();
-                        removable = presenter.addPresentation(Glyffin.BlueGlyff.present(audience));
-                        function unpress() {
-                            removable.remove();
-                            removable = presenter.addPresentation(Glyffin.GreenGlyff.present(audience));
-                        }
-                        return {
-                            onMove: function (spot) {
-                            },
-                            onRelease: function () {
-                                unpress();
-                            },
-                            onCancel: function () {
-                                unpress();
-                            }
-                        };
+                        removable = presenter.addPresentation(Glyffin.GreenGlyff.present(audience));
                     }
-                });
-            }
+                    return {
+                        onMove: function (spot) {
+                        },
+                        onRelease: function () {
+                            unpress();
+                        },
+                        onCancel: function () {
+                            unpress();
+                        }
+                    };
+                }
+            });
         });
     }
     Glyffin.button = button;
@@ -1796,10 +1778,12 @@ var Glyffin;
 /// <reference path="glyffin-gl.ts" />
 /// <reference path="glyffin-touch.ts" />
 var Insertion = Glyffin.Insertion;
+var Glyff = Glyffin.Glyff;
 function main() {
     var glAudience = new Glyffin.GlAudience();
     var headline = "Bidding for the 2026 World Cup is suspended by FIFA as Valcke denies wrongdoing";
     var alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz 0123456789";
-    Glyffin.RedGlyff.addTop(100, Glyffin.BlueGlyff.addTop(80, Glyffin.asciiMultiLine(3, alphabet)).pad(10, 10)).addTop(50, Glyffin.BlueGlyff.addTop(30, Glyffin.asciiMultiLine(2, headline)).pad(10, 10)).addTop(70, Glyffin.BlueGlyff.addTop(50, Glyffin.asciiMultiLine(3, headline)).pad(10, 10)).addTop(44, Glyffin.button()).present(glAudience);
+    var demo = Glyffin.RedGlyff.addTop(100, Glyffin.BlueGlyff.addTop(80, Glyffin.asciiMultiLine(3, alphabet)).pad(10, 10)).addTop(50, Glyffin.BlueGlyff.addTop(30, Glyffin.asciiMultiLine(2, headline)).pad(10, 10)).addTop(70, Glyffin.BlueGlyff.addTop(50, Glyffin.asciiMultiLine(3, headline)).pad(10, 10)).addTop(44, Glyffin.button());
+    demo.present(glAudience);
 }
 //# sourceMappingURL=combined.js.map

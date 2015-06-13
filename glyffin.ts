@@ -8,8 +8,7 @@
 module Glyffin {
 
     export class Glyff<T> {
-
-        constructor(private onPresent : OnPresent<T>) {
+        constructor(private onPresent : (audience : Audience, presenter : Presenter<T>)=>void) {
         }
 
         addLefts<U>(insertions : Insertion<U>[]) : Glyff<T> {
@@ -24,57 +23,51 @@ module Glyffin {
 
         addLeft(insertAmount : number, insertGlyff : Glyff<Void>) : Glyff<T> {
             var existingGlyff = this;
-            return Glyff.create({
-                call(audience : Audience, presenter : Presenter<Void>) {
-                    var perimeter = audience.getPerimeter();
-                    var insertRight = perimeter.left + insertAmount;
-                    var insertPerimeter = new RectangleBounds(perimeter.left, perimeter.top,
-                        insertRight, perimeter.bottom);
-                    var modifiedPerimeter = new RectangleBounds(insertRight, perimeter.top,
-                        perimeter.right, perimeter.bottom);
-                    presenter.addPresentation(insertGlyff.present(new PerimeterAudience(insertPerimeter,
-                        audience), presenter));
-                    presenter.addPresentation(existingGlyff.present(new PerimeterAudience(modifiedPerimeter,
-                        audience), presenter));
-                }
+            return Glyff.create((audience : Audience, presenter : Presenter<Void>)=> {
+                var perimeter = audience.getPerimeter();
+                var insertRight = perimeter.left + insertAmount;
+                var insertPerimeter = new RectangleBounds(perimeter.left, perimeter.top,
+                    insertRight, perimeter.bottom);
+                var modifiedPerimeter = new RectangleBounds(insertRight, perimeter.top,
+                    perimeter.right, perimeter.bottom);
+                presenter.addPresentation(insertGlyff.present(new PerimeterAudience(insertPerimeter,
+                    audience), presenter));
+                presenter.addPresentation(existingGlyff.present(new PerimeterAudience(modifiedPerimeter,
+                    audience), presenter));
             });
         }
 
         addTop(insertAmount : number, insertGlyff : Glyff<Void>) : Glyff<T> {
             var existingGlyff = this;
-            return Glyff.create({
-                call(audience : Audience, presenter : Presenter<Void>) {
-                    var perimeter = audience.getPerimeter();
-                    var insertBottom = perimeter.top + insertAmount;
-                    var insertPerimeter = new RectangleBounds(perimeter.left, perimeter.top,
-                        perimeter.right, insertBottom);
-                    var modifiedPerimeter = new RectangleBounds(perimeter.left, insertBottom,
-                        perimeter.right, perimeter.bottom);
-                    presenter.addPresentation(insertGlyff.present(new PerimeterAudience(insertPerimeter,
-                        audience), presenter));
-                    presenter.addPresentation(existingGlyff.present(new PerimeterAudience(modifiedPerimeter,
-                        audience), presenter));
-                }
+            return Glyff.create((audience : Audience, presenter : Presenter<Void>) => {
+                var perimeter = audience.getPerimeter();
+                var insertBottom = perimeter.top + insertAmount;
+                var insertPerimeter = new RectangleBounds(perimeter.left, perimeter.top,
+                    perimeter.right, insertBottom);
+                var modifiedPerimeter = new RectangleBounds(perimeter.left, insertBottom,
+                    perimeter.right, perimeter.bottom);
+                presenter.addPresentation(insertGlyff.present(new PerimeterAudience(insertPerimeter,
+                    audience), presenter));
+                presenter.addPresentation(existingGlyff.present(new PerimeterAudience(modifiedPerimeter,
+                    audience), presenter));
             });
         }
 
         kaleid(columns : number, rows : number, spots : number[][]) : Glyff<Void> {
             var upperGlyff = this;
-            return Glyff.create({
-                call(audience : Audience, presenter : Presenter<Void>) {
-                    var perimeter = audience.getPerimeter();
-                    var rowHeight = perimeter.getHeight() / rows;
-                    var colWidth = perimeter.getWidth() / columns;
-                    spots.forEach(spot=> {
-                        var left = perimeter.left + colWidth * spot[0];
-                        var top = perimeter.top + rowHeight * spot[1];
-                        var spotPerimeter = new RectangleBounds(left,
-                            top, left + colWidth, top + rowHeight
-                        );
-                        presenter.addPresentation(upperGlyff.present(
-                            new PerimeterAudience(spotPerimeter, audience), presenter));
-                    });
-                }
+            return Glyff.create((audience : Audience, presenter : Presenter<Void>)=> {
+                var perimeter = audience.getPerimeter();
+                var rowHeight = perimeter.getHeight() / rows;
+                var colWidth = perimeter.getWidth() / columns;
+                spots.forEach(spot=> {
+                    var left = perimeter.left + colWidth * spot[0];
+                    var top = perimeter.top + rowHeight * spot[1];
+                    var spotPerimeter = new RectangleBounds(left,
+                        top, left + colWidth, top + rowHeight
+                    );
+                    presenter.addPresentation(upperGlyff.present(
+                        new PerimeterAudience(spotPerimeter, audience), presenter));
+                });
             });
         }
 
@@ -92,13 +85,11 @@ module Glyffin {
 
         compose<U>(operation : Mogrifier<T,U>) {
             var upperGlyff = this;
-            return Glyff.create<U>({
-                call(audience : Audience, presenter : Presenter<U>) {
-                    presenter.addPresentation(upperGlyff.present(operation.getUpperAudience(audience,
-                            presenter),
-                        operation.getUpperReaction(audience, presenter)
-                    ));
-                }
+            return Glyff.create<U>((audience : Audience, presenter : Presenter<U>)=> {
+                presenter.addPresentation(upperGlyff.present(operation.getUpperAudience(audience,
+                        presenter),
+                    operation.getUpperReaction(audience, presenter)
+                ));
             });
         }
 
@@ -131,7 +122,7 @@ module Glyffin {
                     firmReaction.onError(error);
                 }
             };
-            this.onPresent.call(audience, presenter);
+            this.onPresent(audience, presenter);
             return <Presentation>{
                 end() {
                     while (presented.length > 0) {
@@ -142,8 +133,7 @@ module Glyffin {
         }
 
         static fromColor(color : Color) : Glyff<Void> {
-            return Glyff.create<Void>({
-                call(audience : Audience, presenter : Presenter<Void>) {
+            return Glyff.create<Void>((audience : Audience, presenter : Presenter<Void>)=> {
                     var patch = audience.addRectanglePatch(audience.getPerimeter(), color);
                     presenter.addPresentation({
                         end() {
@@ -151,21 +141,18 @@ module Glyffin {
                         }
                     });
                 }
-            });
+            );
         }
 
-        static create<U>(f : OnPresent<U>) : Glyff<U> {
+        static create<U>(f : (audience : Audience, presenter : Presenter<U>)=>void) : Glyff<U> {
             return new Glyff<U>(f);
         }
     }
 
+    export var ClearGlyff = Glyff.create<Void>(()=> {
+    });
     export var RedGlyff = Glyff.fromColor(Palette.RED);
     export var GreenGlyff = Glyff.fromColor(Palette.GREEN);
     export var BlueGlyff = Glyff.fromColor(Palette.BLUE);
     export var BeigeGlyff = Glyff.fromColor(Palette.BEIGE);
-
-    export var ClearGlyff = Glyff.create<Void>({
-        call(audience : Audience, presenter : Presenter<Void>) {
-        }
-    });
 }
