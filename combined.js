@@ -1691,6 +1691,7 @@ var Glyffin;
             }
             this.editCount++;
             requestAnimationFrame(function () {
+                _this.vertices.clearFreePatches();
                 _this.gl.clear(_this.gl.COLOR_BUFFER_BIT);
                 _this.gl.drawArrays(_this.gl.TRIANGLES, 0, _this.vertices.getActiveVertexCount());
                 _this.drawCount = _this.editCount;
@@ -1716,6 +1717,7 @@ var Glyffin;
             this.maxPatchCount = maxPatchCount;
             this.nextPatchIndex = 0;
             this.freePatchIndices = [];
+            this.clearedPatchIndices = [];
             this.totalFreed = 0;
             this.emptyPatchVertices = new Float32Array(FLOATS_PER_PATCH);
             this.gl = gl;
@@ -1733,7 +1735,7 @@ var Glyffin;
             return this.nextPatchIndex * VERTICES_PER_PATCH;
         };
         VerticesAndColor.prototype.getFreeVertexCount = function () {
-            return this.freePatchIndices.length * VERTICES_PER_PATCH;
+            return (this.freePatchIndices.length + this.clearedPatchIndices.length) * VERTICES_PER_PATCH;
         };
         VerticesAndColor.prototype.getTotalFreedVertices = function () {
             return this.totalFreed * VERTICES_PER_PATCH;
@@ -1742,6 +1744,9 @@ var Glyffin;
             var patchIndex;
             if (this.freePatchIndices.length > 0) {
                 patchIndex = this.freePatchIndices.pop();
+            }
+            else if (this.clearedPatchIndices.length > 0) {
+                patchIndex = this.clearedPatchIndices.pop();
             }
             else {
                 if (this.nextPatchIndex >= MAX_PATCH_COUNT) {
@@ -1754,9 +1759,16 @@ var Glyffin;
             return patchIndex;
         };
         VerticesAndColor.prototype.putPatch = function (patchIndex) {
-            this.gl.bufferSubData(this.gl.ARRAY_BUFFER, patchIndex * BYTES_PER_PATCH, this.emptyPatchVertices);
             this.freePatchIndices.push(patchIndex);
             this.totalFreed++;
+        };
+        VerticesAndColor.prototype.clearFreePatches = function () {
+            var _this = this;
+            this.freePatchIndices.forEach(function (patchIndex) {
+                _this.gl.bufferSubData(_this.gl.ARRAY_BUFFER, patchIndex * BYTES_PER_PATCH, _this.emptyPatchVertices);
+            });
+            this.clearedPatchIndices = this.freePatchIndices;
+            this.freePatchIndices = [];
         };
         return VerticesAndColor;
     })();

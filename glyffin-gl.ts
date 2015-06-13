@@ -124,6 +124,7 @@ module Glyffin {
             }
             this.editCount++;
             requestAnimationFrame(()=> {
+                this.vertices.clearFreePatches();
                 this.gl.clear(this.gl.COLOR_BUFFER_BIT);
                 this.gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
                 this.drawCount = this.editCount;
@@ -166,6 +167,7 @@ module Glyffin {
 
         private nextPatchIndex = 0;
         private freePatchIndices : number[] = [];
+        private clearedPatchIndices : number[] = [];
         public totalFreed = 0;
         private gl;
         private emptyPatchVertices = new Float32Array(FLOATS_PER_PATCH);
@@ -194,7 +196,8 @@ module Glyffin {
         }
 
         getFreeVertexCount() : number {
-            return this.freePatchIndices.length * VERTICES_PER_PATCH;
+            return (this.freePatchIndices.length + this.clearedPatchIndices.length) *
+                VERTICES_PER_PATCH;
         }
 
         getTotalFreedVertices() : number {
@@ -206,6 +209,8 @@ module Glyffin {
             var patchIndex;
             if (this.freePatchIndices.length > 0) {
                 patchIndex = this.freePatchIndices.pop();
+            } else if (this.clearedPatchIndices.length > 0) {
+                patchIndex = this.clearedPatchIndices.pop();
             } else {
                 if (this.nextPatchIndex >= MAX_PATCH_COUNT) {
                     throw "Too many patches";
@@ -231,10 +236,17 @@ module Glyffin {
         }
 
         putPatch(patchIndex : number) {
-            this.gl.bufferSubData(this.gl.ARRAY_BUFFER, patchIndex * BYTES_PER_PATCH,
-                this.emptyPatchVertices);
             this.freePatchIndices.push(patchIndex);
             this.totalFreed++;
+        }
+
+        clearFreePatches() {
+            this.freePatchIndices.forEach((patchIndex : number)=> {
+                this.gl.bufferSubData(this.gl.ARRAY_BUFFER, patchIndex * BYTES_PER_PATCH,
+                    this.emptyPatchVertices);
+            });
+            this.clearedPatchIndices = this.freePatchIndices;
+            this.freePatchIndices = [];
         }
     }
 }

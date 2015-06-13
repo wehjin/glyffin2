@@ -34,6 +34,7 @@ function main() {
 
     var app = Glyff.create((audience : Audience, presenter : Presenter<Void>)=> {
         var page = Glyffin.BeigeGlyff.addTopReact(44, Glyffin.button());
+
         var presented;
 
         function setPresented(glyff : Glyff<number>, next : Glyff<number>) {
