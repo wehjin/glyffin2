@@ -127,6 +127,9 @@ module Glyffin {
                 this.gl.clear(this.gl.COLOR_BUFFER_BIT);
                 this.gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
                 this.drawCount = this.editCount;
+                console.log("Active %i, Free %i, TotalFreed %",
+                    this.vertices.getActiveVertexCount(),
+                    this.vertices.getFreeVertexCount(), this.vertices.getTotalFreedVertices());
             });
         }
 
@@ -162,6 +165,8 @@ module Glyffin {
     class VerticesAndColor {
 
         private nextPatchIndex = 0;
+        private freePatchIndices : number[] = [];
+        public totalFreed = 0;
         private gl;
         private emptyPatchVertices = new Float32Array(FLOATS_PER_PATCH);
 
@@ -188,9 +193,25 @@ module Glyffin {
             return this.nextPatchIndex * VERTICES_PER_PATCH;
         }
 
+        getFreeVertexCount() : number {
+            return this.freePatchIndices.length * VERTICES_PER_PATCH;
+        }
+
+        getTotalFreedVertices() : number {
+            return this.totalFreed * VERTICES_PER_PATCH;
+        }
+
         getPatch(left : number, top : number, right : number, bottom : number,
                  color : Glyffin.Color) : number {
-            var patchIndex = this.nextPatchIndex++;
+            var patchIndex;
+            if (this.freePatchIndices.length > 0) {
+                patchIndex = this.freePatchIndices.pop();
+            } else {
+                if (this.nextPatchIndex >= MAX_PATCH_COUNT) {
+                    throw "Too many patches";
+                }
+                patchIndex = this.nextPatchIndex++;
+            }
             var patchVertices = new Float32Array([left, top,
                                                   color.red, color.green, color.blue, color.alpha,
                                                   right, top,
@@ -212,6 +233,8 @@ module Glyffin {
         putPatch(patchIndex : number) {
             this.gl.bufferSubData(this.gl.ARRAY_BUFFER, patchIndex * BYTES_PER_PATCH,
                 this.emptyPatchVertices);
+            this.freePatchIndices.push(patchIndex);
+            this.totalFreed++;
         }
     }
 }

@@ -1694,6 +1694,7 @@ var Glyffin;
                 _this.gl.clear(_this.gl.COLOR_BUFFER_BIT);
                 _this.gl.drawArrays(_this.gl.TRIANGLES, 0, _this.vertices.getActiveVertexCount());
                 _this.drawCount = _this.editCount;
+                console.log("Active %i, Free %i, TotalFreed %", _this.vertices.getActiveVertexCount(), _this.vertices.getFreeVertexCount(), _this.vertices.getTotalFreedVertices());
             });
         };
         return GlAudience;
@@ -1714,6 +1715,8 @@ var Glyffin;
         function VerticesAndColor(maxPatchCount, gl) {
             this.maxPatchCount = maxPatchCount;
             this.nextPatchIndex = 0;
+            this.freePatchIndices = [];
+            this.totalFreed = 0;
             this.emptyPatchVertices = new Float32Array(FLOATS_PER_PATCH);
             this.gl = gl;
             gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
@@ -1729,14 +1732,31 @@ var Glyffin;
         VerticesAndColor.prototype.getActiveVertexCount = function () {
             return this.nextPatchIndex * VERTICES_PER_PATCH;
         };
+        VerticesAndColor.prototype.getFreeVertexCount = function () {
+            return this.freePatchIndices.length * VERTICES_PER_PATCH;
+        };
+        VerticesAndColor.prototype.getTotalFreedVertices = function () {
+            return this.totalFreed * VERTICES_PER_PATCH;
+        };
         VerticesAndColor.prototype.getPatch = function (left, top, right, bottom, color) {
-            var patchIndex = this.nextPatchIndex++;
+            var patchIndex;
+            if (this.freePatchIndices.length > 0) {
+                patchIndex = this.freePatchIndices.pop();
+            }
+            else {
+                if (this.nextPatchIndex >= MAX_PATCH_COUNT) {
+                    throw "Too many patches";
+                }
+                patchIndex = this.nextPatchIndex++;
+            }
             var patchVertices = new Float32Array([left, top, color.red, color.green, color.blue, color.alpha, right, top, color.red, color.green, color.blue, color.alpha, left, bottom, color.red, color.green, color.blue, color.alpha, left, bottom, color.red, color.green, color.blue, color.alpha, right, top, color.red, color.green, color.blue, color.alpha, right, bottom, color.red, color.green, color.blue, color.alpha,]);
             this.gl.bufferSubData(this.gl.ARRAY_BUFFER, patchIndex * BYTES_PER_PATCH, patchVertices);
             return patchIndex;
         };
         VerticesAndColor.prototype.putPatch = function (patchIndex) {
             this.gl.bufferSubData(this.gl.ARRAY_BUFFER, patchIndex * BYTES_PER_PATCH, this.emptyPatchVertices);
+            this.freePatchIndices.push(patchIndex);
+            this.totalFreed++;
         };
         return VerticesAndColor;
     })();
@@ -1750,7 +1770,7 @@ var Glyffin;
     function button() {
         return Glyffin.Glyff.create(function (audience, presenter) {
             var removable = presenter.addPresentation(Glyffin.GreenGlyff.present(audience));
-            audience.addRectangleActive(audience.getPerimeter(), {
+            var rectangleActive = audience.addRectangleActive(audience.getPerimeter(), {
                 getTouch: function (spot) {
                     removable.remove();
                     removable = presenter.addPresentation(Glyffin.BlueGlyff.present(audience));
@@ -1769,6 +1789,11 @@ var Glyffin;
                             unpress();
                         }
                     };
+                }
+            });
+            presenter.addPresentation({
+                end: function () {
+                    rectangleActive.remove();
                 }
             });
         });
@@ -1794,6 +1819,7 @@ function main() {
     var app = Glyff.create(function (audience, presenter) {
         var page = Glyffin.BeigeGlyff.addTopReact(44, Glyffin.button());
         var presented = presenter.addPresentation(page.present(audience, function () {
+            console.log("Descend");
             presented.remove();
             presenter.addPresentation(demo.present(audience));
         }));

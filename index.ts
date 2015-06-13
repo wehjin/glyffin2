@@ -33,8 +33,8 @@ function main() {
 
     var app = Glyff.create((audience : Audience, presenter : Presenter<Void>)=> {
         var page = Glyffin.BeigeGlyff.addTopReact(44, Glyffin.button());
-
         var presented = presenter.addPresentation(page.present(audience, ()=> {
+            console.log("Descend");
             presented.remove();
             presenter.addPresentation(demo.present(audience));
         }));

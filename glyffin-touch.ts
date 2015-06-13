@@ -10,7 +10,7 @@ module Glyffin {
         return Glyff.create((audience : Glyffin.Audience,
                              presenter : Glyffin.Presenter<number>) => {
             var removable = presenter.addPresentation(GreenGlyff.present(audience));
-            audience.addRectangleActive(audience.getPerimeter(), {
+            var rectangleActive = audience.addRectangleActive(audience.getPerimeter(), {
                 getTouch: (spot : Spot) : Touch => {
                     removable.remove();
                     removable = presenter.addPresentation(BlueGlyff.present(audience));
@@ -31,6 +31,11 @@ module Glyffin {
                             unpress();
                         }
                     };
+                }
+            });
+            presenter.addPresentation(<Presentation>{
+                end: ()=> {
+                    rectangleActive.remove();
                 }
             });
         });
