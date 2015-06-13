@@ -10,6 +10,10 @@
 
 import Insertion = Glyffin.Insertion;
 import Glyff = Glyffin.Glyff;
+import Audience = Glyffin.Audience;
+import Presenter = Glyffin.Presenter;
+import Void = Glyffin.Void;
+import Reaction = Glyffin.Reaction;
 
 function main() {
     var glAudience : Glyffin.Audience = new Glyffin.GlAudience();
@@ -27,6 +31,15 @@ function main() {
             .pad(10, 10))
         .addTop(44, Glyffin.button());
 
-    demo.present(glAudience);
+    var app = Glyff.create((audience : Audience, presenter : Presenter<Void>)=> {
+        var page = Glyffin.BeigeGlyff.addTopReact(44, Glyffin.button());
+        presenter.addPresentation(page.present(audience, (click : number)=> {
+            console.log("Click time:", click);
+        }));
+    });
+
+    app.present(glAudience);
+
+    console.log("reaction: ", typeof x);
 }
 

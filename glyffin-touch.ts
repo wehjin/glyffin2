@@ -6,14 +6,9 @@
 
 module Glyffin {
 
-    export class Start {
-        constructor(public time : number) {
-        }
-    }
-
-    export function button() : Glyff<Start> {
+    export function button() : Glyff<number> {
         return Glyff.create((audience : Glyffin.Audience,
-                             presenter : Glyffin.Presenter<Glyffin.Start>) => {
+                             presenter : Glyffin.Presenter<number>) => {
             var removable = presenter.addPresentation(GreenGlyff.present(audience));
             audience.addRectangleActive(audience.getPerimeter(), {
                 getTouch: (spot : Spot) : Touch => {
@@ -30,6 +25,7 @@ module Glyffin {
                         },
                         onRelease: ()=> {
                             unpress();
+                            presenter.onResult(Date.now());
                         },
                         onCancel: ()=> {
                             unpress();

@@ -37,18 +37,24 @@ module Glyffin {
             });
         }
 
-        addTop(insertAmount : number, insertGlyff : Glyff<Void>) : Glyff<T> {
+        addTopReact<U>(size : number, addGlyff : Glyff<U>) : Glyff<U> {
             var existingGlyff = this;
             return Glyff.create((audience : Audience, presenter : Presenter<Void>) => {
-                var perimeter = audience.getPerimeter();
-                var insertBottom = perimeter.top + insertAmount;
-                var insertPerimeter = new RectangleBounds(perimeter.left, perimeter.top,
-                    perimeter.right, insertBottom);
-                var modifiedPerimeter = new RectangleBounds(perimeter.left, insertBottom,
-                    perimeter.right, perimeter.bottom);
-                presenter.addPresentation(insertGlyff.present(new PerimeterAudience(insertPerimeter,
+                var bounds = audience.getPerimeter().splitHorizontal(size);
+                presenter.addPresentation(addGlyff.present(new PerimeterAudience(bounds[0],
                     audience), presenter));
-                presenter.addPresentation(existingGlyff.present(new PerimeterAudience(modifiedPerimeter,
+                presenter.addPresentation(existingGlyff.present(new PerimeterAudience(bounds[1],
+                    audience), presenter));
+            });
+        }
+
+        addTop(size : number, addGlyff : Glyff<Void>) : Glyff<T> {
+            var existingGlyff = this;
+            return Glyff.create((audience : Audience, presenter : Presenter<Void>) => {
+                var bounds = audience.getPerimeter().splitHorizontal(size);
+                presenter.addPresentation(addGlyff.present(new PerimeterAudience(bounds[0],
+                    audience), presenter));
+                presenter.addPresentation(existingGlyff.present(new PerimeterAudience(bounds[1],
                     audience), presenter));
             });
         }
@@ -93,14 +99,8 @@ module Glyffin {
             });
         }
 
-        present(audience : Audience, reaction ? : Reaction<T>) : Presentation {
-            //noinspection JSUnusedLocalSymbols
-            var firmReaction : Reaction<T> = reaction ? reaction : {
-                onResult(result : T) {
-                },
-                onError(error : Error) {
-                }
-            };
+        present(audience : Audience, reactionOrOnResult ? : Reaction<T>|ResultCallback,
+                onError? : ErrorCallback) : Presentation {
             var presented : Presentation[] = [];
             var presenter = {
                 addPresentation(presentation : Presentation) : Removable {
@@ -116,10 +116,18 @@ module Glyffin {
                     }
                 },
                 onResult(result : T) {
-                    firmReaction.onResult(result);
+                    if (typeof reactionOrOnResult === 'object') {
+                        (<Reaction<T>>reactionOrOnResult).onResult(result);
+                    } else if (typeof reactionOrOnResult === 'function') {
+                        (<ResultCallback>reactionOrOnResult)(result);
+                    }
                 },
                 onError(error : Error) {
-                    firmReaction.onError(error);
+                    if (typeof reactionOrOnResult === 'object') {
+                        (<Reaction<T>>reactionOrOnResult).onError(error);
+                    } else if (onError) {
+                        onError(error);
+                    }
                 }
             };
             this.onPresent(audience, presenter);

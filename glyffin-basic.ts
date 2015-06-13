@@ -70,6 +70,10 @@ module Glyffin {
         onError(error : Error);
     }
 
+    export type ResultCallback = <T>(result : T)=>void;
+    export type ErrorCallback = (error : Error)=>void;
+
+
     export interface Presentation {
         end();
     }
@@ -111,6 +115,12 @@ module Glyffin {
         downFromTop(pixelsY : number, pixelsHigh : number) : RectangleBounds {
             var inTop = this.top + pixelsY;
             return new RectangleBounds(this.left, inTop, this.right, inTop + pixelsHigh);
+        }
+
+        splitHorizontal(pixelsDown : number) : RectangleBounds[] {
+            var split = this.top + pixelsDown;
+            return [new RectangleBounds(this.left, this.top, this.right, split),
+                    new RectangleBounds(this.left, split, this.right, this.bottom)];
         }
     }
 

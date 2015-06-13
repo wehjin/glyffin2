@@ -57,6 +57,10 @@ var Glyffin;
             var inTop = this.top + pixelsY;
             return new RectangleBounds(this.left, inTop, this.right, inTop + pixelsHigh);
         };
+        RectangleBounds.prototype.splitHorizontal = function (pixelsDown) {
+            var split = this.top + pixelsDown;
+            return [new RectangleBounds(this.left, this.top, this.right, split), new RectangleBounds(this.left, split, this.right, this.bottom)];
+        };
         return RectangleBounds;
     })();
     Glyffin.RectangleBounds = RectangleBounds;
@@ -126,15 +130,20 @@ var Glyffin;
                 presenter.addPresentation(existingGlyff.present(new Glyffin.PerimeterAudience(modifiedPerimeter, audience), presenter));
             });
         };
-        Glyff.prototype.addTop = function (insertAmount, insertGlyff) {
+        Glyff.prototype.addTopReact = function (size, addGlyff) {
             var existingGlyff = this;
             return Glyff.create(function (audience, presenter) {
-                var perimeter = audience.getPerimeter();
-                var insertBottom = perimeter.top + insertAmount;
-                var insertPerimeter = new Glyffin.RectangleBounds(perimeter.left, perimeter.top, perimeter.right, insertBottom);
-                var modifiedPerimeter = new Glyffin.RectangleBounds(perimeter.left, insertBottom, perimeter.right, perimeter.bottom);
-                presenter.addPresentation(insertGlyff.present(new Glyffin.PerimeterAudience(insertPerimeter, audience), presenter));
-                presenter.addPresentation(existingGlyff.present(new Glyffin.PerimeterAudience(modifiedPerimeter, audience), presenter));
+                var bounds = audience.getPerimeter().splitHorizontal(size);
+                presenter.addPresentation(addGlyff.present(new Glyffin.PerimeterAudience(bounds[0], audience), presenter));
+                presenter.addPresentation(existingGlyff.present(new Glyffin.PerimeterAudience(bounds[1], audience), presenter));
+            });
+        };
+        Glyff.prototype.addTop = function (size, addGlyff) {
+            var existingGlyff = this;
+            return Glyff.create(function (audience, presenter) {
+                var bounds = audience.getPerimeter().splitHorizontal(size);
+                presenter.addPresentation(addGlyff.present(new Glyffin.PerimeterAudience(bounds[0], audience), presenter));
+                presenter.addPresentation(existingGlyff.present(new Glyffin.PerimeterAudience(bounds[1], audience), presenter));
             });
         };
         Glyff.prototype.kaleid = function (columns, rows, spots) {
@@ -168,14 +177,7 @@ var Glyffin;
                 presenter.addPresentation(upperGlyff.present(operation.getUpperAudience(audience, presenter), operation.getUpperReaction(audience, presenter)));
             });
         };
-        Glyff.prototype.present = function (audience, reaction) {
-            //noinspection JSUnusedLocalSymbols
-            var firmReaction = reaction ? reaction : {
-                onResult: function (result) {
-                },
-                onError: function (error) {
-                }
-            };
+        Glyff.prototype.present = function (audience, reactionOrOnResult, onError) {
             var presented = [];
             var presenter = {
                 addPresentation: function (presentation) {
@@ -191,10 +193,20 @@ var Glyffin;
                     };
                 },
                 onResult: function (result) {
-                    firmReaction.onResult(result);
+                    if (typeof reactionOrOnResult === 'object') {
+                        reactionOrOnResult.onResult(result);
+                    }
+                    else if (typeof reactionOrOnResult === 'function') {
+                        reactionOrOnResult(result);
+                    }
                 },
                 onError: function (error) {
-                    firmReaction.onError(error);
+                    if (typeof reactionOrOnResult === 'object') {
+                        reactionOrOnResult.onError(error);
+                    }
+                    else if (onError) {
+                        onError(error);
+                    }
                 }
             };
             this.onPresent(audience, presenter);
@@ -1735,13 +1747,6 @@ var Glyffin;
 /// <reference path="glyffin.ts" />
 var Glyffin;
 (function (Glyffin) {
-    var Start = (function () {
-        function Start(time) {
-            this.time = time;
-        }
-        return Start;
-    })();
-    Glyffin.Start = Start;
     function button() {
         return Glyffin.Glyff.create(function (audience, presenter) {
             var removable = presenter.addPresentation(Glyffin.GreenGlyff.present(audience));
@@ -1758,6 +1763,7 @@ var Glyffin;
                         },
                         onRelease: function () {
                             unpress();
+                            presenter.onResult(Date.now());
                         },
                         onCancel: function () {
                             unpress();
@@ -1779,11 +1785,19 @@ var Glyffin;
 /// <reference path="glyffin-touch.ts" />
 var Insertion = Glyffin.Insertion;
 var Glyff = Glyffin.Glyff;
+var Void = Glyffin.Void;
 function main() {
     var glAudience = new Glyffin.GlAudience();
     var headline = "Bidding for the 2026 World Cup is suspended by FIFA as Valcke denies wrongdoing";
     var alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz 0123456789";
     var demo = Glyffin.RedGlyff.addTop(100, Glyffin.BlueGlyff.addTop(80, Glyffin.asciiMultiLine(3, alphabet)).pad(10, 10)).addTop(50, Glyffin.BlueGlyff.addTop(30, Glyffin.asciiMultiLine(2, headline)).pad(10, 10)).addTop(70, Glyffin.BlueGlyff.addTop(50, Glyffin.asciiMultiLine(3, headline)).pad(10, 10)).addTop(44, Glyffin.button());
-    demo.present(glAudience);
+    var app = Glyff.create(function (audience, presenter) {
+        var page = Glyffin.BeigeGlyff.addTopReact(44, Glyffin.button());
+        presenter.addPresentation(page.present(audience, function (click) {
+            console.log("Click time:", click);
+        }));
+    });
+    app.present(glAudience);
+    console.log("reaction: ", typeof x);
 }
 //# sourceMappingURL=combined.js.map
