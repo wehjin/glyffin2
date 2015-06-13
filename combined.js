@@ -1607,6 +1607,8 @@ var Glyffin;
         function GlAudience() {
             var _this = this;
             this.interactives = [];
+            this.drawCount = 0;
+            this.editCount = 0;
             var canvas = document.getElementById('webgl');
             this.canvas = canvas;
             canvas.addEventListener("touchstart", function (ev) {
@@ -1687,8 +1689,16 @@ var Glyffin;
             };
         };
         GlAudience.prototype.scheduleRedraw = function () {
-            this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-            this.gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
+            var _this = this;
+            if (this.editCount > this.drawCount) {
+                return;
+            }
+            this.editCount++;
+            requestAnimationFrame(function () {
+                _this.gl.clear(_this.gl.COLOR_BUFFER_BIT);
+                _this.gl.drawArrays(_this.gl.TRIANGLES, 0, _this.vertices.getActiveVertexCount());
+                _this.drawCount = _this.editCount;
+            });
         };
         return GlAudience;
     })();

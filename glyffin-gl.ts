@@ -21,12 +21,14 @@ module Glyffin {
         private vertices : VerticesAndColor;
         private palette;
         private interactives : Interactive[] = [];
+        private drawCount = 0;
+        private editCount = 0;
 
         constructor() {
             var canvas = <HTMLCanvasElement>document.getElementById('webgl');
             this.canvas = canvas;
 
-            canvas.addEventListener("touchstart", (ev:Event) => {
+            canvas.addEventListener("touchstart", (ev : Event) => {
                 if (this.interactives.length > 0) {
                     var touch = this.interactives[0].touchProvider.getTouch(null);
                     var ontouchcancel;
@@ -117,8 +119,15 @@ module Glyffin {
         }
 
         scheduleRedraw() {
-            this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-            this.gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
+            if (this.editCount > this.drawCount) {
+                return;
+            }
+            this.editCount++;
+            requestAnimationFrame(()=> {
+                this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+                this.gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
+                this.drawCount = this.editCount;
+            });
         }
 
     }
