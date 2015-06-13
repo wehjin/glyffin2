@@ -9,8 +9,37 @@ module Glyffin {
 
     var MAX_PATCH_COUNT = 10000;
 
+    interface JsTouch {
+        clientX: number;
+        clientY: number;
+    }
+    interface JsTouchList {
+        length: number;
+        item(index : number):JsTouch;
+    }
+    interface JsTouchEvent extends UIEvent {
+        touches:JsTouchList;
+    }
+
     class Interactive {
         constructor(public bounds : RectangleBounds, public touchProvider : TouchProvider) {
+        }
+
+        isHit(touchX : number, touchY : number) : boolean {
+            return this.bounds.left <= touchX &&
+                this.bounds.right >= touchX &&
+                this.bounds.top <= touchY &&
+                this.bounds.bottom >= touchY;
+        }
+
+        static findHits(all : Interactive[], x : number, y : number) : Interactive[] {
+            var hitInteractives : Interactive[] = [];
+            all.forEach((interactive : Interactive)=> {
+                if (interactive.isHit(x, y)) {
+                    hitInteractives.push(interactive);
+                }
+            });
+            return hitInteractives;
         }
     }
 
@@ -29,8 +58,12 @@ module Glyffin {
             this.canvas = canvas;
 
             canvas.addEventListener("touchstart", (ev : Event) => {
-                if (this.interactives.length > 0) {
-                    var touch = this.interactives[0].touchProvider.getTouch(null);
+                var jsTouch = (<JsTouchEvent>ev).touches.item(0);
+                var hits = Interactive.findHits(this.interactives, jsTouch.clientX,
+                    jsTouch.clientY);
+                if (hits.length > 0) {
+                    var interactive = hits[0];
+                    var touch = interactive.touchProvider.getTouch(null);
                     var ontouchcancel;
                     var ontouchend = function () {
                         touch.onRelease();
@@ -51,9 +84,11 @@ module Glyffin {
                 ev.preventDefault();
             }, false);
 
-            canvas.onmousedown = ()=> {
-                if (this.interactives.length > 0) {
-                    var touch = this.interactives[0].touchProvider.getTouch(null);
+            canvas.onmousedown = (ev : MouseEvent)=> {
+                var hits = Interactive.findHits(this.interactives, ev.clientX, ev.clientY);
+                if (hits.length > 0) {
+                    var interactive = this.interactives[0];
+                    var touch = interactive.touchProvider.getTouch(null);
                     canvas.onmouseup = ()=> {
                         touch.onRelease();
                         canvas.onmouseout = canvas.onmouseup = null;
@@ -63,6 +98,8 @@ module Glyffin {
                         canvas.onmouseout = canvas.onmouseup = null;
                     };
                 }
+                ev.stopPropagation();
+                ev.preventDefault();
             };
 
             this.perimeter = new RectangleBounds(0, 0, canvas.width, canvas.height);

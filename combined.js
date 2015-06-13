@@ -1597,6 +1597,18 @@ var Glyffin;
             this.bounds = bounds;
             this.touchProvider = touchProvider;
         }
+        Interactive.prototype.isHit = function (touchX, touchY) {
+            return this.bounds.left <= touchX && this.bounds.right >= touchX && this.bounds.top <= touchY && this.bounds.bottom >= touchY;
+        };
+        Interactive.findHits = function (all, x, y) {
+            var hitInteractives = [];
+            all.forEach(function (interactive) {
+                if (interactive.isHit(x, y)) {
+                    hitInteractives.push(interactive);
+                }
+            });
+            return hitInteractives;
+        };
         return Interactive;
     })();
     var GlAudience = (function () {
@@ -1608,8 +1620,11 @@ var Glyffin;
             var canvas = document.getElementById('webgl');
             this.canvas = canvas;
             canvas.addEventListener("touchstart", function (ev) {
-                if (_this.interactives.length > 0) {
-                    var touch = _this.interactives[0].touchProvider.getTouch(null);
+                var jsTouch = ev.touches.item(0);
+                var hits = Interactive.findHits(_this.interactives, jsTouch.clientX, jsTouch.clientY);
+                if (hits.length > 0) {
+                    var interactive = hits[0];
+                    var touch = interactive.touchProvider.getTouch(null);
                     var ontouchcancel;
                     var ontouchend = function () {
                         touch.onRelease();
@@ -1629,9 +1644,11 @@ var Glyffin;
                 ev.stopPropagation();
                 ev.preventDefault();
             }, false);
-            canvas.onmousedown = function () {
-                if (_this.interactives.length > 0) {
-                    var touch = _this.interactives[0].touchProvider.getTouch(null);
+            canvas.onmousedown = function (ev) {
+                var hits = Interactive.findHits(_this.interactives, ev.clientX, ev.clientY);
+                if (hits.length > 0) {
+                    var interactive = _this.interactives[0];
+                    var touch = interactive.touchProvider.getTouch(null);
                     canvas.onmouseup = function () {
                         touch.onRelease();
                         canvas.onmouseout = canvas.onmouseup = null;
@@ -1641,6 +1658,8 @@ var Glyffin;
                         canvas.onmouseout = canvas.onmouseup = null;
                     };
                 }
+                ev.stopPropagation();
+                ev.preventDefault();
             };
             this.perimeter = new Glyffin.RectangleBounds(0, 0, canvas.width, canvas.height);
             this.palette = new Glyffin.Palette();
@@ -1784,7 +1803,7 @@ var Glyffin;
     function button() {
         return Glyffin.Glyff.create(function (audience, presenter) {
             var removable = presenter.addPresentation(Glyffin.GreenGlyff.present(audience));
-            var rectangleActive = audience.addZone(audience.getPerimeter(), {
+            var zone = audience.addZone(audience.getPerimeter(), {
                 getTouch: function (spot) {
                     removable.remove();
                     removable = presenter.addPresentation(Glyffin.BlueGlyff.present(audience));
@@ -1807,7 +1826,7 @@ var Glyffin;
             });
             presenter.addPresentation({
                 end: function () {
-                    rectangleActive.remove();
+                    zone.remove();
                 }
             });
         });
