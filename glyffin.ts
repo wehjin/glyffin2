@@ -142,7 +142,7 @@ module Glyffin {
 
         static fromColor(color : Color) : Glyff<Void> {
             return Glyff.create<Void>((audience : Audience, presenter : Presenter<Void>)=> {
-                    var patch = audience.addRectanglePatch(audience.getPerimeter(), color);
+                    var patch = audience.addPatch(audience.getPerimeter(), color);
                     presenter.addPresentation({
                         end() {
                             patch.remove();

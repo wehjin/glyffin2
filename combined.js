@@ -14,11 +14,11 @@ var Glyffin;
         PerimeterAudience.prototype.getPalette = function () {
             return this.audience.getPalette();
         };
-        PerimeterAudience.prototype.addRectanglePatch = function (bounds, color) {
-            return this.audience.addRectanglePatch(bounds, color);
+        PerimeterAudience.prototype.addPatch = function (bounds, color) {
+            return this.audience.addPatch(bounds, color);
         };
-        PerimeterAudience.prototype.addRectangleActive = function (bounds, touchProvider) {
-            return this.audience.addRectangleActive(bounds, touchProvider);
+        PerimeterAudience.prototype.addZone = function (bounds, touchProvider) {
+            return this.audience.addZone(bounds, touchProvider);
         };
         return PerimeterAudience;
     })();
@@ -220,7 +220,7 @@ var Glyffin;
         };
         Glyff.fromColor = function (color) {
             return Glyff.create(function (audience, presenter) {
-                var patch = audience.addRectanglePatch(audience.getPerimeter(), color);
+                var patch = audience.addPatch(audience.getPerimeter(), color);
                 presenter.addPresentation({
                     end: function () {
                         patch.remove();
@@ -1661,7 +1661,7 @@ var Glyffin;
         GlAudience.prototype.getPalette = function () {
             return this.palette;
         };
-        GlAudience.prototype.addRectanglePatch = function (bounds, color) {
+        GlAudience.prototype.addPatch = function (bounds, color) {
             var _this = this;
             if (bounds.left >= bounds.right || bounds.top >= bounds.bottom || color.alpha == 0) {
                 return Glyffin.EMPTY_PATCH;
@@ -1674,7 +1674,7 @@ var Glyffin;
                 }
             };
         };
-        GlAudience.prototype.addRectangleActive = function (bounds, touchProvider) {
+        GlAudience.prototype.addZone = function (bounds, touchProvider) {
             var interactive = new Interactive(bounds, touchProvider);
             this.interactives.push(interactive);
             var interactives = this.interactives;
@@ -1784,7 +1784,7 @@ var Glyffin;
     function button() {
         return Glyffin.Glyff.create(function (audience, presenter) {
             var removable = presenter.addPresentation(Glyffin.GreenGlyff.present(audience));
-            var rectangleActive = audience.addRectangleActive(audience.getPerimeter(), {
+            var rectangleActive = audience.addZone(audience.getPerimeter(), {
                 getTouch: function (spot) {
                     removable.remove();
                     removable = presenter.addPresentation(Glyffin.BlueGlyff.present(audience));

@@ -91,7 +91,7 @@ module Glyffin {
             return this.palette;
         }
 
-        addRectanglePatch(bounds : RectangleBounds, color : Color) : RectanglePatch {
+        addPatch(bounds : RectangleBounds, color : Color) : Patch {
             if (bounds.left >= bounds.right || bounds.top >= bounds.bottom || color.alpha == 0) {
                 return EMPTY_PATCH;
             }
@@ -99,15 +99,15 @@ module Glyffin {
             var patch = this.vertices.getPatch(bounds.left, bounds.top, bounds.right,
                 bounds.bottom, color);
             this.scheduleRedraw();
-            return <RectanglePatch>{
+            return <Patch>{
                 remove: ()=> {
                     this.vertices.putPatch(patch);
                 }
             };
         }
 
-        addRectangleActive(bounds : Glyffin.RectangleBounds,
-                           touchProvider : Glyffin.TouchProvider) : Glyffin.RectangleActive {
+        addZone(bounds : Glyffin.RectangleBounds,
+                touchProvider : Glyffin.TouchProvider) : Glyffin.Zone {
             var interactive = new Interactive(bounds, touchProvider);
             this.interactives.push(interactive);
             var interactives = this.interactives;

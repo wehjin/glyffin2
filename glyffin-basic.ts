@@ -6,9 +6,9 @@ module Glyffin {
     export interface Audience {
         getPerimeter():RectangleBounds;
         getPalette():Palette;
-        addRectanglePatch(bounds : RectangleBounds, color : Color):RectanglePatch;
-        addRectangleActive(bounds : RectangleBounds,
-                           touchProvider : TouchProvider) : RectangleActive;
+        addPatch(bounds : RectangleBounds, color : Color):Patch;
+        addZone(bounds : RectangleBounds,
+                touchProvider : TouchProvider):Zone;
 
     }
 
@@ -25,35 +25,32 @@ module Glyffin {
             return this.audience.getPalette();
         }
 
-        addRectanglePatch(bounds : RectangleBounds, color : Color) : RectanglePatch {
-            return this.audience.addRectanglePatch(bounds, color);
+        addPatch(bounds : RectangleBounds, color : Color) : Patch {
+            return this.audience.addPatch(bounds, color);
         }
 
 
-        addRectangleActive(bounds : Glyffin.RectangleBounds,
-                           touchProvider : Glyffin.TouchProvider) : Glyffin.RectangleActive {
-            return this.audience.addRectangleActive(bounds, touchProvider);
+        addZone(bounds : RectangleBounds,
+                touchProvider : TouchProvider) : Zone {
+            return this.audience.addZone(bounds, touchProvider);
         }
     }
 
     export interface Removable {
         remove();
     }
-
     export var EMPTY_REMOVABLE = {
         remove() {
         }
     };
 
-    export interface RectanglePatch extends Removable {
+    export interface Patch extends Removable {
+    }
+    export interface Zone extends Removable {
     }
 
-    export var EMPTY_PATCH : RectanglePatch = EMPTY_REMOVABLE;
-
-    export interface RectangleActive extends Removable {
-    }
-
-    export var EMPTY_ACTIVE : RectangleActive = EMPTY_REMOVABLE;
+    export var EMPTY_PATCH : Patch = EMPTY_REMOVABLE;
+    export var EMPTY_ACTIVE : Zone = EMPTY_REMOVABLE;
 
     export interface TouchProvider {
         getTouch(spot : Spot): Touch;
