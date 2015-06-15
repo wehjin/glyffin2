@@ -19,23 +19,26 @@ import Metrics = Glyffin.Metrics;
 
 function main() {
     var glAudience = new Glyffin.GlAudience();
+    var glMetrics = glAudience.getMetrics();
+
     var headline = "Bidding for the 2026 World Cup is suspended by FIFA as Valcke denies wrongdoing";
     var alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz 0123456789";
-    var fingerHeight = 48;
+    var fingerPixels = glMetrics.tapHeight;
+    var readPixels = glMetrics.readHeight;
     var demo = Glyffin.RedGlyff
         .addTop(100, Glyffin.BlueGlyff
-            .addTop(80, Glyffin.asciiMultiLine(3, alphabet))
+            .addTop(readPixels * 8, Glyffin.asciiMultiLine(3, alphabet))
             .pad(10, 10))
-        .addTop(50, Glyffin.BlueGlyff
-            .addTop(30, Glyffin.asciiMultiLine(2, headline))
-            .pad(10, 10))
-        .addTop(70, Glyffin.BlueGlyff
-            .addTop(50, Glyffin.asciiMultiLine(3, headline))
-            .pad(10, 10))
-        .addTopReact(fingerHeight, Glyffin.button());
+        .addTop(readPixels * 5, Glyffin.BlueGlyff
+            .addTop(readPixels * 3, Glyffin.asciiMultiLine(2, headline))
+            .pad(readPixels, readPixels))
+        .addTop(readPixels * 7, Glyffin.BlueGlyff
+            .addTop(readPixels * 5, Glyffin.asciiMultiLine(3, headline))
+            .pad(readPixels, readPixels))
+        .addTopReact(fingerPixels, Glyffin.button());
 
     var app = Glyff.create((metrics : Metrics, audience : Audience, presenter : Presenter<Void>)=> {
-        var page = Glyffin.BeigeGlyff.addTopReact(fingerHeight, Glyffin.button());
+        var page = Glyffin.BeigeGlyff.addTopReact(fingerPixels, Glyffin.button());
 
         var presented;
 
@@ -50,6 +53,6 @@ function main() {
 
         setPresented(page, demo);
     });
-    app.present(glAudience.getMetrics(), glAudience);
+    app.present(glMetrics, glAudience);
 }
 
