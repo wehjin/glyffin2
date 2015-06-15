@@ -1825,9 +1825,12 @@ var Glyffin;
                         },
                         onRelease: function () {
                             unpress();
-                            setTimeout(function () {
-                                presenter.onResult(Date.now());
-                            }, 0);
+                            // Wait for screen to update with unpress.  Then deliver button press.
+                            requestAnimationFrame(function () {
+                                setTimeout(function () {
+                                    presenter.onResult(Date.now());
+                                }, 0);
+                            });
                         },
                         onCancel: function () {
                             unpress();

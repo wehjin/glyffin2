@@ -26,9 +26,12 @@ module Glyffin {
                         },
                         onRelease: ()=> {
                             unpress();
-                            setTimeout(()=> {
-                                presenter.onResult(Date.now());
-                            }, 0);
+                            // Wait for screen to update with unpress.  Then deliver button press.
+                            requestAnimationFrame(()=> {
+                                setTimeout(()=> {
+                                    presenter.onResult(Date.now());
+                                }, 0);
+                            });
                         },
                         onCancel: ()=> {
                             unpress();
