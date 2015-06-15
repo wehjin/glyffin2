@@ -1816,7 +1816,9 @@ var Glyffin;
                         },
                         onRelease: function () {
                             unpress();
-                            presenter.onResult(Date.now());
+                            setTimeout(function () {
+                                presenter.onResult(Date.now());
+                            }, 0);
                         },
                         onCancel: function () {
                             unpress();

@@ -25,7 +25,9 @@ module Glyffin {
                         },
                         onRelease: ()=> {
                             unpress();
-                            presenter.onResult(Date.now());
+                            setTimeout(()=> {
+                                presenter.onResult(Date.now());
+                            }, 0);
                         },
                         onCancel: ()=> {
                             unpress();
