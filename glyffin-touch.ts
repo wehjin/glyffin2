@@ -7,17 +7,18 @@
 module Glyffin {
 
     export function button() : Glyff<number> {
-        return Glyff.create((audience : Glyffin.Audience,
+        return Glyff.create((metrics : Metrics, audience : Glyffin.Audience,
                              presenter : Glyffin.Presenter<number>) => {
-            var removable = presenter.addPresentation(GreenGlyff.present(audience));
-            var zone = audience.addZone(audience.getPerimeter(), {
+            var removable = presenter.addPresentation(GreenGlyff.present(metrics, audience));
+            var zone = audience.addZone(metrics.perimeter, {
                 getTouch: (spot : Spot) : Touch => {
                     removable.remove();
-                    removable = presenter.addPresentation(BlueGlyff.present(audience));
+                    removable = presenter.addPresentation(BlueGlyff.present(metrics, audience));
 
                     function unpress() {
                         removable.remove();
-                        removable = presenter.addPresentation(GreenGlyff.present(audience));
+                        removable =
+                            presenter.addPresentation(GreenGlyff.present(metrics, audience));
                     }
 
                     return {

@@ -13,8 +13,9 @@ module Glyffin {
     }
 
     export function asciiMultiLine(lines : number, paragraph : string) : Glyff<Void> {
-        return Glyff.create((audience : Audience, presenter : Presenter<Void>)=> {
-            var perimeter = audience.getPerimeter();
+        return Glyff.create((metrics : Metrics, audience : Audience,
+                             presenter : Presenter<Void>)=> {
+            var perimeter = metrics.perimeter;
             var linesAndLeadings = (lines * 2 - 1);
             var ascentPixels = perimeter.getHeight() / linesAndLeadings;
             var lineHeight = ascentPixels * 2;
@@ -56,9 +57,10 @@ module Glyffin {
 
             var lineNumber = 0;
             lineContents.forEach((lineContent : LineContent)=> {
-                var lineAudience = new PerimeterAudience(perimeter.downFromTop(lineNumber *
-                    lineHeight, ascentPixels), audience);
-                presenter.addPresentation(asciiEntireWord(lineContent.text).present(lineAudience,
+                var lineMetrics = metrics.withPerimeter(perimeter.downFromTop(lineNumber *
+                    lineHeight, ascentPixels));
+                presenter.addPresentation(asciiEntireWord(lineContent.text).present(lineMetrics,
+                    audience,
                     presenter));
                 lineNumber++;
             });
@@ -67,13 +69,14 @@ module Glyffin {
 
     export function asciiEntireWord(word : string) : Glyff<Void> {
         var wordXWeight = getWordXWeight(word);
-        return Glyff.create((audience : Audience, presenter : Presenter<Void>) => {
-            var perimeter = audience.getPerimeter();
+        return Glyff.create((metrics : Metrics, audience : Audience,
+                             presenter : Presenter<Void>) => {
+            var perimeter = metrics.perimeter;
             var wordXWeightPixels = perimeter.getWidth() / wordXWeight;
             var preferredWeightPixels = perimeter.getHeight() / 7;
             var fittedWeightPixels = Math.min(preferredWeightPixels, wordXWeightPixels);
             presenter.addPresentation(asciiWord(word,
-                fittedWeightPixels).present(audience, presenter));
+                fittedWeightPixels).present(metrics, audience, presenter));
         });
     }
 

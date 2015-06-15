@@ -3,37 +3,29 @@
  */
 
 module Glyffin {
+
+    export class Stage {
+
+        constructor(public metrics : Metrics, public palette : Palette) {
+        }
+    }
+
+    export class Metrics {
+
+        constructor(public perimeter : RectangleBounds, public tapHeight : number,
+                    public readHeight : number) {
+        }
+
+        withPerimeter(perimeter : RectangleBounds) : Metrics {
+            return new Metrics(perimeter, this.tapHeight, this.readHeight);
+        }
+    }
+
     export interface Audience {
-        getPerimeter():RectangleBounds;
-        getPalette():Palette;
         addPatch(bounds : RectangleBounds, color : Color):Patch;
         addZone(bounds : RectangleBounds,
                 touchProvider : TouchProvider):Zone;
 
-    }
-
-    export class PerimeterAudience implements Audience {
-
-        constructor(private perimeter : RectangleBounds, private audience : Audience) {
-        }
-
-        getPerimeter() : RectangleBounds {
-            return this.perimeter;
-        }
-
-        getPalette() : Palette {
-            return this.audience.getPalette();
-        }
-
-        addPatch(bounds : RectangleBounds, color : Color) : Patch {
-            return this.audience.addPatch(bounds, color);
-        }
-
-
-        addZone(bounds : RectangleBounds,
-                touchProvider : TouchProvider) : Zone {
-            return this.audience.addZone(bounds, touchProvider);
-        }
     }
 
     export interface Removable {
@@ -80,8 +72,9 @@ module Glyffin {
     }
 
     export interface Mogrifier<T,U> {
-        getUpperAudience(audience : Audience, presenter : Presenter<U>):Audience;
-        getUpperReaction(audience : Audience, presenter : Presenter<U>):Reaction<T>;
+        getMetrics(metrics : Metrics, presenter : Presenter<U>): Metrics;
+        getUpperAudience(audience : Audience, presenter : Presenter<U>): Audience;
+        getUpperReaction(audience : Audience, presenter : Presenter<U>): Reaction<T>;
     }
 
     export class Insertion<T> {

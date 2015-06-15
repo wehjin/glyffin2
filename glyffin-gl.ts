@@ -120,6 +120,10 @@ module Glyffin {
             gl.uniformMatrix4fv(u_ModelMatrix, false, viewMatrix.elements);
         }
 
+        getMetrics() : Metrics {
+            return new Metrics(this.perimeter, 48, 10);
+        }
+
         getPerimeter() : RectangleBounds {
             return this.perimeter;
         }

@@ -15,9 +15,10 @@ import Presenter = Glyffin.Presenter;
 import Void = Glyffin.Void;
 import Reaction = Glyffin.Reaction;
 import Presentation = Glyffin.Presentation;
+import Metrics = Glyffin.Metrics;
 
 function main() {
-    var glAudience : Glyffin.Audience = new Glyffin.GlAudience();
+    var glAudience = new Glyffin.GlAudience();
     var headline = "Bidding for the 2026 World Cup is suspended by FIFA as Valcke denies wrongdoing";
     var alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz 0123456789";
     var fingerHeight = 48;
@@ -33,7 +34,7 @@ function main() {
             .pad(10, 10))
         .addTopReact(fingerHeight, Glyffin.button());
 
-    var app = Glyff.create((audience : Audience, presenter : Presenter<Void>)=> {
+    var app = Glyff.create((metrics : Metrics, audience : Audience, presenter : Presenter<Void>)=> {
         var page = Glyffin.BeigeGlyff.addTopReact(fingerHeight, Glyffin.button());
 
         var presented;
@@ -42,13 +43,13 @@ function main() {
             if (presented) {
                 presented.remove();
             }
-            presented = presenter.addPresentation(glyff.present(audience, ()=> {
+            presented = presenter.addPresentation(glyff.present(metrics, audience, ()=> {
                 setPresented(next, glyff);
             }));
         }
 
         setPresented(page, demo);
     });
-    app.present(glAudience);
+    app.present(glAudience.getMetrics(), glAudience);
 }
 
