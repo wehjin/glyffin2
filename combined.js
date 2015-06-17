@@ -1748,6 +1748,7 @@ var Glyffin;
             this.clearedPatchIndices = [];
             this.totalFreed = 0;
             this.emptyPatchVertices = new Float32Array(FLOATS_PER_PATCH);
+            this.patchVertices = new Float32Array(FLOATS_PER_PATCH);
             this.gl = gl;
             gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
             var vertices = new Float32Array(maxPatchCount * FLOATS_PER_PATCH);
@@ -1782,8 +1783,8 @@ var Glyffin;
                 }
                 patchIndex = this.nextPatchIndex++;
             }
-            var patchVertices = new Float32Array([left, top, color.red, color.green, color.blue, color.alpha, right, top, color.red, color.green, color.blue, color.alpha, left, bottom, color.red, color.green, color.blue, color.alpha, left, bottom, color.red, color.green, color.blue, color.alpha, right, top, color.red, color.green, color.blue, color.alpha, right, bottom, color.red, color.green, color.blue, color.alpha,]);
-            this.gl.bufferSubData(this.gl.ARRAY_BUFFER, patchIndex * BYTES_PER_PATCH, patchVertices);
+            this.patchVertices.set([left, top, color.red, color.green, color.blue, color.alpha, right, top, color.red, color.green, color.blue, color.alpha, left, bottom, color.red, color.green, color.blue, color.alpha, left, bottom, color.red, color.green, color.blue, color.alpha, right, top, color.red, color.green, color.blue, color.alpha, right, bottom, color.red, color.green, color.blue, color.alpha,]);
+            this.gl.bufferSubData(this.gl.ARRAY_BUFFER, patchIndex * BYTES_PER_PATCH, this.patchVertices);
             return patchIndex;
         };
         VerticesAndColor.prototype.putPatch = function (patchIndex) {

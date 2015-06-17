@@ -212,6 +212,7 @@ module Glyffin {
         public totalFreed = 0;
         private gl;
         private emptyPatchVertices = new Float32Array(FLOATS_PER_PATCH);
+        private patchVertices = new Float32Array(FLOATS_PER_PATCH);
 
         constructor(private maxPatchCount : number, gl : WebGLBookContext) {
             this.gl = gl;
@@ -258,21 +259,21 @@ module Glyffin {
                 }
                 patchIndex = this.nextPatchIndex++;
             }
-            var patchVertices = new Float32Array([left, top,
-                                                  color.red, color.green, color.blue, color.alpha,
-                                                  right, top,
-                                                  color.red, color.green, color.blue, color.alpha,
-                                                  left, bottom,
-                                                  color.red, color.green, color.blue, color.alpha,
-                                                  left, bottom,
-                                                  color.red, color.green, color.blue, color.alpha,
-                                                  right, top,
-                                                  color.red, color.green, color.blue, color.alpha,
-                                                  right, bottom,
-                                                  color.red, color.green, color.blue, color.alpha,
+            this.patchVertices.set([left, top,
+                                    color.red, color.green, color.blue, color.alpha,
+                                    right, top,
+                                    color.red, color.green, color.blue, color.alpha,
+                                    left, bottom,
+                                    color.red, color.green, color.blue, color.alpha,
+                                    left, bottom,
+                                    color.red, color.green, color.blue, color.alpha,
+                                    right, top,
+                                    color.red, color.green, color.blue, color.alpha,
+                                    right, bottom,
+                                    color.red, color.green, color.blue, color.alpha,
             ]);
             this.gl.bufferSubData(this.gl.ARRAY_BUFFER, patchIndex * BYTES_PER_PATCH,
-                patchVertices);
+                this.patchVertices);
             return patchIndex;
         }
 
