@@ -284,10 +284,11 @@ module Glyffin {
 
         clearFreePatches() {
             if (this.freePatchIndices.length > 0) {
-                this.freePatchIndices.forEach((patchIndex : number)=> {
-                    this.gl.bufferSubData(this.gl.ARRAY_BUFFER, patchIndex * BYTES_PER_PATCH,
+                for (var i = 0; i < this.freePatchIndices.length; i++) {
+                    this.gl.bufferSubData(this.gl.ARRAY_BUFFER,
+                        this.freePatchIndices[i] * BYTES_PER_PATCH,
                         this.emptyPatchVertices);
-                });
+                }
                 this.clearedPatchIndices = this.clearedPatchIndices.concat(this.freePatchIndices);
                 this.freePatchIndices = [];
             }
