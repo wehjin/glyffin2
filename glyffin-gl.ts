@@ -106,7 +106,7 @@ module Glyffin {
 
             this.palette = new Palette();
 
-            var gl = getWebGLContext(canvas);
+            var gl = getWebGLContext(canvas, false);
             initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
 

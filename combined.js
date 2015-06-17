@@ -1669,7 +1669,7 @@ var Glyffin;
             };
             this.perimeter = new Glyffin.RectangleBounds(0, 0, canvas.width, canvas.height);
             this.palette = new Glyffin.Palette();
-            var gl = getWebGLContext(canvas);
+            var gl = getWebGLContext(canvas, false);
             initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
             this.vertices = new VerticesAndColor(MAX_PATCH_COUNT, gl);
