@@ -55,6 +55,7 @@ module Glyffin {
 
         constructor() {
             var canvas = <HTMLCanvasElement>document.getElementById('webgl');
+            canvas.width = canvas.clientWidth;
             this.canvas = canvas;
 
             canvas.addEventListener("touchstart", (ev : Event) => {
