@@ -90,7 +90,7 @@ module Glyffin {
             }
             insertions.push(new Insertion(capWidth, Glyffin.asciiByCode(code)));
         }
-        return GreenGlyff.addLefts(insertions);
+        return ClearGlyff.addLefts(insertions);
     }
 
     export function asciiChar(ch : string) : Glyff<Void> {

@@ -326,7 +326,7 @@ var Glyffin;
             }
             insertions.push(new Glyffin.Insertion(capWidth, Glyffin.asciiByCode(code)));
         }
-        return Glyffin.GreenGlyff.addLefts(insertions);
+        return Glyffin.ClearGlyff.addLefts(insertions);
     }
     Glyffin.asciiWord = asciiWord;
     function asciiChar(ch) {
