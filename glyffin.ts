@@ -7,6 +7,26 @@
 
 module Glyffin {
 
+    class NoResultPresenter<S,T> implements Presenter<S> {
+        private outerPresenter;
+
+        constructor(outerPresenter : Presenter<T>) {
+            this.outerPresenter = outerPresenter;
+        }
+
+        addPresentation(presentation : Presentation) : Removable {
+            return this.outerPresenter.addPresentation(presentation);
+        }
+
+        onResult(result : S) {
+            // Do nothing.  Send to null.
+        }
+
+        onError(error : Error) {
+            this.outerPresenter.onError(error);
+        }
+    }
+
     export class Glyff<T> {
         constructor(private onPresent : (metrics : Metrics, audience : Audience,
                                          presenter : Presenter<T>)=>void) {
@@ -63,6 +83,17 @@ module Glyffin {
                     audience, presenter));
                 presenter.addPresentation(existingGlyff.present(metrics.withPerimeter(bounds[1]),
                     audience, presenter));
+            });
+        }
+
+        addNearMajor<U>(distance : number, nearGlyff : Glyff<U>) : Glyff<U> {
+            var farGlyff = this;
+            return Glyff.create((metrics : Metrics, audience : Audience,
+                                 presenter : Presenter<U>) => {
+                // TODO: Enable z-level in bounds, support distance.
+                presenter.addPresentation(farGlyff.present(metrics, audience,
+                    new NoResultPresenter(presenter)));
+                presenter.addPresentation(nearGlyff.present(metrics, audience, presenter));
             });
         }
 

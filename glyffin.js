@@ -5,6 +5,21 @@
 /// <reference path="glyffin-basic.ts" />
 var Glyffin;
 (function (Glyffin) {
+    var NoResultPresenter = (function () {
+        function NoResultPresenter(outerPresenter) {
+            this.outerPresenter = outerPresenter;
+        }
+        NoResultPresenter.prototype.addPresentation = function (presentation) {
+            return this.outerPresenter.addPresentation(presentation);
+        };
+        NoResultPresenter.prototype.onResult = function (result) {
+            // Do nothing.  Send to null.
+        };
+        NoResultPresenter.prototype.onError = function (error) {
+            this.outerPresenter.onError(error);
+        };
+        return NoResultPresenter;
+    })();
     var Glyff = (function () {
         function Glyff(onPresent) {
             this.onPresent = onPresent;
@@ -46,6 +61,14 @@ var Glyffin;
                 var bounds = metrics.perimeter.splitHorizontal(size);
                 presenter.addPresentation(addGlyff.present(metrics.withPerimeter(bounds[0]), audience, presenter));
                 presenter.addPresentation(existingGlyff.present(metrics.withPerimeter(bounds[1]), audience, presenter));
+            });
+        };
+        Glyff.prototype.addNearMajor = function (distance, nearGlyff) {
+            var farGlyff = this;
+            return Glyff.create(function (metrics, audience, presenter) {
+                // TODO: Enable z-level in bounds, support distance.
+                presenter.addPresentation(farGlyff.present(metrics, audience, new NoResultPresenter(presenter)));
+                presenter.addPresentation(nearGlyff.present(metrics, audience, presenter));
             });
         };
         Glyff.prototype.kaleid = function (columns, rows, spots) {

@@ -18,7 +18,9 @@ function main() {
         glAudience.canvas.height);
     var metrics = new Glyffin.Metrics(perimeter, 48, 10, palette);
 
-    var app = Glyffin.fromColorPath([0, 0]);
+    var app = Glyffin.fromColorPath([0, 0])
+        .addNearMajor(1, Glyffin.asciiMultiLine(3, "Hello").pad(metrics.readHeight * 2,
+            metrics.readHeight));
     app.present(metrics, glAudience);
 }
 
