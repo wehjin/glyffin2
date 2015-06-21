@@ -97,6 +97,21 @@ module Glyffin {
             });
         }
 
+        limitHeight(maxHeight : number, align : number) : Glyff<T> {
+            return Glyff.create((metrics : Metrics, audience : Audience,
+                                 presenter : Presenter<T>) => {
+                var perimeter = metrics.perimeter;
+                var height = perimeter.getHeight();
+                if (height <= maxHeight) {
+                    presenter.addPresentation(this.present(metrics, audience, presenter));
+                } else {
+                    var shortPerimeter : RectangleBounds = perimeter.limitHeight(maxHeight, align);
+                    var shortMetrics = metrics.withPerimeter(shortPerimeter);
+                    presenter.addPresentation(this.present(shortMetrics, audience, presenter));
+                }
+            });
+        }
+
         kaleid(columns : number, rows : number, spots : number[][]) : Glyff<Void> {
             var upperGlyff = this;
             return Glyff.create((metrics : Metrics, audience : Audience,
@@ -186,7 +201,7 @@ module Glyffin {
             }
         }
 
-        static fromColor(color : Color) : Glyff<Void> {
+        static color(color : Color) : Glyff<Void> {
             return Glyff.create<Void>((metrics : Metrics, audience : Audience,
                                        presenter : Presenter<Void>)=> {
                     var patch = audience.addPatch(metrics.perimeter, color);
@@ -208,16 +223,16 @@ module Glyffin {
     export var ClearGlyff = Glyff.create<Void>(()=> {
     });
 
-    export function fromColorPath(colorPath : number[]) : Glyff<Void> {
+    export function colorPath(colorPath : number[]) : Glyff<Void> {
         return Glyff.create((metrics : Metrics, audience : Audience,
                              presenter : Presenter<Void>)=> {
-            var colorGlyff = Glyff.fromColor(metrics.palette.get(colorPath));
+            var colorGlyff = Glyff.color(metrics.palette.get(colorPath));
             presenter.addPresentation(colorGlyff.present(metrics, audience, null, null));
         });
     }
 
-    export var RedGlyff = Glyff.fromColor(Color.RED);
-    export var GreenGlyff = Glyff.fromColor(Color.GREEN);
-    export var BlueGlyff = Glyff.fromColor(Color.BLUE);
-    export var BeigeGlyff = Glyff.fromColor(Color.BEIGE);
+    export var RedGlyff = Glyff.color(Color.RED);
+    export var GreenGlyff = Glyff.color(Color.GREEN);
+    export var BlueGlyff = Glyff.color(Color.BLUE);
+    export var BeigeGlyff = Glyff.color(Color.BEIGE);
 }

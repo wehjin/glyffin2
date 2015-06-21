@@ -71,6 +71,21 @@ var Glyffin;
                 presenter.addPresentation(nearGlyff.present(metrics, audience, presenter));
             });
         };
+        Glyff.prototype.limitHeight = function (maxHeight, align) {
+            var _this = this;
+            return Glyff.create(function (metrics, audience, presenter) {
+                var perimeter = metrics.perimeter;
+                var height = perimeter.getHeight();
+                if (height <= maxHeight) {
+                    presenter.addPresentation(_this.present(metrics, audience, presenter));
+                }
+                else {
+                    var shortPerimeter = perimeter.limitHeight(maxHeight, align);
+                    var shortMetrics = metrics.withPerimeter(shortPerimeter);
+                    presenter.addPresentation(_this.present(shortMetrics, audience, presenter));
+                }
+            });
+        };
         Glyff.prototype.kaleid = function (columns, rows, spots) {
             var upperGlyff = this;
             return Glyff.create(function (metrics, audience, presenter) {
@@ -146,7 +161,7 @@ var Glyffin;
                 }
             };
         };
-        Glyff.fromColor = function (color) {
+        Glyff.color = function (color) {
             return Glyff.create(function (metrics, audience, presenter) {
                 var patch = audience.addPatch(metrics.perimeter, color);
                 presenter.addPresentation({
@@ -164,16 +179,16 @@ var Glyffin;
     Glyffin.Glyff = Glyff;
     Glyffin.ClearGlyff = Glyff.create(function () {
     });
-    function fromColorPath(colorPath) {
+    function colorPath(colorPath) {
         return Glyff.create(function (metrics, audience, presenter) {
-            var colorGlyff = Glyff.fromColor(metrics.palette.get(colorPath));
+            var colorGlyff = Glyff.color(metrics.palette.get(colorPath));
             presenter.addPresentation(colorGlyff.present(metrics, audience, null, null));
         });
     }
-    Glyffin.fromColorPath = fromColorPath;
-    Glyffin.RedGlyff = Glyff.fromColor(Glyffin.Color.RED);
-    Glyffin.GreenGlyff = Glyff.fromColor(Glyffin.Color.GREEN);
-    Glyffin.BlueGlyff = Glyff.fromColor(Glyffin.Color.BLUE);
-    Glyffin.BeigeGlyff = Glyff.fromColor(Glyffin.Color.BEIGE);
+    Glyffin.colorPath = colorPath;
+    Glyffin.RedGlyff = Glyff.color(Glyffin.Color.RED);
+    Glyffin.GreenGlyff = Glyff.color(Glyffin.Color.GREEN);
+    Glyffin.BlueGlyff = Glyff.color(Glyffin.Color.BLUE);
+    Glyffin.BeigeGlyff = Glyff.color(Glyffin.Color.BEIGE);
 })(Glyffin || (Glyffin = {}));
 //# sourceMappingURL=glyffin.js.map

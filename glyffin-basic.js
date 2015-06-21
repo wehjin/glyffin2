@@ -33,6 +33,10 @@ var Glyffin;
             var split = this.top + pixelsDown;
             return [new RectangleBounds(this.left, this.top, this.right, split), new RectangleBounds(this.left, split, this.right, this.bottom)];
         };
+        RectangleBounds.prototype.limitHeight = function (maxHeight, align) {
+            var height = this.getHeight();
+            return (height <= maxHeight) ? this : this.downFromTop((maxHeight - height) * align, maxHeight);
+        };
         return RectangleBounds;
     })();
     Glyffin.RectangleBounds = RectangleBounds;

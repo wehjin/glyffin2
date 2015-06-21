@@ -36,6 +36,12 @@ module Glyffin {
             return [new RectangleBounds(this.left, this.top, this.right, split),
                     new RectangleBounds(this.left, split, this.right, this.bottom)];
         }
+
+        limitHeight(maxHeight : number, align : number) : RectangleBounds {
+            var height = this.getHeight();
+            return (height <= maxHeight) ? this :
+                this.downFromTop((maxHeight - height) * align, maxHeight);
+        }
     }
 
     export class Color {
