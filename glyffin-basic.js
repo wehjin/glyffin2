@@ -3,40 +3,12 @@
  */
 var Glyffin;
 (function (Glyffin) {
-    var Stage = (function () {
-        function Stage(metrics, palette) {
-            this.metrics = metrics;
-            this.palette = palette;
+    var Void = (function () {
+        function Void() {
         }
-        return Stage;
+        return Void;
     })();
-    Glyffin.Stage = Stage;
-    var Metrics = (function () {
-        function Metrics(perimeter, tapHeight, readHeight) {
-            this.perimeter = perimeter;
-            this.tapHeight = tapHeight;
-            this.readHeight = readHeight;
-        }
-        Metrics.prototype.withPerimeter = function (perimeter) {
-            return new Metrics(perimeter, this.tapHeight, this.readHeight);
-        };
-        return Metrics;
-    })();
-    Glyffin.Metrics = Metrics;
-    Glyffin.EMPTY_REMOVABLE = {
-        remove: function () {
-        }
-    };
-    Glyffin.EMPTY_PATCH = Glyffin.EMPTY_REMOVABLE;
-    Glyffin.EMPTY_ACTIVE = Glyffin.EMPTY_REMOVABLE;
-    var Insertion = (function () {
-        function Insertion(amount, glyff) {
-            this.amount = amount;
-            this.glyff = glyff;
-        }
-        return Insertion;
-    })();
-    Glyffin.Insertion = Insertion;
+    Glyffin.Void = Void;
     var RectangleBounds = (function () {
         function RectangleBounds(left, top, right, bottom) {
             this.left = left;
@@ -71,16 +43,35 @@ var Glyffin;
             this.blue = blue;
             this.alpha = alpha;
         }
+        Color.get = function (red, green, blue, alpha) {
+            return new Color(red, green, blue, alpha);
+        };
+        Color.getMany = function (hexRgbas) {
+            var array = [];
+            hexRgbas.forEach(function (hexRgba) {
+                array.push(Color.get(hexRgba[0] / 255, hexRgba[1] / 255, hexRgba[2] / 255, hexRgba[3] / 255));
+            });
+            return array;
+        };
+        Color.RED = new Color(1, 0, 0, 1);
+        Color.GREEN = new Color(0, 1, 0, 1);
+        Color.BLUE = new Color(0, 0, 1, 1);
+        Color.BEIGE = new Color(245 / 255, 245 / 255, 220 / 255, 1);
         return Color;
     })();
     Glyffin.Color = Color;
     var Palette = (function () {
-        function Palette() {
+        function Palette(colors) {
+            this.colors = colors || [];
         }
-        Palette.RED = new Color(1, 0, 0, 1);
-        Palette.GREEN = new Color(0, 1, 0, 1);
-        Palette.BLUE = new Color(0, 0, 1, 1);
-        Palette.BEIGE = new Color(245 / 255, 245 / 255, 220 / 255, 1);
+        Palette.prototype.withLevel = function (level, hexRgbas) {
+            var nextColors = this.colors.slice();
+            nextColors[level] = Color.getMany(hexRgbas);
+            return new Palette(nextColors);
+        };
+        Palette.prototype.get = function (colorPath) {
+            return this.colors[colorPath[0]][colorPath[1]];
+        };
         return Palette;
     })();
     Glyffin.Palette = Palette;
@@ -92,11 +83,40 @@ var Glyffin;
         return Spot;
     })();
     Glyffin.Spot = Spot;
-    var Void = (function () {
-        function Void() {
+    var Metrics = (function () {
+        function Metrics(perimeter, tapHeight, readHeight, palette) {
+            this.perimeter = perimeter;
+            this.tapHeight = tapHeight;
+            this.readHeight = readHeight;
+            this.palette = palette;
         }
-        return Void;
+        Metrics.prototype.withPerimeter = function (perimeter) {
+            return new Metrics(perimeter, this.tapHeight, this.readHeight, this.palette);
+        };
+        return Metrics;
     })();
-    Glyffin.Void = Void;
+    Glyffin.Metrics = Metrics;
+    var Stage = (function () {
+        function Stage(metrics, palette) {
+            this.metrics = metrics;
+            this.palette = palette;
+        }
+        return Stage;
+    })();
+    Glyffin.Stage = Stage;
+    Glyffin.EMPTY_REMOVABLE = {
+        remove: function () {
+        }
+    };
+    Glyffin.EMPTY_PATCH = Glyffin.EMPTY_REMOVABLE;
+    Glyffin.EMPTY_ACTIVE = Glyffin.EMPTY_REMOVABLE;
+    var Insertion = (function () {
+        function Insertion(amount, glyff) {
+            this.amount = amount;
+            this.glyff = glyff;
+        }
+        return Insertion;
+    })();
+    Glyffin.Insertion = Insertion;
 })(Glyffin || (Glyffin = {}));
 //# sourceMappingURL=glyffin-basic.js.map

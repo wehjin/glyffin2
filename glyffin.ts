@@ -176,8 +176,17 @@ module Glyffin {
 
     export var ClearGlyff = Glyff.create<Void>(()=> {
     });
-    export var RedGlyff = Glyff.fromColor(Palette.RED);
-    export var GreenGlyff = Glyff.fromColor(Palette.GREEN);
-    export var BlueGlyff = Glyff.fromColor(Palette.BLUE);
-    export var BeigeGlyff = Glyff.fromColor(Palette.BEIGE);
+
+    export function fromColorPath(colorPath : number[]) : Glyff<Void> {
+        return Glyff.create((metrics : Metrics, audience : Audience,
+                             presenter : Presenter<Void>)=> {
+            var colorGlyff = Glyff.fromColor(metrics.palette.get(colorPath));
+            presenter.addPresentation(colorGlyff.present(metrics, audience, null, null));
+        });
+    }
+
+    export var RedGlyff = Glyff.fromColor(Color.RED);
+    export var GreenGlyff = Glyff.fromColor(Color.GREEN);
+    export var BlueGlyff = Glyff.fromColor(Color.BLUE);
+    export var BeigeGlyff = Glyff.fromColor(Color.BEIGE);
 }

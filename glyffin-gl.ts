@@ -44,11 +44,9 @@ module Glyffin {
     }
 
     export class GlAudience implements Audience {
-        private canvas : HTMLCanvasElement;
+        public canvas : HTMLCanvasElement;
         private gl : WebGLBookContext;
-        private perimeter : RectangleBounds;
         private vertices : VerticesAndColor;
-        private palette;
         private interactives : Interactive[] = [];
         private drawCount = 0;
         private editCount = 0;
@@ -103,10 +101,6 @@ module Glyffin {
                 ev.preventDefault();
             };
 
-            this.perimeter = new RectangleBounds(0, 0, canvas.width, canvas.height);
-
-            this.palette = new Palette();
-
             var gl = getWebGLContext(canvas, false);
             initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -119,18 +113,6 @@ module Glyffin {
             viewMatrix.scale(2 / canvas.width, -2 / canvas.height, 1);
             var u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_viewMatrix');
             gl.uniformMatrix4fv(u_ModelMatrix, false, viewMatrix.elements);
-        }
-
-        getMetrics() : Metrics {
-            return new Metrics(this.perimeter, 48, 10);
-        }
-
-        getPerimeter() : RectangleBounds {
-            return this.perimeter;
-        }
-
-        getPalette() : Palette {
-            return this.palette;
         }
 
         addPatch(bounds : RectangleBounds, color : Color) : Patch {

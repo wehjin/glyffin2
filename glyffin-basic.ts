@@ -4,20 +4,102 @@
 
 module Glyffin {
 
-    export class Stage {
+    export class Void {
+    }
 
-        constructor(public metrics : Metrics, public palette : Palette) {
+    export class RectangleBounds {
+        constructor(public left : number, public top : number, public right : number,
+                    public bottom : number) {
+        }
+
+        getHeight() : number {
+            return this.bottom - this.top;
+        }
+
+        getWidth() : number {
+            return this.right - this.left;
+        }
+
+        inset(pixelsX : number, pixelsY : number) : RectangleBounds {
+            return new RectangleBounds(this.left + pixelsX,
+                this.top + pixelsY, this.right - pixelsX,
+                this.bottom - pixelsY);
+        }
+
+        downFromTop(pixelsY : number, pixelsHigh : number) : RectangleBounds {
+            var inTop = this.top + pixelsY;
+            return new RectangleBounds(this.left, inTop, this.right, inTop + pixelsHigh);
+        }
+
+        splitHorizontal(pixelsDown : number) : RectangleBounds[] {
+            var split = this.top + pixelsDown;
+            return [new RectangleBounds(this.left, this.top, this.right, split),
+                    new RectangleBounds(this.left, split, this.right, this.bottom)];
+        }
+    }
+
+    export class Color {
+        constructor(public red : number, public green : number, public blue : number,
+                    public alpha : number) {
+        }
+
+        public static RED = new Color(1, 0, 0, 1);
+        public static GREEN = new Color(0, 1, 0, 1);
+        public static BLUE = new Color(0, 0, 1, 1);
+        public static BEIGE = new Color(245 / 255, 245 / 255, 220 / 255, 1);
+
+        public static get(red : number, green : number, blue : number, alpha : number) : Color {
+            return new Color(red, green, blue, alpha);
+        }
+
+        public static getMany(hexRgbas : number[][]) : Color[] {
+            var array = [];
+            hexRgbas.forEach((hexRgba : number[])=> {
+                array.push(Color.get(hexRgba[0] / 255, hexRgba[1] / 255, hexRgba[2] / 255,
+                    hexRgba[3] / 255));
+            });
+            return array;
+        }
+    }
+
+    export class Palette {
+
+        private colors : Color[][];
+
+        constructor(colors? : Color[][]) {
+            this.colors = colors || [];
+        }
+
+        withLevel(level : number, hexRgbas : number[][]) : Palette {
+            var nextColors = this.colors.slice();
+            nextColors[level] = Color.getMany(hexRgbas);
+            return new Palette(nextColors);
+        }
+
+        get(colorPath : number[]) : Color {
+            return this.colors[colorPath[0]][colorPath[1]];
+        }
+    }
+
+    export class Spot {
+        constructor(public x : number, public y : number) {
         }
     }
 
     export class Metrics {
 
         constructor(public perimeter : RectangleBounds, public tapHeight : number,
-                    public readHeight : number) {
+                    public readHeight : number, public palette : Palette) {
         }
 
         withPerimeter(perimeter : RectangleBounds) : Metrics {
-            return new Metrics(perimeter, this.tapHeight, this.readHeight);
+            return new Metrics(perimeter, this.tapHeight, this.readHeight, this.palette);
+        }
+    }
+
+    export class Stage {
+
+        constructor(public metrics : Metrics, public palette : Palette) {
         }
     }
 
@@ -83,55 +165,4 @@ module Glyffin {
         }
     }
 
-    export class RectangleBounds {
-        constructor(public left : number, public top : number, public right : number,
-                    public bottom : number) {
-        }
-
-        getHeight() : number {
-            return this.bottom - this.top;
-        }
-
-        getWidth() : number {
-            return this.right - this.left;
-        }
-
-        inset(pixelsX : number, pixelsY : number) : RectangleBounds {
-            return new RectangleBounds(this.left + pixelsX,
-                this.top + pixelsY, this.right - pixelsX,
-                this.bottom - pixelsY);
-        }
-
-        downFromTop(pixelsY : number, pixelsHigh : number) : RectangleBounds {
-            var inTop = this.top + pixelsY;
-            return new RectangleBounds(this.left, inTop, this.right, inTop + pixelsHigh);
-        }
-
-        splitHorizontal(pixelsDown : number) : RectangleBounds[] {
-            var split = this.top + pixelsDown;
-            return [new RectangleBounds(this.left, this.top, this.right, split),
-                    new RectangleBounds(this.left, split, this.right, this.bottom)];
-        }
-    }
-
-    export class Color {
-        constructor(public red : number, public green : number, public blue : number,
-                    public alpha : number) {
-        }
-    }
-
-    export class Palette {
-        public static RED = new Color(1, 0, 0, 1);
-        public static GREEN = new Color(0, 1, 0, 1);
-        public static BLUE = new Color(0, 0, 1, 1);
-        public static BEIGE = new Color(245 / 255, 245 / 255, 220 / 255, 1);
-    }
-
-    export class Spot {
-        constructor(public x : number, public y : number) {
-        }
-    }
-
-    export class Void {
-    }
 }

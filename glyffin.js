@@ -141,9 +141,16 @@ var Glyffin;
     Glyffin.Glyff = Glyff;
     Glyffin.ClearGlyff = Glyff.create(function () {
     });
-    Glyffin.RedGlyff = Glyff.fromColor(Glyffin.Palette.RED);
-    Glyffin.GreenGlyff = Glyff.fromColor(Glyffin.Palette.GREEN);
-    Glyffin.BlueGlyff = Glyff.fromColor(Glyffin.Palette.BLUE);
-    Glyffin.BeigeGlyff = Glyff.fromColor(Glyffin.Palette.BEIGE);
+    function fromColorPath(colorPath) {
+        return Glyff.create(function (metrics, audience, presenter) {
+            var colorGlyff = Glyff.fromColor(metrics.palette.get(colorPath));
+            presenter.addPresentation(colorGlyff.present(metrics, audience, null, null));
+        });
+    }
+    Glyffin.fromColorPath = fromColorPath;
+    Glyffin.RedGlyff = Glyff.fromColor(Glyffin.Color.RED);
+    Glyffin.GreenGlyff = Glyff.fromColor(Glyffin.Color.GREEN);
+    Glyffin.BlueGlyff = Glyff.fromColor(Glyffin.Color.BLUE);
+    Glyffin.BeigeGlyff = Glyff.fromColor(Glyffin.Color.BEIGE);
 })(Glyffin || (Glyffin = {}));
 //# sourceMappingURL=glyffin.js.map

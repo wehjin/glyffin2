@@ -76,8 +76,6 @@ var Glyffin;
                 ev.stopPropagation();
                 ev.preventDefault();
             };
-            this.perimeter = new Glyffin.RectangleBounds(0, 0, canvas.width, canvas.height);
-            this.palette = new Glyffin.Palette();
             var gl = getWebGLContext(canvas, false);
             initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -89,15 +87,6 @@ var Glyffin;
             var u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_viewMatrix');
             gl.uniformMatrix4fv(u_ModelMatrix, false, viewMatrix.elements);
         }
-        GlAudience.prototype.getMetrics = function () {
-            return new Glyffin.Metrics(this.perimeter, 48, 10);
-        };
-        GlAudience.prototype.getPerimeter = function () {
-            return this.perimeter;
-        };
-        GlAudience.prototype.getPalette = function () {
-            return this.palette;
-        };
         GlAudience.prototype.addPatch = function (bounds, color) {
             var _this = this;
             if (bounds.left >= bounds.right || bounds.top >= bounds.bottom || color.alpha == 0) {
