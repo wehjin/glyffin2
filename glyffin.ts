@@ -60,28 +60,24 @@ module Glyffin {
             });
         }
 
-        addTopReact<U>(size : number, addGlyff : Glyff<U>) : Glyff<U> {
-            var existingGlyff = this;
-            // TODO: Fix Presenter type. Should be U.
+        addTopMajor<U>(size : number, topGlyff : Glyff<U>) : Glyff<U> {
             return Glyff.create((metrics : Metrics, audience : Audience,
-                                 presenter : Presenter<Void>) => {
-                var bounds = metrics.perimeter.splitHorizontal(size);
-                presenter.addPresentation(addGlyff.present(metrics.withPerimeter(bounds[0]),
+                                 presenter : Presenter<U>) => {
+                var split = metrics.perimeter.splitHorizontal(size);
+                presenter.addPresentation(topGlyff.present(metrics.withPerimeter(split[0]),
                     audience, presenter));
-                presenter.addPresentation(existingGlyff.present(metrics.withPerimeter(bounds[1]),
-                    audience, presenter));
+                presenter.addPresentation(this.present(metrics.withPerimeter(split[1]),
+                    audience, new NoResultPresenter(presenter)));
             });
         }
 
-        addTop(size : number, addGlyff : Glyff<Void>) : Glyff<T> {
-            var existingGlyff = this;
-            // TODO: Fix Presenter type.  Should be T.
+        addTopMinor<U>(size : number, addGlyff : Glyff<U>) : Glyff<T> {
             return Glyff.create((metrics : Metrics, audience : Audience,
-                                 presenter : Presenter<Void>) => {
-                var bounds = metrics.perimeter.splitHorizontal(size);
-                presenter.addPresentation(addGlyff.present(metrics.withPerimeter(bounds[0]),
-                    audience, presenter));
-                presenter.addPresentation(existingGlyff.present(metrics.withPerimeter(bounds[1]),
+                                 presenter : Presenter<T>) => {
+                var split = metrics.perimeter.splitHorizontal(size);
+                presenter.addPresentation(addGlyff.present(metrics.withPerimeter(split[0]),
+                    audience, new NoResultPresenter(presenter)));
+                presenter.addPresentation(this.present(metrics.withPerimeter(split[1]),
                     audience, presenter));
             });
         }

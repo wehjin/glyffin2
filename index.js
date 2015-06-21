@@ -18,9 +18,9 @@ function main() {
     var alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz 0123456789";
     var fingerPixels = metrics.tapHeight;
     var readPixels = metrics.readHeight;
-    var demo = Glyffin.RedGlyff.addTop(100, Glyffin.BlueGlyff.addTop(readPixels * 8, Glyffin.asciiMultiLine(3, alphabet)).pad(10, 10)).addTop(readPixels * 5, Glyffin.BlueGlyff.addTop(readPixels * 3, Glyffin.asciiMultiLine(2, headline)).pad(readPixels, readPixels)).addTop(readPixels * 7, Glyffin.BlueGlyff.addTop(readPixels * 5, Glyffin.asciiMultiLine(3, headline)).pad(readPixels, readPixels)).addTopReact(fingerPixels, Glyffin.button());
+    var demo = Glyffin.RedGlyff.addTopMinor(100, Glyffin.BlueGlyff.addTopMinor(readPixels * 8, Glyffin.asciiMultiLine(3, alphabet)).pad(10, 10)).addTopMinor(readPixels * 5, Glyffin.BlueGlyff.addTopMinor(readPixels * 3, Glyffin.asciiMultiLine(2, headline)).pad(readPixels, readPixels)).addTopMinor(readPixels * 7, Glyffin.BlueGlyff.addTopMinor(readPixels * 5, Glyffin.asciiMultiLine(3, headline)).pad(readPixels, readPixels)).addTopMajor(fingerPixels, Glyffin.button());
     var app = Glyff.create(function (metrics, audience, presenter) {
-        var page = Glyffin.BeigeGlyff.addTopReact(fingerPixels, Glyffin.button());
+        var page = Glyffin.BeigeGlyff.addTopMajor(fingerPixels, Glyffin.button());
         var presented;
         function setPresented(glyff, next) {
             if (presented) {

@@ -45,22 +45,20 @@ var Glyffin;
                 presenter.addPresentation(existingGlyff.present(metrics.withPerimeter(modifiedPerimeter), audience, presenter));
             });
         };
-        Glyff.prototype.addTopReact = function (size, addGlyff) {
-            var existingGlyff = this;
-            // TODO: Fix Presenter type. Should be U.
+        Glyff.prototype.addTopMajor = function (size, topGlyff) {
+            var _this = this;
             return Glyff.create(function (metrics, audience, presenter) {
-                var bounds = metrics.perimeter.splitHorizontal(size);
-                presenter.addPresentation(addGlyff.present(metrics.withPerimeter(bounds[0]), audience, presenter));
-                presenter.addPresentation(existingGlyff.present(metrics.withPerimeter(bounds[1]), audience, presenter));
+                var split = metrics.perimeter.splitHorizontal(size);
+                presenter.addPresentation(topGlyff.present(metrics.withPerimeter(split[0]), audience, presenter));
+                presenter.addPresentation(_this.present(metrics.withPerimeter(split[1]), audience, new NoResultPresenter(presenter)));
             });
         };
-        Glyff.prototype.addTop = function (size, addGlyff) {
-            var existingGlyff = this;
-            // TODO: Fix Presenter type.  Should be T.
+        Glyff.prototype.addTopMinor = function (size, addGlyff) {
+            var _this = this;
             return Glyff.create(function (metrics, audience, presenter) {
-                var bounds = metrics.perimeter.splitHorizontal(size);
-                presenter.addPresentation(addGlyff.present(metrics.withPerimeter(bounds[0]), audience, presenter));
-                presenter.addPresentation(existingGlyff.present(metrics.withPerimeter(bounds[1]), audience, presenter));
+                var split = metrics.perimeter.splitHorizontal(size);
+                presenter.addPresentation(addGlyff.present(metrics.withPerimeter(split[0]), audience, new NoResultPresenter(presenter)));
+                presenter.addPresentation(_this.present(metrics.withPerimeter(split[1]), audience, presenter));
             });
         };
         Glyff.prototype.addNearMajor = function (distance, nearGlyff) {
