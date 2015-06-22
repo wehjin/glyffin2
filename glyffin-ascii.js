@@ -85,8 +85,9 @@ var Glyffin;
     }
     Glyffin.asciiChar = asciiChar;
     function asciiByCode(code) {
-        var spots = ascii_spots[code];
-        return Glyffin.BeigeGlyff.kaleid(x_weights[code], 7, spots);
+        var spots = code >= ascii_spots.length ? no_spots : ascii_spots[code];
+        var xWeight = code >= x_weights.length ? 7 : x_weights[code];
+        return Glyffin.BeigeGlyff.kaleid(xWeight, 7, spots);
     }
     Glyffin.asciiByCode = asciiByCode;
     var no_spots = [];
@@ -1070,6 +1071,52 @@ var Glyffin;
         [1, 6],
         [2, 6]
     ];
+    var colon_spots = [
+        [0, 1],
+        [0, 2],
+        [0, 5],
+        [0, 6]
+    ];
+    var slash_spots = [
+        [4, 0],
+        [3, 1],
+        [3, 2],
+        [2, 3],
+        [1, 4],
+        [1, 5],
+        [0, 6]
+    ];
+    var period_spots = [
+        [0, 5],
+        [0, 6]
+    ];
+    var minus_spots = [
+        [0, 4],
+        [1, 4],
+        [2, 4],
+        [3, 4],
+        [4, 4]
+    ];
+    var quote_spots = [
+        [0, 0],
+        [0, 1]
+    ];
+    var comma_spots = [
+        [0, 5],
+        [0, 6],
+        [0, 7]
+    ];
+    var qmark_spots = [
+        [1, 0],
+        [2, 0],
+        [3, 0],
+        [0, 1],
+        [4, 1],
+        [4, 2],
+        [3, 3],
+        [2, 4],
+        [2, 6]
+    ];
     var ascii_spots = [
         no_spots,
         no_spots,
@@ -1110,15 +1157,15 @@ var Glyffin;
         no_spots,
         no_spots,
         no_spots,
+        quote_spots,
         no_spots,
         no_spots,
         no_spots,
         no_spots,
-        no_spots,
-        no_spots,
-        no_spots,
-        no_spots,
-        no_spots,
+        comma_spots,
+        minus_spots,
+        period_spots,
+        slash_spots,
         d0_spots,
         d1_spots,
         d2_spots,
@@ -1129,12 +1176,12 @@ var Glyffin;
         d7_spots,
         d8_spots,
         d9_spots,
+        colon_spots,
         no_spots,
         no_spots,
         no_spots,
         no_spots,
-        no_spots,
-        no_spots,
+        qmark_spots,
         no_spots,
         A_spots,
         B_spots,
@@ -1240,6 +1287,14 @@ var Glyffin;
         5,
         5,
         5,
+        1,
+        5,
+        5,
+        5,
+        5,
+        1,
+        5,
+        1,
         5,
         5,
         5,
@@ -1251,15 +1306,7 @@ var Glyffin;
         5,
         5,
         5,
-        5,
-        5,
-        5,
-        5,
-        5,
-        5,
-        5,
-        5,
-        5,
+        1,
         5,
         5,
         5,
