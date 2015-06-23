@@ -18,6 +18,9 @@ var Glyffin;
         if (charCode == 8217) {
             return 39;
         }
+        else if (charCode === 0x2013) {
+            return 45;
+        }
         return charCode;
     }
     function getCharXWeight(charCode) {
@@ -1139,6 +1142,54 @@ var Glyffin;
         [2, 4],
         [2, 6]
     ];
+    var lparen_spots = [
+        [2, 0],
+        [3, 0],
+        [1, 1],
+        [0, 2],
+        [0, 3],
+        [0, 4],
+        [1, 5],
+        [2, 6],
+        [3, 6]
+    ];
+    var rparen_spots = [
+        [0, 0],
+        [1, 0],
+        [2, 1],
+        [3, 2],
+        [3, 3],
+        [3, 4],
+        [2, 5],
+        [0, 6],
+        [1, 6]
+    ];
+    var lbrack_spots = [
+        [0, 0],
+        [1, 0],
+        [2, 0],
+        [0, 1],
+        [0, 2],
+        [0, 3],
+        [0, 4],
+        [0, 5],
+        [0, 6],
+        [1, 6],
+        [2, 6]
+    ];
+    var rbrack_spots = [
+        [0, 0],
+        [1, 0],
+        [2, 0],
+        [2, 1],
+        [2, 2],
+        [2, 3],
+        [2, 4],
+        [2, 5],
+        [0, 6],
+        [1, 6],
+        [2, 6]
+    ];
     var ascii_spots = [
         no_spots,
         no_spots,
@@ -1180,8 +1231,8 @@ var Glyffin;
         no_spots,
         no_spots,
         quote_spots,
-        no_spots,
-        no_spots,
+        lparen_spots,
+        rparen_spots,
         no_spots,
         no_spots,
         comma_spots,
@@ -1231,9 +1282,9 @@ var Glyffin;
         X_spots,
         Y_spots,
         Z_spots,
+        lbrack_spots,
         no_spots,
-        no_spots,
-        no_spots,
+        rbrack_spots,
         no_spots,
         no_spots,
         no_spots,
@@ -1311,8 +1362,8 @@ var Glyffin;
         5,
         5,
         1,
-        5,
-        5,
+        4,
+        4,
         5,
         5,
         1,
@@ -1362,9 +1413,9 @@ var Glyffin;
         5,
         5,
         5,
+        3,
         5,
-        5,
-        5,
+        3,
         5,
         5,
         5,

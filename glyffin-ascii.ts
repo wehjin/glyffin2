@@ -18,6 +18,8 @@ module Glyffin {
         }
         if (charCode == 8217) {
             return 39;
+        } else if (charCode === 0x2013) {
+            return 45;
         }
         return charCode;
     }
@@ -695,6 +697,42 @@ module Glyffin {
         [2, 4],
         [2, 6]
     ];
+    var lparen_spots = [
+        [2, 0], [3, 0],
+        [1, 1],
+        [0, 2],
+        [0, 3],
+        [0, 4],
+        [1, 5],
+        [2, 6], [3, 6]
+    ];
+    var rparen_spots = [
+        [0, 0], [1, 0],
+        [2, 1],
+        [3, 2],
+        [3, 3],
+        [3, 4],
+        [2, 5],
+        [0, 6], [1, 6]
+    ];
+    var lbrack_spots = [
+        [0, 0], [1, 0], [2, 0],
+        [0, 1],
+        [0, 2],
+        [0, 3],
+        [0, 4],
+        [0, 5],
+        [0, 6], [1, 6], [2, 6]
+    ];
+    var rbrack_spots = [
+        [0, 0], [1, 0], [2, 0],
+        [2, 1],
+        [2, 2],
+        [2, 3],
+        [2, 4],
+        [2, 5],
+        [0, 6], [1, 6], [2, 6]
+    ];
 
     var ascii_spots = [
         no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
@@ -703,14 +741,15 @@ module Glyffin {
         no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
 
         no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, quote_spots,
-        no_spots, no_spots, no_spots, no_spots, comma_spots, minus_spots, period_spots, slash_spots,
+        lparen_spots, rparen_spots, no_spots, no_spots, comma_spots, minus_spots, period_spots,
+        slash_spots,
         d0_spots, d1_spots, d2_spots, d3_spots, d4_spots, d5_spots, d6_spots, d7_spots,
         d8_spots, d9_spots, colon_spots, no_spots, no_spots, no_spots, no_spots, qmark_spots,
 
         no_spots, A_spots, B_spots, C_spots, D_spots, E_spots, F_spots, G_spots,
         H_spots, I_spots, J_spots, K_spots, L_spots, M_spots, N_spots, O_spots,
         P_spots, Q_spots, R_spots, S_spots, T_spots, U_spots, V_spots, W_spots,
-        X_spots, Y_spots, Z_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
+        X_spots, Y_spots, Z_spots, lbrack_spots, no_spots, rbrack_spots, no_spots, no_spots,
 
         no_spots, a_spots, b_spots, c_spots, d_spots, e_spots, f_spots, g_spots,
         h_spots, i_spots, j_spots, k_spots, l_spots, m_spots, n_spots, o_spots,
@@ -726,14 +765,14 @@ module Glyffin {
         5, 5, 5, 5, 5, 5, 5, 5,
 
         5, 5, 5, 5, 5, 5, 5, 1,
-        5, 5, 5, 5, 1, 5, 1, 5,
+        4, 4, 5, 5, 1, 5, 1, 5,
         5, 5, 5, 5, 5, 5, 5, 5,
         5, 5, 1, 5, 5, 5, 5, 5,
 
         5, 5, 5, 5, 5, 5, 5, 5,
         5, 3, 5, 5, 5, 5, 5, 5,
         5, 5, 5, 5, 5, 5, 5, 5,
-        5, 5, 5, 5, 5, 5, 5, 5,
+        5, 5, 5, 3, 5, 3, 5, 5,
 
         5, 5, 5, 5, 5, 5, 4, 5,
         5, 1, 5, 4, 2, 5, 5, 5,
