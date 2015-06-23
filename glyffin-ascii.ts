@@ -12,6 +12,19 @@ module Glyffin {
         }
     }
 
+    function getCharXWeight(charCode : number) : number {
+        return charCode < x_weights.length ? x_weights[charCode] : x_weight_default;
+    }
+
+    function getWordXWeight(word : string) : number {
+        var spaceWeights = word.length <= 1 ? 0 : (word.length - 1);
+        var letterWeights = 0;
+        for (var i = 0; i < word.length; i++) {
+            letterWeights += getCharXWeight(word.charCodeAt(i));
+        }
+        return letterWeights + spaceWeights;
+    }
+
     export function asciiMultiLine(lines : number, paragraph : string) : Glyff<Void> {
         return Glyff.create((metrics : Metrics, audience : Audience,
                              presenter : Presenter<Void>)=> {
@@ -84,7 +97,7 @@ module Glyffin {
         var insertions : Insertion<Void>[] = [];
         for (var i = 0; i < word.length; i++) {
             var code = word.charCodeAt(i);
-            var capWidth = xWeightPixels * x_weights[code];
+            var capWidth = xWeightPixels * getCharXWeight(code);
             if (i > 0) {
                 insertions.push(new Insertion(xWeightPixels, Glyffin.ClearGlyff));
             }
@@ -99,7 +112,7 @@ module Glyffin {
 
     export function asciiByCode(code : number) : Glyff<Void> {
         var spots = code >= ascii_spots.length ? no_spots : ascii_spots[code];
-        var xWeight = code >= x_weights.length ? 7 : x_weights[code];
+        var xWeight = getCharXWeight(code);
         return BeigeGlyff.kaleid(xWeight, 7, spots);
     }
 
@@ -693,6 +706,7 @@ module Glyffin {
         x_spots, y_spots, z_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
     ];
 
+    var x_weight_default : number = 5;
     var x_weights : number[] = [
         5, 5, 5, 5, 5, 5, 5, 5,
         5, 5, 5, 5, 5, 5, 5, 5,
@@ -714,16 +728,6 @@ module Glyffin {
         5, 5, 5, 5, 3, 5, 5, 5,
         5, 5, 5, 5, 5, 5, 5, 5,
     ];
-
-    function getWordXWeight(word : string) : number {
-        var spaceWeights = word.length <= 1 ? 0 : (word.length - 1);
-        var letterWeights = 0;
-        for (var i = 0; i < word.length; i++) {
-            var charCode = word.charCodeAt(i);
-            letterWeights += x_weights[charCode];
-        }
-        return letterWeights + spaceWeights;
-    }
 
     var spaceWeight = getWordXWeight(' ');
 }

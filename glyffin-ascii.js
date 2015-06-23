@@ -11,6 +11,17 @@ var Glyffin;
         }
         return LineContent;
     })();
+    function getCharXWeight(charCode) {
+        return charCode < x_weights.length ? x_weights[charCode] : x_weight_default;
+    }
+    function getWordXWeight(word) {
+        var spaceWeights = word.length <= 1 ? 0 : (word.length - 1);
+        var letterWeights = 0;
+        for (var i = 0; i < word.length; i++) {
+            letterWeights += getCharXWeight(word.charCodeAt(i));
+        }
+        return letterWeights + spaceWeights;
+    }
     function asciiMultiLine(lines, paragraph) {
         return Glyffin.Glyff.create(function (metrics, audience, presenter) {
             var perimeter = metrics.perimeter;
@@ -71,7 +82,7 @@ var Glyffin;
         var insertions = [];
         for (var i = 0; i < word.length; i++) {
             var code = word.charCodeAt(i);
-            var capWidth = xWeightPixels * x_weights[code];
+            var capWidth = xWeightPixels * getCharXWeight(code);
             if (i > 0) {
                 insertions.push(new Glyffin.Insertion(xWeightPixels, Glyffin.ClearGlyff));
             }
@@ -86,7 +97,7 @@ var Glyffin;
     Glyffin.asciiChar = asciiChar;
     function asciiByCode(code) {
         var spots = code >= ascii_spots.length ? no_spots : ascii_spots[code];
-        var xWeight = code >= x_weights.length ? 7 : x_weights[code];
+        var xWeight = getCharXWeight(code);
         return Glyffin.BeigeGlyff.kaleid(xWeight, 7, spots);
     }
     Glyffin.asciiByCode = asciiByCode;
@@ -1247,6 +1258,7 @@ var Glyffin;
         no_spots,
         no_spots,
     ];
+    var x_weight_default = 5;
     var x_weights = [
         5,
         5,
@@ -1377,15 +1389,6 @@ var Glyffin;
         5,
         5,
     ];
-    function getWordXWeight(word) {
-        var spaceWeights = word.length <= 1 ? 0 : (word.length - 1);
-        var letterWeights = 0;
-        for (var i = 0; i < word.length; i++) {
-            var charCode = word.charCodeAt(i);
-            letterWeights += x_weights[charCode];
-        }
-        return letterWeights + spaceWeights;
-    }
     var spaceWeight = getWordXWeight(' ');
 })(Glyffin || (Glyffin = {}));
 //# sourceMappingURL=glyffin-ascii.js.map
