@@ -222,6 +222,7 @@ module Glyffin {
                     getTouch: (spot : Spot) : Touch => {
                         removable.remove();
                         removable = presenter.addPresentation(pressed.present(metrics, audience));
+                        var pressTime = Date.now();
 
                         function unpress() {
                             removable.remove();
@@ -233,13 +234,17 @@ module Glyffin {
                             onMove: (spot : Spot)=> {
                             },
                             onRelease: ()=> {
-                                unpress();
-                                // Wait for screen to update with unpress.  Then deliver button press.
-                                requestAnimationFrame(()=> {
-                                    setTimeout(()=> {
-                                        presenter.onResult(symbol);
-                                    }, 0);
-                                });
+                                var delay = (pressTime + 100) - Date.now();
+                                // Stayed pressed until minimum duration ends then un-press.
+                                setTimeout(()=> {
+                                    unpress();
+                                    // Wait for screen to update with unpress.  Then deliver button press.
+                                    requestAnimationFrame(()=> {
+                                        setTimeout(()=> {
+                                            presenter.onResult(symbol);
+                                        }, 0);
+                                    });
+                                }, (delay > 0) ? delay : 0);
                             },
                             onCancel: ()=> {
                                 unpress();

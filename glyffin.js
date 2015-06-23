@@ -179,6 +179,7 @@ var Glyffin;
                     getTouch: function (spot) {
                         removable.remove();
                         removable = presenter.addPresentation(pressed.present(metrics, audience));
+                        var pressTime = Date.now();
                         function unpress() {
                             removable.remove();
                             removable = presenter.addPresentation(unpressed.present(metrics, audience));
@@ -187,13 +188,17 @@ var Glyffin;
                             onMove: function (spot) {
                             },
                             onRelease: function () {
-                                unpress();
-                                // Wait for screen to update with unpress.  Then deliver button press.
-                                requestAnimationFrame(function () {
-                                    setTimeout(function () {
-                                        presenter.onResult(symbol);
-                                    }, 0);
-                                });
+                                var delay = (pressTime + 100) - Date.now();
+                                // Stayed pressed until minimum duration ends then un-press.
+                                setTimeout(function () {
+                                    unpress();
+                                    // Wait for screen to update with unpress.  Then deliver button press.
+                                    requestAnimationFrame(function () {
+                                        setTimeout(function () {
+                                            presenter.onResult(symbol);
+                                        }, 0);
+                                    });
+                                }, (delay > 0) ? delay : 0);
                             },
                             onCancel: function () {
                                 unpress();
