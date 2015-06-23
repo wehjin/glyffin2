@@ -12,7 +12,18 @@ module Glyffin {
         }
     }
 
+    function getAsciiCode(charCode : number) : number {
+        if (charCode < x_weights.length) {
+            return charCode;
+        }
+        if (charCode == 8217) {
+            return 39;
+        }
+        return charCode;
+    }
+
     function getCharXWeight(charCode : number) : number {
+        charCode = getAsciiCode(charCode);
         return charCode < x_weights.length ? x_weights[charCode] : x_weight_default;
     }
 
@@ -23,6 +34,13 @@ module Glyffin {
             letterWeights += getCharXWeight(word.charCodeAt(i));
         }
         return letterWeights + spaceWeights;
+    }
+
+    export function asciiByCode(code : number) : Glyff<Void> {
+        code = getAsciiCode(code);
+        var spots = code >= ascii_spots.length ? no_spots : ascii_spots[code];
+        var xWeight = getCharXWeight(code);
+        return BeigeGlyff.kaleid(xWeight, 7, spots);
     }
 
     export function asciiMultiLine(lines : number, paragraph : string) : Glyff<Void> {
@@ -108,12 +126,6 @@ module Glyffin {
 
     export function asciiChar(ch : string) : Glyff<Void> {
         return asciiByCode(ch.charCodeAt(0));
-    }
-
-    export function asciiByCode(code : number) : Glyff<Void> {
-        var spots = code >= ascii_spots.length ? no_spots : ascii_spots[code];
-        var xWeight = getCharXWeight(code);
-        return BeigeGlyff.kaleid(xWeight, 7, spots);
     }
 
     var no_spots = [];

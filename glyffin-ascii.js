@@ -11,7 +11,17 @@ var Glyffin;
         }
         return LineContent;
     })();
+    function getAsciiCode(charCode) {
+        if (charCode < x_weights.length) {
+            return charCode;
+        }
+        if (charCode == 8217) {
+            return 39;
+        }
+        return charCode;
+    }
     function getCharXWeight(charCode) {
+        charCode = getAsciiCode(charCode);
         return charCode < x_weights.length ? x_weights[charCode] : x_weight_default;
     }
     function getWordXWeight(word) {
@@ -22,6 +32,13 @@ var Glyffin;
         }
         return letterWeights + spaceWeights;
     }
+    function asciiByCode(code) {
+        code = getAsciiCode(code);
+        var spots = code >= ascii_spots.length ? no_spots : ascii_spots[code];
+        var xWeight = getCharXWeight(code);
+        return Glyffin.BeigeGlyff.kaleid(xWeight, 7, spots);
+    }
+    Glyffin.asciiByCode = asciiByCode;
     function asciiMultiLine(lines, paragraph) {
         return Glyffin.Glyff.create(function (metrics, audience, presenter) {
             var perimeter = metrics.perimeter;
@@ -95,12 +112,6 @@ var Glyffin;
         return asciiByCode(ch.charCodeAt(0));
     }
     Glyffin.asciiChar = asciiChar;
-    function asciiByCode(code) {
-        var spots = code >= ascii_spots.length ? no_spots : ascii_spots[code];
-        var xWeight = getCharXWeight(code);
-        return Glyffin.BeigeGlyff.kaleid(xWeight, 7, spots);
-    }
-    Glyffin.asciiByCode = asciiByCode;
     var no_spots = [];
     var A_spots = [
         [1, 0],
