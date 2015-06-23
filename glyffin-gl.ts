@@ -86,7 +86,7 @@ module Glyffin {
             canvas.onmousedown = (ev : MouseEvent)=> {
                 var hits = Interactive.findHits(this.interactives, ev.clientX, ev.clientY);
                 if (hits.length > 0) {
-                    var interactive = this.interactives[0];
+                    var interactive = hits[0];
                     var touch = interactive.touchProvider.getTouch(null);
                     canvas.onmouseup = ()=> {
                         touch.onRelease();

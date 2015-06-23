@@ -62,7 +62,7 @@ var Glyffin;
             canvas.onmousedown = function (ev) {
                 var hits = Interactive.findHits(_this.interactives, ev.clientX, ev.clientY);
                 if (hits.length > 0) {
-                    var interactive = _this.interactives[0];
+                    var interactive = hits[0];
                     var touch = interactive.touchProvider.getTouch(null);
                     canvas.onmouseup = function () {
                         touch.onRelease();

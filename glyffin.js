@@ -24,6 +24,56 @@ var Glyffin;
         function Glyff(onPresent) {
             this.onPresent = onPresent;
         }
+        Glyff.create = function (onPresent) {
+            return new Glyff(onPresent);
+        };
+        Glyff.prototype.present = function (metrics, audience, reactionOrOnResult, onError) {
+            var presented = [];
+            var presenter = {
+                addPresentation: function (presentation) {
+                    presented.push(presentation);
+                    return {
+                        remove: function () {
+                            var index = presented.indexOf(presentation);
+                            if (index >= 0) {
+                                presented.splice(index, 1);
+                            }
+                            presentation.end();
+                        }
+                    };
+                },
+                onResult: function (result) {
+                    if (typeof reactionOrOnResult === 'object') {
+                        reactionOrOnResult.onResult(result);
+                    }
+                    else if (typeof reactionOrOnResult === 'function') {
+                        reactionOrOnResult(result);
+                    }
+                },
+                onError: function (error) {
+                    if (typeof reactionOrOnResult === 'object') {
+                        reactionOrOnResult.onError(error);
+                    }
+                    else if (onError) {
+                        onError(error);
+                    }
+                }
+            };
+            this.onPresent(metrics, audience, presenter);
+            return {
+                end: function () {
+                    while (presented.length > 0) {
+                        presented.pop().end();
+                    }
+                }
+            };
+        };
+        Glyff.prototype.compose = function (mogrifier) {
+            var upperGlyff = this;
+            return Glyff.create(function (metrics, audience, presenter) {
+                presenter.addPresentation(upperGlyff.present(mogrifier.getMetrics(metrics, presenter), mogrifier.getUpperAudience(audience, presenter), mogrifier.getUpperReaction(audience, presenter)));
+            });
+        };
         Glyff.prototype.addLefts = function (insertions) {
             var current = this;
             var todo = insertions.slice();
@@ -43,6 +93,14 @@ var Glyffin;
                 var modifiedPerimeter = new Glyffin.RectangleBounds(insertRight, perimeter.top, perimeter.right, perimeter.bottom);
                 presenter.addPresentation(insertGlyff.present(metrics.withPerimeter(insertPerimeter), audience, presenter));
                 presenter.addPresentation(existingGlyff.present(metrics.withPerimeter(modifiedPerimeter), audience, presenter));
+            });
+        };
+        Glyff.prototype.addTopCombine = function (size, topGlyff) {
+            var _this = this;
+            return Glyff.create(function (metrics, audience, presenter) {
+                var split = metrics.perimeter.splitHorizontal(size);
+                presenter.addPresentation(topGlyff.present(metrics.withPerimeter(split[0]), audience, presenter));
+                presenter.addPresentation(_this.present(metrics.withPerimeter(split[1]), audience, presenter));
             });
         };
         Glyff.prototype.addTopMajor = function (size, topGlyff) {
@@ -112,52 +170,43 @@ var Glyffin;
                 }
             });
         };
-        Glyff.prototype.compose = function (mogrifier) {
-            var upperGlyff = this;
+        Glyff.prototype.clicken = function (symbol, pressed) {
+            var _this = this;
             return Glyff.create(function (metrics, audience, presenter) {
-                presenter.addPresentation(upperGlyff.present(mogrifier.getMetrics(metrics, presenter), mogrifier.getUpperAudience(audience, presenter), mogrifier.getUpperReaction(audience, presenter)));
-            });
-        };
-        Glyff.prototype.present = function (metrics, audience, reactionOrOnResult, onError) {
-            var presented = [];
-            var presenter = {
-                addPresentation: function (presentation) {
-                    presented.push(presentation);
-                    return {
-                        remove: function () {
-                            var index = presented.indexOf(presentation);
-                            if (index >= 0) {
-                                presented.splice(index, 1);
-                            }
-                            presentation.end();
+                var unpressed = _this;
+                var removable = presenter.addPresentation(unpressed.present(metrics, audience));
+                var zone = audience.addZone(metrics.perimeter, {
+                    getTouch: function (spot) {
+                        removable.remove();
+                        removable = presenter.addPresentation(pressed.present(metrics, audience));
+                        function unpress() {
+                            removable.remove();
+                            removable = presenter.addPresentation(unpressed.present(metrics, audience));
                         }
-                    };
-                },
-                onResult: function (result) {
-                    if (typeof reactionOrOnResult === 'object') {
-                        reactionOrOnResult.onResult(result);
+                        return {
+                            onMove: function (spot) {
+                            },
+                            onRelease: function () {
+                                unpress();
+                                // Wait for screen to update with unpress.  Then deliver button press.
+                                requestAnimationFrame(function () {
+                                    setTimeout(function () {
+                                        presenter.onResult(symbol);
+                                    }, 0);
+                                });
+                            },
+                            onCancel: function () {
+                                unpress();
+                            }
+                        };
                     }
-                    else if (typeof reactionOrOnResult === 'function') {
-                        reactionOrOnResult(result);
+                });
+                presenter.addPresentation({
+                    end: function () {
+                        zone.remove();
                     }
-                },
-                onError: function (error) {
-                    if (typeof reactionOrOnResult === 'object') {
-                        reactionOrOnResult.onError(error);
-                    }
-                    else if (onError) {
-                        onError(error);
-                    }
-                }
-            };
-            this.onPresent(metrics, audience, presenter);
-            return {
-                end: function () {
-                    while (presented.length > 0) {
-                        presented.pop().end();
-                    }
-                }
-            };
+                });
+            });
         };
         Glyff.color = function (color) {
             return Glyff.create(function (metrics, audience, presenter) {
@@ -168,9 +217,6 @@ var Glyffin;
                     }
                 });
             });
-        };
-        Glyff.create = function (onPresent) {
-            return new Glyff(onPresent);
         };
         return Glyff;
     })();

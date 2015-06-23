@@ -32,6 +32,65 @@ module Glyffin {
                                          presenter : Presenter<T>)=>void) {
         }
 
+        static create<U>(onPresent : (metrics : Metrics, audience : Audience,
+                                      presenter : Presenter<U>)=>void) : Glyff<U> {
+            return new Glyff<U>(onPresent);
+        }
+
+        present(metrics : Metrics, audience : Audience,
+                reactionOrOnResult ? : Reaction<T>|ResultCallback,
+                onError? : ErrorCallback) : Presentation {
+            var presented : Presentation[] = [];
+            var presenter = {
+                addPresentation(presentation : Presentation) : Removable {
+                    presented.push(presentation);
+                    return {
+                        remove() {
+                            var index = presented.indexOf(presentation);
+                            if (index >= 0) {
+                                presented.splice(index, 1);
+                            }
+                            presentation.end();
+                        }
+                    }
+                },
+                onResult(result : T) {
+                    if (typeof reactionOrOnResult === 'object') {
+                        (<Reaction<T>>reactionOrOnResult).onResult(result);
+                    } else if (typeof reactionOrOnResult === 'function') {
+                        (<ResultCallback>reactionOrOnResult)(result);
+                    }
+                },
+                onError(error : Error) {
+                    if (typeof reactionOrOnResult === 'object') {
+                        (<Reaction<T>>reactionOrOnResult).onError(error);
+                    } else if (onError) {
+                        onError(error);
+                    }
+                }
+            };
+            this.onPresent(metrics, audience, presenter);
+            return <Presentation>{
+                end() {
+                    while (presented.length > 0) {
+                        presented.pop().end();
+                    }
+                }
+            }
+        }
+
+        compose<U>(mogrifier : Mogrifier<T,U>) {
+            var upperGlyff = this;
+            return Glyff.create<U>((metrics : Metrics, audience : Audience,
+                                    presenter : Presenter<U>)=> {
+                presenter.addPresentation(upperGlyff.present(mogrifier.getMetrics(metrics,
+                        presenter), mogrifier.getUpperAudience(audience,
+                        presenter),
+                    mogrifier.getUpperReaction(audience, presenter)
+                ));
+            });
+        }
+
         addLefts<U>(insertions : Insertion<U>[]) : Glyff<T> {
             var current : Glyff<T> = this;
             var todo = insertions.slice();
@@ -56,6 +115,17 @@ module Glyffin {
                 presenter.addPresentation(insertGlyff.present(metrics.withPerimeter(insertPerimeter),
                     audience, presenter));
                 presenter.addPresentation(existingGlyff.present(metrics.withPerimeter(modifiedPerimeter),
+                    audience, presenter));
+            });
+        }
+
+        addTopCombine(size : number, topGlyff : Glyff<T>) : Glyff<T> {
+            return Glyff.create((metrics : Metrics, audience : Audience,
+                                 presenter : Presenter<T>) => {
+                var split = metrics.perimeter.splitHorizontal(size);
+                presenter.addPresentation(topGlyff.present(metrics.withPerimeter(split[0]),
+                    audience, presenter));
+                presenter.addPresentation(this.present(metrics.withPerimeter(split[1]),
                     audience, presenter));
             });
         }
@@ -143,58 +213,46 @@ module Glyffin {
             });
         }
 
-        compose<U>(mogrifier : Mogrifier<T,U>) {
-            var upperGlyff = this;
-            return Glyff.create<U>((metrics : Metrics, audience : Audience,
-                                    presenter : Presenter<U>)=> {
-                presenter.addPresentation(upperGlyff.present(mogrifier.getMetrics(metrics,
-                        presenter), mogrifier.getUpperAudience(audience,
-                        presenter),
-                    mogrifier.getUpperReaction(audience, presenter)
-                ));
-            });
-        }
+        clicken<U>(symbol : string, pressed : Glyff<U>) : Glyff<string> {
+            return Glyff.create<string>((metrics : Metrics, audience : Audience,
+                                         presenter : Presenter<Void>)=> {
+                var unpressed = this;
+                var removable = presenter.addPresentation(unpressed.present(metrics, audience));
+                var zone = audience.addZone(metrics.perimeter, {
+                    getTouch: (spot : Spot) : Touch => {
+                        removable.remove();
+                        removable = presenter.addPresentation(pressed.present(metrics, audience));
 
-        present(metrics : Metrics, audience : Audience,
-                reactionOrOnResult ? : Reaction<T>|ResultCallback,
-                onError? : ErrorCallback) : Presentation {
-            var presented : Presentation[] = [];
-            var presenter = {
-                addPresentation(presentation : Presentation) : Removable {
-                    presented.push(presentation);
-                    return {
-                        remove() {
-                            var index = presented.indexOf(presentation);
-                            if (index >= 0) {
-                                presented.splice(index, 1);
-                            }
-                            presentation.end();
+                        function unpress() {
+                            removable.remove();
+                            removable =
+                                presenter.addPresentation(unpressed.present(metrics, audience));
                         }
+
+                        return {
+                            onMove: (spot : Spot)=> {
+                            },
+                            onRelease: ()=> {
+                                unpress();
+                                // Wait for screen to update with unpress.  Then deliver button press.
+                                requestAnimationFrame(()=> {
+                                    setTimeout(()=> {
+                                        presenter.onResult(symbol);
+                                    }, 0);
+                                });
+                            },
+                            onCancel: ()=> {
+                                unpress();
+                            }
+                        };
                     }
-                },
-                onResult(result : T) {
-                    if (typeof reactionOrOnResult === 'object') {
-                        (<Reaction<T>>reactionOrOnResult).onResult(result);
-                    } else if (typeof reactionOrOnResult === 'function') {
-                        (<ResultCallback>reactionOrOnResult)(result);
+                });
+                presenter.addPresentation(<Presentation>{
+                    end: ()=> {
+                        zone.remove();
                     }
-                },
-                onError(error : Error) {
-                    if (typeof reactionOrOnResult === 'object') {
-                        (<Reaction<T>>reactionOrOnResult).onError(error);
-                    } else if (onError) {
-                        onError(error);
-                    }
-                }
-            };
-            this.onPresent(metrics, audience, presenter);
-            return <Presentation>{
-                end() {
-                    while (presented.length > 0) {
-                        presented.pop().end();
-                    }
-                }
-            }
+                });
+            });
         }
 
         static color(color : Color) : Glyff<Void> {
@@ -210,10 +268,6 @@ module Glyffin {
             );
         }
 
-        static create<U>(onPresent : (metrics : Metrics, audience : Audience,
-                                      presenter : Presenter<U>)=>void) : Glyff<U> {
-            return new Glyff<U>(onPresent);
-        }
     }
 
     export var ClearGlyff = Glyff.create<Void>(()=> {
