@@ -66,6 +66,17 @@ module Glyffin {
             });
             return array;
         }
+
+        private mixComponent(mix : number, start : number, end : number) : number {
+            return start + (end - start) * mix;
+        }
+
+        mix(mix : number, endColor : Color) : Color {
+            return new Color(this.mixComponent(mix, this.red, endColor.red),
+                this.mixComponent(mix, this.green, endColor.green),
+                this.mixComponent(mix, this.blue, endColor.blue),
+                this.mixComponent(mix, this.alpha, endColor.alpha));
+        }
     }
 
     export class Palette {

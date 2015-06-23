@@ -278,10 +278,15 @@ module Glyffin {
     export var ClearGlyff = Glyff.create<Void>(()=> {
     });
 
-    export function colorPath(colorPath : number[]) : Glyff<Void> {
+    export function colorPath(colorPath : number[], mix? : number,
+                              colorPath2? : number[]) : Glyff<Void> {
         return Glyff.create((metrics : Metrics, audience : Audience,
                              presenter : Presenter<Void>)=> {
-            var colorGlyff = Glyff.color(metrics.palette.get(colorPath));
+            var color = metrics.palette.get(colorPath);
+            if (mix) {
+                color = color.mix(mix, metrics.palette.get(colorPath2));
+            }
+            var colorGlyff = Glyff.color(color);
             presenter.addPresentation(colorGlyff.present(metrics, audience, null, null));
         });
     }

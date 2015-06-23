@@ -57,6 +57,12 @@ var Glyffin;
             });
             return array;
         };
+        Color.prototype.mixComponent = function (mix, start, end) {
+            return start + (end - start) * mix;
+        };
+        Color.prototype.mix = function (mix, endColor) {
+            return new Color(this.mixComponent(mix, this.red, endColor.red), this.mixComponent(mix, this.green, endColor.green), this.mixComponent(mix, this.blue, endColor.blue), this.mixComponent(mix, this.alpha, endColor.alpha));
+        };
         Color.RED = new Color(1, 0, 0, 1);
         Color.GREEN = new Color(0, 1, 0, 1);
         Color.BLUE = new Color(0, 0, 1, 1);

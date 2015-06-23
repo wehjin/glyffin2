@@ -228,9 +228,13 @@ var Glyffin;
     Glyffin.Glyff = Glyff;
     Glyffin.ClearGlyff = Glyff.create(function () {
     });
-    function colorPath(colorPath) {
+    function colorPath(colorPath, mix, colorPath2) {
         return Glyff.create(function (metrics, audience, presenter) {
-            var colorGlyff = Glyff.color(metrics.palette.get(colorPath));
+            var color = metrics.palette.get(colorPath);
+            if (mix) {
+                color = color.mix(mix, metrics.palette.get(colorPath2));
+            }
+            var colorGlyff = Glyff.color(color);
             presenter.addPresentation(colorGlyff.present(metrics, audience, null, null));
         });
     }

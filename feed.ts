@@ -12,9 +12,9 @@
 function main() {
     var glAudience = new Glyffin.GlAudience();
 
-    var foreground = [0x55, 0x055, 0x55, 0xff];
     var background = [0xbb, 0xbb, 0xbb, 0xff];
-    var palette = new Glyffin.Palette().withLevel(0, [background, foreground]);
+    var midground = [0x55, 0x055, 0x55, 0xff];
+    var palette = new Glyffin.Palette().withLevel(0, [background, midground]);
     var perimeter = new Glyffin.RectangleBounds(0, 0, glAudience.canvas.width,
         glAudience.canvas.height);
     var metrics = new Glyffin.Metrics(perimeter, 48, 10, palette);
@@ -50,7 +50,7 @@ function main() {
             }
 
             var unpressedCell = addTitle(Glyffin.colorPath([0, 1]));
-            var pressedCell = addTitle(Glyffin.GreenGlyff);
+            var pressedCell = addTitle(Glyffin.colorPath([0, 1], .5, [0, 0]));
             var cell = unpressedCell
                 .clicken("go", pressedCell)
                 .limitHeight(metrics.tapHeight * 2, 0);

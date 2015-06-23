@@ -9,9 +9,9 @@
 /// <reference path="rx.ts" />
 function main() {
     var glAudience = new Glyffin.GlAudience();
-    var foreground = [0x55, 0x055, 0x55, 0xff];
     var background = [0xbb, 0xbb, 0xbb, 0xff];
-    var palette = new Glyffin.Palette().withLevel(0, [background, foreground]);
+    var midground = [0x55, 0x055, 0x55, 0xff];
+    var palette = new Glyffin.Palette().withLevel(0, [background, midground]);
     var perimeter = new Glyffin.RectangleBounds(0, 0, glAudience.canvas.width, glAudience.canvas.height);
     var metrics = new Glyffin.Metrics(perimeter, 48, 10, palette);
     var hNewsUri = "https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20rss%20where%20url%3D%22https%3A%2F%2Fnews.ycombinator.com%2Frss%22&format=json&diagnostics=true&callback=";
@@ -38,7 +38,7 @@ function main() {
                 return background.addNearMajor(1, Glyffin.asciiMultiLine(3, title).pad(metrics.readHeight * 2, metrics.readHeight));
             }
             var unpressedCell = addTitle(Glyffin.colorPath([0, 1]));
-            var pressedCell = addTitle(Glyffin.GreenGlyff);
+            var pressedCell = addTitle(Glyffin.colorPath([0, 1], .5, [0, 0]));
             var cell = unpressedCell.clicken("go", pressedCell).limitHeight(metrics.tapHeight * 2, 0);
             var app = Glyffin.colorPath([0, 0]).addNearMajor(1, cell).addTopCombine(metrics.tapHeight, Glyffin.button("next"));
             presentation = app.present(metrics, glAudience, function (symbol) {
