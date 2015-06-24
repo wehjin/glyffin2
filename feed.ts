@@ -45,7 +45,7 @@ function main() {
 
             var tapHeight = metrics.tapHeight;
             var readSize = metrics.readHeight;
-            var textSize = readSize * 1.5;
+            var textSize = readSize * 1.2;
 
             var item = items[index % items.length];
             var title = item['title'] + " - " + item['link'];

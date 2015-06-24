@@ -33,6 +33,7 @@ var Glyffin;
             this.editCount = 0;
             var canvas = document.getElementById('webgl');
             canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
             this.canvas = canvas;
             canvas.addEventListener("touchstart", function (ev) {
                 var jsTouch = ev.touches.item(0);
