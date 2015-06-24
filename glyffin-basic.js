@@ -41,7 +41,7 @@ var Glyffin;
         };
         RectangleBounds.prototype.limitHeight = function (maxHeight, align) {
             var height = this.getHeight();
-            return (height <= maxHeight) ? this : this.downFromTop((maxHeight - height) * align, maxHeight);
+            return (height <= maxHeight) ? this : this.downFromTop((height - maxHeight) * align, maxHeight);
         };
         return RectangleBounds;
     })();

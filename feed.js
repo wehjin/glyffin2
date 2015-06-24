@@ -40,7 +40,7 @@ function main() {
             var item = items[index % items.length];
             var title = item['title'] + " - " + item['link'];
             function addTitle(background) {
-                return background.addNearMajor(1, Glyffin.asciiMultiLine(2, title).pad(readSize * 2, readSize).limitHeight(readSize * 2 + textSize * 3, 0));
+                return background.addNearMajor(1, Glyffin.asciiMultiLine(2, title).pad(readSize * 2, readSize).limitHeight(readSize * 2 + textSize * 3, .6));
             }
             var unpressedCell = addTitle(Glyffin.colorPath(midgroundColorPath));
             var pressedCell = addTitle(Glyffin.colorPath(midgroundColorPath, .5, backgroundColorPath));

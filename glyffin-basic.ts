@@ -46,7 +46,7 @@ module Glyffin {
         limitHeight(maxHeight : number, align : number) : RectangleBounds {
             var height = this.getHeight();
             return (height <= maxHeight) ? this :
-                this.downFromTop((maxHeight - height) * align, maxHeight);
+                this.downFromTop((height - maxHeight) * align, maxHeight);
         }
     }
 

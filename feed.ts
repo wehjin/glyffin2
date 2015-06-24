@@ -54,7 +54,7 @@ function main() {
                 return background.addNearMajor(1,
                     Glyffin.asciiMultiLine(2, title)
                         .pad(readSize * 2, readSize)
-                        .limitHeight(readSize * 2 + textSize * 3, 0)
+                        .limitHeight(readSize * 2 + textSize * 3, .6)
                 );
             }
 
