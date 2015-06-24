@@ -71,16 +71,18 @@ function main() {
             var cell = unpressedCell
                 .clicken("go", pressedCell);
 
-            var buttonText = Glyffin.asciiMultiLine(1, "Next").pad(readSize, readSize);
+            var buttonText = Glyffin.asciiMultiLine(1, "Next")
+                .limitHeight(readSize * 1.75, .5)
+                .pad(readSize, readSize);
             var buttonNormal = Glyffin.colorPath(midgroundColorPath, .3,
                 backgroundColorPath).addNearMajor(1, buttonText);
             var buttonPressed = Glyffin.colorPath(midgroundColorPath, .6,
                 backgroundColorPath).addNearMajor(1, buttonText);
-            var nextButton = buttonNormal.clicken("next", buttonPressed).pad(readSize / 2,
-                readSize / 2);
+            var nextButton = buttonNormal.pad(readSize, readSize)
+                .clicken("next", buttonPressed).limitHeight(tapHeight + readSize * 2, 0);
 
             var app = Glyffin.colorPath(backgroundColorPath)
-                .addNearMajor(1, cell.combineTop(-tapHeight, nextButton));
+                .addNearMajor(1, cell.combineTop(-tapHeight * 3, nextButton));
             presentation = app.present(metrics, glAudience, (symbol)=> {
                 console.log("%s", symbol);
                 if (symbol === "go") {
