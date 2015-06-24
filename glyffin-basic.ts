@@ -32,9 +32,15 @@ module Glyffin {
         }
 
         splitHorizontal(pixelsDown : number) : RectangleBounds[] {
-            var split = this.top + pixelsDown;
-            return [new RectangleBounds(this.left, this.top, this.right, split),
-                    new RectangleBounds(this.left, split, this.right, this.bottom)];
+            if (pixelsDown >= 0) {
+                var split = this.top + pixelsDown;
+                return [new RectangleBounds(this.left, this.top, this.right, split),
+                        new RectangleBounds(this.left, split, this.right, this.bottom)];
+            } else {
+                var split = this.bottom + pixelsDown;
+                return [new RectangleBounds(this.left, split, this.right, this.bottom),
+                        new RectangleBounds(this.left, this.top, this.right, split)];
+            }
         }
 
         limitHeight(maxHeight : number, align : number) : RectangleBounds {
@@ -49,6 +55,8 @@ module Glyffin {
                     public alpha : number) {
         }
 
+        public static WHITE = new Color(1, 1, 1, 1);
+        public static BLACK = new Color(0, 0, 0, 1);
         public static RED = new Color(1, 0, 0, 1);
         public static GREEN = new Color(0, 1, 0, 1);
         public static BLUE = new Color(0, 0, 1, 1);

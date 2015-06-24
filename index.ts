@@ -28,19 +28,19 @@ function main() {
     var fingerPixels = metrics.tapHeight;
     var readPixels = metrics.readHeight;
     var demo = Glyffin.RedGlyff
-        .addTopMinor(100, Glyffin.BlueGlyff
-            .addTopMinor(readPixels * 8, Glyffin.asciiMultiLine(3, alphabet))
+        .minorTop(100, Glyffin.BlueGlyff
+            .minorTop(readPixels * 8, Glyffin.asciiMultiLine(3, alphabet))
             .pad(10, 10))
-        .addTopMinor(readPixels * 5, Glyffin.BlueGlyff
-            .addTopMinor(readPixels * 3, Glyffin.asciiMultiLine(2, headline))
+        .minorTop(readPixels * 5, Glyffin.BlueGlyff
+            .minorTop(readPixels * 3, Glyffin.asciiMultiLine(2, headline))
             .pad(readPixels, readPixels))
-        .addTopMinor(readPixels * 7, Glyffin.BlueGlyff
-            .addTopMinor(readPixels * 5, Glyffin.asciiMultiLine(3, headline2))
+        .minorTop(readPixels * 7, Glyffin.BlueGlyff
+            .minorTop(readPixels * 5, Glyffin.asciiMultiLine(3, headline2))
             .pad(readPixels, readPixels))
-        .addTopMajor(fingerPixels, Glyffin.button());
+        .majorTop(fingerPixels, Glyffin.button());
 
     var app = Glyff.create((metrics : Metrics, audience : Audience, presenter : Presenter<Void>)=> {
-        var page = Glyffin.BeigeGlyff.addTopMajor(fingerPixels, Glyffin.button());
+        var page = Glyffin.BeigeGlyff.majorTop(fingerPixels, Glyffin.button());
 
         var presented;
 

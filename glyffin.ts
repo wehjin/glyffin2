@@ -119,7 +119,7 @@ module Glyffin {
             });
         }
 
-        addTopCombine(size : number, topGlyff : Glyff<T>) : Glyff<T> {
+        combineTop(size : number, topGlyff : Glyff<T>) : Glyff<T> {
             return Glyff.create((metrics : Metrics, audience : Audience,
                                  presenter : Presenter<T>) => {
                 var split = metrics.perimeter.splitHorizontal(size);
@@ -130,7 +130,7 @@ module Glyffin {
             });
         }
 
-        addTopMajor<U>(size : number, topGlyff : Glyff<U>) : Glyff<U> {
+        majorTop<U>(size : number, topGlyff : Glyff<U>) : Glyff<U> {
             return Glyff.create((metrics : Metrics, audience : Audience,
                                  presenter : Presenter<U>) => {
                 var split = metrics.perimeter.splitHorizontal(size);
@@ -141,7 +141,7 @@ module Glyffin {
             });
         }
 
-        addTopMinor<U>(size : number, addGlyff : Glyff<U>) : Glyff<T> {
+        minorTop<U>(size : number, addGlyff : Glyff<U>) : Glyff<T> {
             return Glyff.create((metrics : Metrics, audience : Audience,
                                  presenter : Presenter<T>) => {
                 var split = metrics.perimeter.splitHorizontal(size);
@@ -295,4 +295,6 @@ module Glyffin {
     export var GreenGlyff = Glyff.color(Color.GREEN);
     export var BlueGlyff = Glyff.color(Color.BLUE);
     export var BeigeGlyff = Glyff.color(Color.BEIGE);
+    export var WhiteGlyff = Glyff.color(Color.WHITE);
+    export var BlackGlyff = Glyff.color(Color.BLACK);
 }

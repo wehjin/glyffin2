@@ -30,8 +30,14 @@ var Glyffin;
             return new RectangleBounds(this.left, inTop, this.right, inTop + pixelsHigh);
         };
         RectangleBounds.prototype.splitHorizontal = function (pixelsDown) {
-            var split = this.top + pixelsDown;
-            return [new RectangleBounds(this.left, this.top, this.right, split), new RectangleBounds(this.left, split, this.right, this.bottom)];
+            if (pixelsDown >= 0) {
+                var split = this.top + pixelsDown;
+                return [new RectangleBounds(this.left, this.top, this.right, split), new RectangleBounds(this.left, split, this.right, this.bottom)];
+            }
+            else {
+                var split = this.bottom + pixelsDown;
+                return [new RectangleBounds(this.left, split, this.right, this.bottom), new RectangleBounds(this.left, this.top, this.right, split)];
+            }
         };
         RectangleBounds.prototype.limitHeight = function (maxHeight, align) {
             var height = this.getHeight();
@@ -63,6 +69,8 @@ var Glyffin;
         Color.prototype.mix = function (mix, endColor) {
             return new Color(this.mixComponent(mix, this.red, endColor.red), this.mixComponent(mix, this.green, endColor.green), this.mixComponent(mix, this.blue, endColor.blue), this.mixComponent(mix, this.alpha, endColor.alpha));
         };
+        Color.WHITE = new Color(1, 1, 1, 1);
+        Color.BLACK = new Color(0, 0, 0, 1);
         Color.RED = new Color(1, 0, 0, 1);
         Color.GREEN = new Color(0, 1, 0, 1);
         Color.BLUE = new Color(0, 0, 1, 1);

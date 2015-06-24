@@ -12,6 +12,8 @@ function main() {
     var background = [0xbb, 0xbb, 0xbb, 0xff];
     var midground = [0x55, 0x055, 0x55, 0xff];
     var palette = new Glyffin.Palette().withLevel(0, [background, midground]);
+    var backgroundColorPath = [0, 0];
+    var midgroundColorPath = [0, 1];
     var perimeter = new Glyffin.RectangleBounds(0, 0, glAudience.canvas.width, glAudience.canvas.height);
     var metrics = new Glyffin.Metrics(perimeter, 48, 10, palette);
     var hNewsUri = "https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20rss%20where%20url%3D%22https%3A%2F%2Fnews.ycombinator.com%2Frss%22&format=json&diagnostics=true&callback=";
@@ -32,15 +34,22 @@ function main() {
             if (presentation) {
                 presentation.end();
             }
+            var tapHeight = metrics.tapHeight;
+            var readSize = metrics.readHeight;
+            var textSize = readSize * 1.5;
             var item = items[index % items.length];
             var title = item['title'] + " - " + item['link'];
             function addTitle(background) {
-                return background.addNearMajor(1, Glyffin.asciiMultiLine(3, title).pad(metrics.readHeight * 2, metrics.readHeight));
+                return background.addNearMajor(1, Glyffin.asciiMultiLine(2, title).pad(readSize * 2, readSize).limitHeight(readSize * 2 + textSize * 3, 0));
             }
-            var unpressedCell = addTitle(Glyffin.colorPath([0, 1]));
-            var pressedCell = addTitle(Glyffin.colorPath([0, 1], .5, [0, 0]));
-            var cell = unpressedCell.clicken("go", pressedCell).limitHeight(metrics.tapHeight * 2, 0);
-            var app = Glyffin.colorPath([0, 0]).addNearMajor(1, cell).addTopCombine(metrics.tapHeight, Glyffin.button("next"));
+            var unpressedCell = addTitle(Glyffin.colorPath(midgroundColorPath));
+            var pressedCell = addTitle(Glyffin.colorPath(midgroundColorPath, .5, backgroundColorPath));
+            var cell = unpressedCell.clicken("go", pressedCell);
+            var buttonText = Glyffin.asciiMultiLine(1, "Next").pad(readSize, readSize);
+            var buttonNormal = Glyffin.colorPath(midgroundColorPath, .3, backgroundColorPath).addNearMajor(1, buttonText);
+            var buttonPressed = Glyffin.colorPath(midgroundColorPath, .6, backgroundColorPath).addNearMajor(1, buttonText);
+            var nextButton = buttonNormal.clicken("next", buttonPressed).pad(readSize / 2, readSize / 2);
+            var app = Glyffin.colorPath(backgroundColorPath).addNearMajor(1, cell.combineTop(-tapHeight, nextButton));
             presentation = app.present(metrics, glAudience, function (symbol) {
                 console.log("%s", symbol);
                 if (symbol === "go") {

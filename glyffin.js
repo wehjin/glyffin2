@@ -95,7 +95,7 @@ var Glyffin;
                 presenter.addPresentation(existingGlyff.present(metrics.withPerimeter(modifiedPerimeter), audience, presenter));
             });
         };
-        Glyff.prototype.addTopCombine = function (size, topGlyff) {
+        Glyff.prototype.combineTop = function (size, topGlyff) {
             var _this = this;
             return Glyff.create(function (metrics, audience, presenter) {
                 var split = metrics.perimeter.splitHorizontal(size);
@@ -103,7 +103,7 @@ var Glyffin;
                 presenter.addPresentation(_this.present(metrics.withPerimeter(split[1]), audience, presenter));
             });
         };
-        Glyff.prototype.addTopMajor = function (size, topGlyff) {
+        Glyff.prototype.majorTop = function (size, topGlyff) {
             var _this = this;
             return Glyff.create(function (metrics, audience, presenter) {
                 var split = metrics.perimeter.splitHorizontal(size);
@@ -111,7 +111,7 @@ var Glyffin;
                 presenter.addPresentation(_this.present(metrics.withPerimeter(split[1]), audience, new NoResultPresenter(presenter)));
             });
         };
-        Glyff.prototype.addTopMinor = function (size, addGlyff) {
+        Glyff.prototype.minorTop = function (size, addGlyff) {
             var _this = this;
             return Glyff.create(function (metrics, audience, presenter) {
                 var split = metrics.perimeter.splitHorizontal(size);
@@ -243,5 +243,7 @@ var Glyffin;
     Glyffin.GreenGlyff = Glyff.color(Glyffin.Color.GREEN);
     Glyffin.BlueGlyff = Glyff.color(Glyffin.Color.BLUE);
     Glyffin.BeigeGlyff = Glyff.color(Glyffin.Color.BEIGE);
+    Glyffin.WhiteGlyff = Glyff.color(Glyffin.Color.WHITE);
+    Glyffin.BlackGlyff = Glyff.color(Glyffin.Color.BLACK);
 })(Glyffin || (Glyffin = {}));
 //# sourceMappingURL=glyffin.js.map
