@@ -186,6 +186,7 @@ var Glyffin;
                         }
                         return {
                             onMove: function (spot) {
+                                // TODO: Cancel click
                             },
                             onRelease: function () {
                                 var delay = (pressTime + 100) - Date.now();

@@ -232,6 +232,7 @@ module Glyffin {
 
                         return {
                             onMove: (spot : Spot)=> {
+                                // TODO: Cancel click
                             },
                             onRelease: ()=> {
                                 var delay = (pressTime + 100) - Date.now();
