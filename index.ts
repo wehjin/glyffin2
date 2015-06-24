@@ -24,7 +24,7 @@ function main() {
     var metrics = new Glyffin.Metrics(perimeter, 48, 10, new Glyffin.Palette());
     var headline = "Bidding for the 2026 World Cup is suspended by FIFA as Valcke denies wrongdoing";
     var headline2 = "Google didn’t lead the self-driving vehicle revolution. John Deere did";
-    var alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz 0123456789";
+    var alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz 0123456789 \"'(),.;:[]";
     var fingerPixels = metrics.tapHeight;
     var readPixels = metrics.readHeight;
     var demo = Glyffin.RedGlyff

@@ -1126,6 +1126,12 @@ var Glyffin;
         [0, 0],
         [0, 1]
     ];
+    var dquote_spots = [
+        [0, 0],
+        [2, 0],
+        [0, 1],
+        [2, 1]
+    ];
     var comma_spots = [
         [0, 5],
         [0, 6],
@@ -1225,7 +1231,7 @@ var Glyffin;
         no_spots,
         no_spots,
         no_spots,
-        no_spots,
+        dquote_spots,
         no_spots,
         no_spots,
         no_spots,
@@ -1356,7 +1362,7 @@ var Glyffin;
         5,
         5,
         5,
-        5,
+        3,
         5,
         5,
         5,
