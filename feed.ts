@@ -10,6 +10,13 @@
 /// <reference path="rx.ts" />
 
 function main() {
+
+    document.addEventListener('touchmove', function (e) {
+        e.preventDefault();
+        window.scroll(0, 0);
+        return false;
+    }, false);
+
     var glAudience = new Glyffin.GlAudience();
 
     var background = [0xbb, 0xbb, 0xbb, 0xff];
