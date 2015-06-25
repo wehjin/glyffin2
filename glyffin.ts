@@ -79,7 +79,15 @@ module Glyffin {
             }
         }
 
-        compose<U>(mogrifier : Mogrifier<T,U>) {
+        rebuild<U>(builder : (previous : Glyff<T>)=>Glyff<U>) : Glyff<U> {
+            var rebuilt = builder(this);
+            return Glyff.create<U>((metrics : Metrics, audience : Audience,
+                                    presenter : Presenter<U>)=> {
+                presenter.addPresentation(rebuilt.present(metrics, audience, presenter));
+            });
+        }
+
+        compose<U>(mogrifier : Mogrifier<T,U>) : Glyff<U> {
             var upperGlyff = this;
             return Glyff.create<U>((metrics : Metrics, audience : Audience,
                                     presenter : Presenter<U>)=> {

@@ -48,8 +48,8 @@ function main() {
             function addTitle(background) {
                 return background.addNearMajor(1, Glyffin.asciiMultiLine(2, title).minorTop(-textSize, Glyffin.ClearGlyff).minorTop(-textSize, Glyffin.asciiEntireWord(link)).pad(readSize * 2, readSize).limitHeight(readSize * 2 + textSize * 5, .4));
             }
-            var unpressedCell = addTitle(Glyffin.colorPath(midgroundColorPath));
-            var pressedCell = addTitle(Glyffin.colorPath(midgroundColorPath, .5, backgroundColorPath));
+            var unpressedCell = Glyffin.colorPath(midgroundColorPath).rebuild(addTitle);
+            var pressedCell = Glyffin.colorPath(midgroundColorPath, .5, backgroundColorPath).rebuild(addTitle);
             var cell = unpressedCell.clicken("go", pressedCell);
             var buttonText = Glyffin.asciiMultiLine(1, "Next").limitHeight(readSize * 1.75, .5).pad(readSize, readSize);
             var buttonNormal = Glyffin.colorPath(midgroundColorPath, .3, backgroundColorPath).addNearMajor(1, buttonText);

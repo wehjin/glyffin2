@@ -68,6 +68,12 @@ var Glyffin;
                 }
             };
         };
+        Glyff.prototype.rebuild = function (builder) {
+            var rebuilt = builder(this);
+            return Glyff.create(function (metrics, audience, presenter) {
+                presenter.addPresentation(rebuilt.present(metrics, audience, presenter));
+            });
+        };
         Glyff.prototype.compose = function (mogrifier) {
             var upperGlyff = this;
             return Glyff.create(function (metrics, audience, presenter) {

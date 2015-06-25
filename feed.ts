@@ -68,9 +68,9 @@ function main() {
                 );
             }
 
-            var unpressedCell = addTitle(Glyffin.colorPath(midgroundColorPath));
-            var pressedCell = addTitle(Glyffin.colorPath(midgroundColorPath, .5,
-                backgroundColorPath));
+            var unpressedCell = Glyffin.colorPath(midgroundColorPath).rebuild(addTitle);
+            var pressedCell = Glyffin.colorPath(midgroundColorPath, .5, backgroundColorPath)
+                .rebuild(addTitle);
             var cell = unpressedCell
                 .clicken("go", pressedCell);
 
