@@ -43,9 +43,10 @@ function main() {
             var readSize = metrics.readHeight;
             var textSize = readSize * 1.2;
             var item = items[index % items.length];
-            var title = item['title'] + " - " + item['link'];
+            var title = item['title'];
+            var link = item['link'];
             function addTitle(background) {
-                return background.addNearMajor(1, Glyffin.asciiMultiLine(2, title).pad(readSize * 2, readSize).limitHeight(readSize * 2 + textSize * 3, .6));
+                return background.addNearMajor(1, Glyffin.asciiMultiLine(2, title).minorTop(-textSize, Glyffin.ClearGlyff).minorTop(-textSize, Glyffin.asciiEntireWord(link)).pad(readSize * 2, readSize).limitHeight(readSize * 2 + textSize * 5, .4));
             }
             var unpressedCell = addTitle(Glyffin.colorPath(midgroundColorPath));
             var pressedCell = addTitle(Glyffin.colorPath(midgroundColorPath, .5, backgroundColorPath));

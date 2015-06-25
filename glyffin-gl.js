@@ -36,7 +36,15 @@ var Glyffin;
             canvas.height = canvas.clientHeight;
             this.canvas = canvas;
             canvas.addEventListener("touchstart", function (ev) {
-                var jsTouch = ev.touches.item(0);
+                var cancel;
+                var touches = ev.touches;
+                if (touches.length > 1) {
+                    if (cancel) {
+                        cancel();
+                    }
+                    return;
+                }
+                var jsTouch = touches.item(0);
                 var hits = Interactive.findHits(_this.interactives, jsTouch.clientX, jsTouch.clientY);
                 if (hits.length > 0) {
                     var interactive = hits[0];
@@ -48,7 +56,7 @@ var Glyffin;
                         canvas.removeEventListener("touchend", ontouchend, false);
                         canvas.removeEventListener("touchmove", ontouchmove, false);
                         canvas.removeEventListener("touchcancel", ontouchcancel, false);
-                        ontouchcancel = ontouchmove = ontouchend = null;
+                        cancel = ontouchcancel = ontouchmove = ontouchend = null;
                     }
                     ontouchend = function () {
                         touch.onRelease();
@@ -67,6 +75,7 @@ var Glyffin;
                     canvas.addEventListener("touchend", ontouchend, false);
                     canvas.addEventListener("touchmove", ontouchmove, false);
                     canvas.addEventListener("touchcancel", ontouchcancel, false);
+                    cancel = ontouchcancel;
                 }
                 ev.stopPropagation();
                 ev.preventDefault();
