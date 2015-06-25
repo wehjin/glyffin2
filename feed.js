@@ -7,6 +7,8 @@
 /// <reference path="glyffin-gl.ts" />
 /// <reference path="glyffin-touch.ts" />
 /// <reference path="rx.ts" />
+var Void = Glyffin.Void;
+var Glyff = Glyffin.Glyff;
 function main() {
     document.addEventListener('touchmove', function (e) {
         e.preventDefault();
@@ -19,7 +21,8 @@ function main() {
     var palette = new Glyffin.Palette().withLevel(0, [background, midground]);
     var backgroundColorPath = [0, 0];
     var midgroundColorPath = [0, 1];
-    var perimeter = new Glyffin.RectangleBounds(0, 0, glAudience.canvas.width, glAudience.canvas.height);
+    var screenWidth = glAudience.canvas.width;
+    var perimeter = new Glyffin.RectangleBounds(0, 0, screenWidth, glAudience.canvas.height);
     var metrics = new Glyffin.Metrics(perimeter, 48, 13, palette);
     var hNewsUri = "https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20rss%20where%20url%3D%22https%3A%2F%2Fnews.ycombinator.com%2Frss%22&format=json&diagnostics=true&callback=";
     var yNewsUri = "https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20rss%20where%20url%3D%22http%3A%2F%2Frss.news.yahoo.com%2Frss%2Ftopstories%22&format=json&callback=";
@@ -46,16 +49,29 @@ function main() {
             var title = item['title'];
             var link = item['link'];
             function addTitle(background) {
-                return background.addNearMajor(1, Glyffin.asciiMultiLine(2, title).minorTop(-textSize, Glyffin.ClearGlyff).minorTop(-textSize, Glyffin.asciiEntireWord(link)).pad(readSize * 2, readSize).limitHeight(readSize * 2 + textSize * 5, .4));
+                return background.addNearMajor(1, Glyffin.asciiMultiLine(2, title).minorTop(-textSize, Glyffin.ClearGlyff).minorTop(-textSize, Glyffin.asciiEntireWord(link)).pad(readSize, readSize).limitHeight(readSize * 2 + textSize * 5, .4));
             }
             var unpressedCell = Glyffin.colorPath(midgroundColorPath).rebuild(addTitle);
             var pressedCell = Glyffin.colorPath(midgroundColorPath, .5, backgroundColorPath).rebuild(addTitle);
-            var cell = unpressedCell.clicken("go", pressedCell);
-            var buttonText = Glyffin.asciiMultiLine(1, "Next").limitHeight(readSize * 1.75, .5).pad(readSize, readSize);
-            var buttonNormal = Glyffin.colorPath(midgroundColorPath, .3, backgroundColorPath).addNearMajor(1, buttonText);
-            var buttonPressed = Glyffin.colorPath(midgroundColorPath, .6, backgroundColorPath).addNearMajor(1, buttonText);
-            var nextButton = buttonNormal.pad(readSize, readSize).clicken("next", buttonPressed).limitHeight(tapHeight + readSize * 2, 0);
-            var app = Glyffin.colorPath(backgroundColorPath).addNearMajor(1, cell.combineTop(-tapHeight * 3, nextButton));
+            var cell = unpressedCell.clicken("go", pressedCell).pad(readSize, readSize);
+            function button(label, symbol) {
+                function addLabel(label) {
+                    return function (background) {
+                        var buttonText = Glyffin.asciiMultiLine(1, label).pad(readSize, 0).limitHeight(readSize * 1.75, .5);
+                        return background.addNearMajor(1, buttonText);
+                    };
+                }
+                var buttonBackgroundUnpressed = Glyffin.colorPath(midgroundColorPath, .3, backgroundColorPath);
+                var buttonBackgroundPressed = Glyffin.colorPath(midgroundColorPath, .6, backgroundColorPath);
+                var addButtonLabel = addLabel(label);
+                var buttonUnpressed = buttonBackgroundUnpressed.rebuild(addButtonLabel);
+                var buttonPressed = buttonBackgroundPressed.rebuild(addButtonLabel);
+                return buttonUnpressed.clicken(symbol, buttonPressed);
+            }
+            var nextButton = button("Next", "next");
+            var prevButton = button("Back", "back");
+            var actionBar = nextButton.addLeft(readSize / 2, Glyffin.ClearGlyff).addLeft(screenWidth * .3, prevButton).pad(readSize, readSize).limitHeight(tapHeight + readSize * 2, 0);
+            var app = Glyffin.colorPath(backgroundColorPath).addNearMajor(1, cell.combineTop(-tapHeight * 3, actionBar));
             presentation = app.present(metrics, glAudience, function (symbol) {
                 console.log("%s", symbol);
                 if (symbol === "go") {
@@ -65,6 +81,10 @@ function main() {
                 }
                 else if (symbol === "next") {
                     index++;
+                    refresh();
+                }
+                else if (symbol === "back") {
+                    index = index == 0 ? (items.length - 1) : (index - 1);
                     refresh();
                 }
             });
