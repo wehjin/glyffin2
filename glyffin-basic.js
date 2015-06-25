@@ -98,6 +98,9 @@ var Glyffin;
             this.x = x;
             this.y = y;
         }
+        Spot.prototype.distanceSquared = function (other) {
+            return other.x * this.x + other.y * this.y;
+        };
         return Spot;
     })();
     Glyffin.Spot = Spot;

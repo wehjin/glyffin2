@@ -109,6 +109,10 @@ module Glyffin {
     export class Spot {
         constructor(public x : number, public y : number) {
         }
+
+        distanceSquared(other : Spot) : number {
+            return other.x * this.x + other.y * this.y;
+        }
     }
 
     export class Metrics {
@@ -155,8 +159,12 @@ module Glyffin {
         getTouch(spot : Spot): Touch;
     }
 
+    export interface Gesture {
+        cancel();
+    }
+
     export interface Touch {
-        onMove(spot : Spot);
+        onMove(spot : Spot, failed : ()=>void);
         onRelease();
         onCancel();
     }

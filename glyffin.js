@@ -184,11 +184,18 @@ var Glyffin;
                             removable.remove();
                             removable = presenter.addPresentation(unpressed.present(metrics, audience));
                         }
+                        var canceled = false;
+                        function cancel() {
+                            canceled = true;
+                            unpress();
+                        }
+                        var startSpot = spot;
+                        var thresholdSquared = (metrics.readHeight / 2) ^ 2;
                         return {
-                            onMove: function (spot) {
-                                // TODO: Cancel click
-                            },
                             onRelease: function () {
+                                if (canceled) {
+                                    return;
+                                }
                                 var delay = (pressTime + 100) - Date.now();
                                 // Stayed pressed until minimum duration ends then un-press.
                                 setTimeout(function () {
@@ -201,8 +208,20 @@ var Glyffin;
                                     });
                                 }, (delay > 0) ? delay : 0);
                             },
+                            onMove: function (spot, failed) {
+                                if (canceled) {
+                                    return;
+                                }
+                                if (spot.distanceSquared(startSpot) > thresholdSquared) {
+                                    cancel();
+                                    failed();
+                                }
+                            },
                             onCancel: function () {
-                                unpress();
+                                if (canceled) {
+                                    return;
+                                }
+                                cancel();
                             }
                         };
                     }

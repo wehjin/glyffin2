@@ -63,21 +63,36 @@ module Glyffin {
                     jsTouch.clientY);
                 if (hits.length > 0) {
                     var interactive = hits[0];
-                    var touch = interactive.touchProvider.getTouch(null);
+                    var touch = interactive.touchProvider.getTouch(new Spot(jsTouch.clientX,
+                        jsTouch.clientY));
+
                     var ontouchcancel;
-                    var ontouchend = function () {
-                        touch.onRelease();
+                    var ontouchmove;
+                    var ontouchend;
+
+                    function removeListeners() {
                         canvas.removeEventListener("touchend", ontouchend, false);
+                        canvas.removeEventListener("touchmove", ontouchmove, false);
                         canvas.removeEventListener("touchcancel", ontouchcancel, false);
-                        ontouchcancel = ontouchend = null;
+                        ontouchcancel = ontouchmove = ontouchend = null;
+                    }
+
+                    ontouchend = function () {
+                        touch.onRelease();
+                        removeListeners();
+                    };
+                    ontouchmove = function (ev : Event) {
+                        var jsTouch = (<JsTouchEvent>ev).touches.item(0);
+                        touch.onMove(new Spot(jsTouch.clientX, jsTouch.clientY), ()=> {
+                            removeListeners();
+                        });
                     };
                     ontouchcancel = function () {
                         touch.onCancel();
-                        canvas.removeEventListener("touchend", ontouchend, false);
-                        canvas.removeEventListener("touchcancel", ontouchcancel, false);
-                        ontouchcancel = ontouchend = null;
+                        removeListeners();
                     };
                     canvas.addEventListener("touchend", ontouchend, false);
+                    canvas.addEventListener("touchmove", ontouchmove, false);
                     canvas.addEventListener("touchcancel", ontouchcancel, false);
                 }
                 ev.stopPropagation();
@@ -88,14 +103,20 @@ module Glyffin {
                 var hits = Interactive.findHits(this.interactives, ev.clientX, ev.clientY);
                 if (hits.length > 0) {
                     var interactive = hits[0];
-                    var touch = interactive.touchProvider.getTouch(null);
+                    var touch = interactive.touchProvider.getTouch(new Spot(ev.clientX,
+                        ev.clientY));
                     canvas.onmouseup = ()=> {
                         touch.onRelease();
-                        canvas.onmouseout = canvas.onmouseup = null;
+                        canvas.onmouseout = canvas.onmousemove = canvas.onmouseup = null;
+                    };
+                    canvas.onmousemove = (ev : MouseEvent)=> {
+                        touch.onMove(new Spot(ev.clientX, ev.clientY), ()=> {
+                            canvas.onmouseout = canvas.onmousemove = canvas.onmouseup = null;
+                        });
                     };
                     canvas.onmouseout = ()=> {
                         touch.onCancel();
-                        canvas.onmouseout = canvas.onmouseup = null;
+                        canvas.onmouseout = canvas.onmousemove = canvas.onmouseup = null;
                     };
                 }
                 ev.stopPropagation();

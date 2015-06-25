@@ -230,11 +230,20 @@ module Glyffin {
                                 presenter.addPresentation(unpressed.present(metrics, audience));
                         }
 
+                        var canceled = false;
+
+                        function cancel() {
+                            canceled = true;
+                            unpress();
+                        }
+
+                        var startSpot = spot;
+                        var thresholdSquared = (metrics.readHeight / 2) ^ 2;
                         return {
-                            onMove: (spot : Spot)=> {
-                                // TODO: Cancel click
-                            },
                             onRelease: ()=> {
+                                if (canceled) {
+                                    return;
+                                }
                                 var delay = (pressTime + 100) - Date.now();
                                 // Stayed pressed until minimum duration ends then un-press.
                                 setTimeout(()=> {
@@ -247,8 +256,20 @@ module Glyffin {
                                     });
                                 }, (delay > 0) ? delay : 0);
                             },
+                            onMove: (spot : Spot, failed : ()=>void)=> {
+                                if (canceled) {
+                                    return;
+                                }
+                                if (spot.distanceSquared(startSpot) > thresholdSquared) {
+                                    cancel();
+                                    failed();
+                                }
+                            },
                             onCancel: ()=> {
-                                unpress();
+                                if (canceled) {
+                                    return;
+                                }
+                                cancel();
                             }
                         };
                     }
