@@ -117,7 +117,7 @@ module Glyffin {
         var insertions : Insertion<Void>[] = [];
         for (var i = 0; i < word.length; i++) {
             var code = word.charCodeAt(i);
-            var charWidth = xWeightPixels * getCharXWeight(code);
+            var charWidth = Math.floor(xWeightPixels * getCharXWeight(code));
             if (i > 0) {
                 insertions.push(new Insertion(xWeightPixels, Glyffin.ClearGlyff));
             }
