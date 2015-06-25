@@ -102,7 +102,7 @@ var Glyffin;
         var insertions = [];
         for (var i = 0; i < word.length; i++) {
             var code = word.charCodeAt(i);
-            var charWidth = Math.floor(xWeightPixels * getCharXWeight(code));
+            var charWidth = xWeightPixels * getCharXWeight(code);
             if (i > 0) {
                 insertions.push(new Glyffin.Insertion(xWeightPixels, Glyffin.ClearGlyff));
             }
