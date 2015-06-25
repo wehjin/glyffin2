@@ -48,7 +48,7 @@ var Glyffin;
             var linesAndLeadings = (lines * 2 - 1);
             var ascentPixels = perimeter.getHeight() / linesAndLeadings;
             var lineHeight = ascentPixels * 2;
-            var xWeightPixels = (ascentPixels / 7);
+            var xWeightPixels = Math.floor(ascentPixels / 7);
             var width = perimeter.getWidth();
             var xWeightsPerLine = Math.floor(width / xWeightPixels);
             var lineContents = [];
@@ -93,7 +93,7 @@ var Glyffin;
             var perimeter = metrics.perimeter;
             var wordXWeightPixels = perimeter.getWidth() / wordXWeight;
             var preferredWeightPixels = perimeter.getHeight() / 7;
-            var fittedWeightPixels = Math.min(preferredWeightPixels, wordXWeightPixels);
+            var fittedWeightPixels = Math.floor(Math.min(preferredWeightPixels, wordXWeightPixels));
             presenter.addPresentation(asciiWord(word, fittedWeightPixels).present(metrics, audience, presenter));
         });
     }
