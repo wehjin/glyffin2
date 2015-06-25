@@ -190,7 +190,7 @@ var Glyffin;
                             unpress();
                         }
                         var startSpot = spot;
-                        var thresholdSquared = (metrics.readHeight / 2) ^ 2;
+                        var thresholdSquared = (metrics.tapHeight / 4) ^ 2;
                         return {
                             onRelease: function () {
                                 if (canceled) {
