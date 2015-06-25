@@ -93,7 +93,7 @@ var Glyffin;
             var perimeter = metrics.perimeter;
             var wordXWeightPixels = perimeter.getWidth() / wordXWeight;
             var preferredWeightPixels = perimeter.getHeight() / 7;
-            var fittedWeightPixels = Math.min(preferredWeightPixels, wordXWeightPixels);
+            var fittedWeightPixels = Math.floor(Math.min(preferredWeightPixels, wordXWeightPixels));
             presenter.addPresentation(asciiWord(word, fittedWeightPixels).present(metrics, audience, presenter));
         });
     }
@@ -102,11 +102,11 @@ var Glyffin;
         var insertions = [];
         for (var i = 0; i < word.length; i++) {
             var code = word.charCodeAt(i);
-            var capWidth = xWeightPixels * getCharXWeight(code);
+            var charWidth = xWeightPixels * getCharXWeight(code);
             if (i > 0) {
                 insertions.push(new Glyffin.Insertion(xWeightPixels, Glyffin.ClearGlyff));
             }
-            insertions.push(new Glyffin.Insertion(capWidth, Glyffin.asciiByCode(code)));
+            insertions.push(new Glyffin.Insertion(charWidth, Glyffin.asciiByCode(code)));
         }
         return Glyffin.ClearGlyff.addLefts(insertions);
     }
