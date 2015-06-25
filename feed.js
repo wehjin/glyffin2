@@ -20,7 +20,7 @@ function main() {
     var backgroundColorPath = [0, 0];
     var midgroundColorPath = [0, 1];
     var perimeter = new Glyffin.RectangleBounds(0, 0, glAudience.canvas.width, glAudience.canvas.height);
-    var metrics = new Glyffin.Metrics(perimeter, 48, 10, palette);
+    var metrics = new Glyffin.Metrics(perimeter, 48, 13, palette);
     var hNewsUri = "https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20rss%20where%20url%3D%22https%3A%2F%2Fnews.ycombinator.com%2Frss%22&format=json&diagnostics=true&callback=";
     var yNewsUri = "https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20rss%20where%20url%3D%22http%3A%2F%2Frss.news.yahoo.com%2Frss%2Ftopstories%22&format=json&callback=";
     Rx.httpGet(hNewsUri).subscribe(function (response) {
