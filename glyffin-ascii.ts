@@ -107,7 +107,7 @@ module Glyffin {
             var perimeter = metrics.perimeter;
             var wordXWeightPixels = perimeter.getWidth() / wordXWeight;
             var preferredWeightPixels = perimeter.getHeight() / 7;
-            var fittedWeightPixels = Math.floor(Math.min(preferredWeightPixels, wordXWeightPixels));
+            var fittedWeightPixels = Math.min(preferredWeightPixels, wordXWeightPixels);
             presenter.addPresentation(asciiWord(word,
                 fittedWeightPixels).present(metrics, audience, presenter));
         });
