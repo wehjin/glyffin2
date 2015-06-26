@@ -33,7 +33,7 @@ var Glyffin;
             this.thresholdSquared = threshold * threshold;
             this.willPress = setTimeout(function () {
                 _this.doPress();
-            }, 150);
+            }, 200);
         }
         ClickGesturing.prototype.clearWillPress = function () {
             if (this.willPress) {

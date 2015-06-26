@@ -63,7 +63,7 @@ module Glyffin {
             this.thresholdSquared = threshold * threshold;
             this.willPress = setTimeout(()=> {
                 this.doPress();
-            }, 150);
+            }, 200);
         }
 
         release() {
