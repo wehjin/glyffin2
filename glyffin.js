@@ -264,7 +264,7 @@ var Glyffin;
             return Glyff.create(function (metrics, audience, presenter) {
                 var unpressed = _this;
                 var removable = presenter.addPresentation(unpressed.present(metrics, audience));
-                var zone = audience.addZone(metrics.perimeter, new ClickGesturable(metrics.tapHeight / 4, function () {
+                var zone = audience.addZone(metrics.perimeter, new ClickGesturable(metrics.tapHeight / 2, function () {
                     removable.remove();
                     removable = presenter.addPresentation(pressed.present(metrics, audience));
                 }, function () {

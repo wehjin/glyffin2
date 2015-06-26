@@ -315,7 +315,7 @@ module Glyffin {
                 var unpressed = this;
                 var removable = presenter.addPresentation(unpressed.present(metrics, audience));
                 var zone = audience.addZone(metrics.perimeter,
-                    new ClickGesturable(metrics.tapHeight / 4, ()=> {
+                    new ClickGesturable(metrics.tapHeight / 2, ()=> {
                         removable.remove();
                         removable = presenter.addPresentation(pressed.present(metrics, audience));
                     }, ()=> {
