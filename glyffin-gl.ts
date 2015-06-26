@@ -22,7 +22,7 @@ module Glyffin {
     }
 
     class Interactive {
-        constructor(public bounds : RectangleBounds, public touchProvider : TouchProvider) {
+        constructor(public bounds : RectangleBounds, public touchProvider : Gesturable) {
         }
 
         isHit(touchX : number, touchY : number) : boolean {
@@ -71,7 +71,7 @@ module Glyffin {
                     jsTouch.clientY);
                 if (hits.length > 0) {
                     var interactive = hits[0];
-                    var touch = interactive.touchProvider.getTouch(new Spot(jsTouch.clientX,
+                    var touch = interactive.touchProvider.init(new Spot(jsTouch.clientX,
                         jsTouch.clientY));
 
                     var ontouchcancel;
@@ -86,17 +86,17 @@ module Glyffin {
                     }
 
                     ontouchend = function () {
-                        touch.onRelease();
+                        touch.release();
                         removeListeners();
                     };
                     ontouchmove = function (ev : Event) {
                         var jsTouch = (<JsTouchEvent>ev).touches.item(0);
-                        touch.onMove(new Spot(jsTouch.clientX, jsTouch.clientY), ()=> {
+                        touch.move(new Spot(jsTouch.clientX, jsTouch.clientY), ()=> {
                             removeListeners();
                         });
                     };
                     ontouchcancel = function () {
-                        touch.onCancel();
+                        touch.cancel();
                         removeListeners();
                     };
                     canvas.addEventListener("touchend", ontouchend, false);
@@ -112,19 +112,19 @@ module Glyffin {
                 var hits = Interactive.findHits(this.interactives, ev.clientX, ev.clientY);
                 if (hits.length > 0) {
                     var interactive = hits[0];
-                    var touch = interactive.touchProvider.getTouch(new Spot(ev.clientX,
+                    var touch = interactive.touchProvider.init(new Spot(ev.clientX,
                         ev.clientY));
                     canvas.onmouseup = ()=> {
-                        touch.onRelease();
+                        touch.release();
                         canvas.onmouseout = canvas.onmousemove = canvas.onmouseup = null;
                     };
                     canvas.onmousemove = (ev : MouseEvent)=> {
-                        touch.onMove(new Spot(ev.clientX, ev.clientY), ()=> {
+                        touch.move(new Spot(ev.clientX, ev.clientY), ()=> {
                             canvas.onmouseout = canvas.onmousemove = canvas.onmouseup = null;
                         });
                     };
                     canvas.onmouseout = ()=> {
-                        touch.onCancel();
+                        touch.cancel();
                         canvas.onmouseout = canvas.onmousemove = canvas.onmouseup = null;
                     };
                 }
@@ -162,7 +162,7 @@ module Glyffin {
         }
 
         addZone(bounds : Glyffin.RectangleBounds,
-                touchProvider : Glyffin.TouchProvider) : Glyffin.Zone {
+                touchProvider : Glyffin.Gesturable) : Glyffin.Zone {
             var interactive = new Interactive(bounds, touchProvider);
             this.interactives.push(interactive);
             var interactives = this.interactives;

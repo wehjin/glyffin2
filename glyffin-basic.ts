@@ -135,7 +135,7 @@ module Glyffin {
     export interface Audience {
         addPatch(bounds : RectangleBounds, color : Color):Patch;
         addZone(bounds : RectangleBounds,
-                touchProvider : TouchProvider):Zone;
+                touchProvider : Gesturable):Zone;
 
     }
 
@@ -155,18 +155,14 @@ module Glyffin {
     export var EMPTY_PATCH : Patch = EMPTY_REMOVABLE;
     export var EMPTY_ACTIVE : Zone = EMPTY_REMOVABLE;
 
-    export interface TouchProvider {
-        getTouch(spot : Spot): Touch;
+    export interface Gesturable {
+        init(spot : Spot): Gesturing;
     }
 
-    export interface Gesture {
+    export interface Gesturing {
+        move(spot : Spot, onAbort : ()=>void);
+        release();
         cancel();
-    }
-
-    export interface Touch {
-        onMove(spot : Spot, failed : ()=>void);
-        onRelease();
-        onCancel();
     }
 
     export interface Reaction<T> {

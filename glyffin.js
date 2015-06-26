@@ -20,6 +20,89 @@ var Glyffin;
         };
         return NoResultPresenter;
     })();
+    var ClickGesturing = (function () {
+        function ClickGesturing(startSpot, threshold, onPress, onUnpress, onClick) {
+            var _this = this;
+            this.startSpot = startSpot;
+            this.onPress = onPress;
+            this.onUnpress = onUnpress;
+            this.onClick = onClick;
+            this.isEnded = false;
+            this.pressTime = 0;
+            this.willPress = 0;
+            this.thresholdSquared = threshold * threshold;
+            this.willPress = setTimeout(function () {
+                _this.doPress();
+            }, 150);
+        }
+        ClickGesturing.prototype.clearWillPress = function () {
+            if (this.willPress) {
+                clearTimeout(this.willPress);
+                this.willPress = 0;
+            }
+        };
+        ClickGesturing.prototype.doPress = function () {
+            if (this.isEnded) {
+                return;
+            }
+            this.clearWillPress();
+            this.pressTime = Date.now();
+            this.onPress();
+        };
+        ClickGesturing.prototype.doEnd = function () {
+            this.isEnded = true;
+            this.clearWillPress();
+            if (this.pressTime) {
+                this.onUnpress();
+            }
+        };
+        ClickGesturing.prototype.release = function () {
+            var _this = this;
+            if (this.isEnded) {
+                return;
+            }
+            if (this.pressTime == 0) {
+                this.doPress();
+            }
+            var delay = (this.pressTime + 100) - Date.now();
+            // Stayed pressed until minimum duration ends then un-press.
+            setTimeout(function () {
+                _this.doEnd();
+                // Wait for screen to show the un-press before delivering click.
+                requestAnimationFrame(function () {
+                    setTimeout(_this.onClick, 50);
+                });
+            }, (delay > 0) ? delay : 0);
+        };
+        ClickGesturing.prototype.move = function (spot, onAbort) {
+            if (this.isEnded) {
+                return;
+            }
+            if (spot.distanceSquared(this.startSpot) > this.thresholdSquared) {
+                this.doEnd();
+                onAbort();
+            }
+        };
+        ClickGesturing.prototype.cancel = function () {
+            if (this.isEnded) {
+                return;
+            }
+            this.doEnd();
+        };
+        return ClickGesturing;
+    })();
+    var ClickGesturable = (function () {
+        function ClickGesturable(threshold, press, unpress, click) {
+            this.threshold = threshold;
+            this.press = press;
+            this.unpress = unpress;
+            this.click = click;
+        }
+        ClickGesturable.prototype.init = function (spot) {
+            return new ClickGesturing(spot, this.threshold, this.press, this.unpress, this.click);
+        };
+        return ClickGesturable;
+    })();
     var Glyff = (function () {
         function Glyff(onPresent) {
             this.onPresent = onPresent;
@@ -181,57 +264,15 @@ var Glyffin;
             return Glyff.create(function (metrics, audience, presenter) {
                 var unpressed = _this;
                 var removable = presenter.addPresentation(unpressed.present(metrics, audience));
-                var zone = audience.addZone(metrics.perimeter, {
-                    getTouch: function (spot) {
-                        removable.remove();
-                        removable = presenter.addPresentation(pressed.present(metrics, audience));
-                        var pressTime = Date.now();
-                        function unpress() {
-                            removable.remove();
-                            removable = presenter.addPresentation(unpressed.present(metrics, audience));
-                        }
-                        var canceled = false;
-                        function cancel() {
-                            canceled = true;
-                            unpress();
-                        }
-                        var startSpot = spot;
-                        var thresholdSquared = (metrics.tapHeight / 4) ^ 2;
-                        return {
-                            onRelease: function () {
-                                if (canceled) {
-                                    return;
-                                }
-                                var delay = (pressTime + 100) - Date.now();
-                                // Stayed pressed until minimum duration ends then un-press.
-                                setTimeout(function () {
-                                    unpress();
-                                    // Wait for screen to update with unpress.  Then deliver button press.
-                                    requestAnimationFrame(function () {
-                                        setTimeout(function () {
-                                            presenter.onResult(symbol);
-                                        }, 0);
-                                    });
-                                }, (delay > 0) ? delay : 0);
-                            },
-                            onMove: function (spot, failed) {
-                                if (canceled) {
-                                    return;
-                                }
-                                if (spot.distanceSquared(startSpot) > thresholdSquared) {
-                                    cancel();
-                                    failed();
-                                }
-                            },
-                            onCancel: function () {
-                                if (canceled) {
-                                    return;
-                                }
-                                cancel();
-                            }
-                        };
-                    }
-                });
+                var zone = audience.addZone(metrics.perimeter, new ClickGesturable(metrics.tapHeight / 4, function () {
+                    removable.remove();
+                    removable = presenter.addPresentation(pressed.present(metrics, audience));
+                }, function () {
+                    removable.remove();
+                    removable = presenter.addPresentation(unpressed.present(metrics, audience));
+                }, function () {
+                    presenter.onResult(symbol);
+                }));
                 presenter.addPresentation({
                     end: function () {
                         zone.remove();

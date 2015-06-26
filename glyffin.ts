@@ -27,6 +27,94 @@ module Glyffin {
         }
     }
 
+    class ClickGesturing implements Gesturing {
+
+        private isEnded : boolean = false;
+        private thresholdSquared : number;
+        private pressTime : number = 0;
+        private willPress : number = 0;
+
+        private clearWillPress() {
+            if (this.willPress) {
+                clearTimeout(this.willPress);
+                this.willPress = 0;
+            }
+        }
+
+        private doPress() {
+            if (this.isEnded) {
+                return;
+            }
+            this.clearWillPress();
+            this.pressTime = Date.now();
+            this.onPress();
+        }
+
+        private doEnd() {
+            this.isEnded = true;
+            this.clearWillPress();
+            if (this.pressTime) {
+                this.onUnpress();
+            }
+        }
+
+        constructor(private startSpot : Spot, threshold : number, private onPress : ()=>void,
+                    private onUnpress : ()=>void, private onClick : ()=>void) {
+            this.thresholdSquared = threshold * threshold;
+            this.willPress = setTimeout(()=> {
+                this.doPress();
+            }, 150);
+        }
+
+        release() {
+            if (this.isEnded) {
+                return;
+            }
+
+            if (this.pressTime == 0) {
+                this.doPress();
+            }
+
+            var delay = (this.pressTime + 100) - Date.now();
+            // Stayed pressed until minimum duration ends then un-press.
+            setTimeout(()=> {
+                this.doEnd();
+
+                // Wait for screen to show the un-press before delivering click.
+                requestAnimationFrame(()=> {
+                    setTimeout(this.onClick, 50);
+                });
+            }, (delay > 0) ? delay : 0);
+        }
+
+        move(spot : Glyffin.Spot, onAbort : ()=>void) {
+            if (this.isEnded) {
+                return;
+            }
+            if (spot.distanceSquared(this.startSpot) > this.thresholdSquared) {
+                this.doEnd();
+                onAbort();
+            }
+        }
+
+        cancel() {
+            if (this.isEnded) {
+                return;
+            }
+            this.doEnd();
+        }
+    }
+
+    class ClickGesturable implements Gesturable {
+        constructor(private threshold : number, private press : ()=>void,
+                    private unpress : ()=>void, private click : ()=>void) {
+        }
+
+        init(spot : Spot) : Gesturing {
+            return new ClickGesturing(spot, this.threshold, this.press, this.unpress, this.click);
+        }
+    }
+
     export class Glyff<T> {
         constructor(private onPresent : (metrics : Metrics, audience : Audience,
                                          presenter : Presenter<T>)=>void) {
@@ -226,62 +314,16 @@ module Glyffin {
                                          presenter : Presenter<Void>)=> {
                 var unpressed = this;
                 var removable = presenter.addPresentation(unpressed.present(metrics, audience));
-                var zone = audience.addZone(metrics.perimeter, {
-                    getTouch: (spot : Spot) : Touch => {
+                var zone = audience.addZone(metrics.perimeter,
+                    new ClickGesturable(metrics.tapHeight / 4, ()=> {
                         removable.remove();
                         removable = presenter.addPresentation(pressed.present(metrics, audience));
-                        var pressTime = Date.now();
-
-                        function unpress() {
-                            removable.remove();
-                            removable =
-                                presenter.addPresentation(unpressed.present(metrics, audience));
-                        }
-
-                        var canceled = false;
-
-                        function cancel() {
-                            canceled = true;
-                            unpress();
-                        }
-
-                        var startSpot = spot;
-                        var thresholdSquared = (metrics.tapHeight / 4) ^ 2;
-                        return {
-                            onRelease: ()=> {
-                                if (canceled) {
-                                    return;
-                                }
-                                var delay = (pressTime + 100) - Date.now();
-                                // Stayed pressed until minimum duration ends then un-press.
-                                setTimeout(()=> {
-                                    unpress();
-                                    // Wait for screen to update with unpress.  Then deliver button press.
-                                    requestAnimationFrame(()=> {
-                                        setTimeout(()=> {
-                                            presenter.onResult(symbol);
-                                        }, 0);
-                                    });
-                                }, (delay > 0) ? delay : 0);
-                            },
-                            onMove: (spot : Spot, failed : ()=>void)=> {
-                                if (canceled) {
-                                    return;
-                                }
-                                if (spot.distanceSquared(startSpot) > thresholdSquared) {
-                                    cancel();
-                                    failed();
-                                }
-                            },
-                            onCancel: ()=> {
-                                if (canceled) {
-                                    return;
-                                }
-                                cancel();
-                            }
-                        };
-                    }
-                });
+                    }, ()=> {
+                        removable.remove();
+                        removable = presenter.addPresentation(unpressed.present(metrics, audience));
+                    }, ()=> {
+                        presenter.onResult(symbol);
+                    }));
                 presenter.addPresentation(<Presentation>{
                     end: ()=> {
                         zone.remove();
