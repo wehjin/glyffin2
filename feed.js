@@ -49,11 +49,11 @@ function main() {
             var title = item['title'];
             var link = item['link'];
             function addTitle(background) {
-                return background.addNearMajor(1, Glyffin.asciiMultiLine(2, title).minorTop(-textSize, Glyffin.ClearGlyff).minorTop(-textSize, Glyffin.asciiEntireWord(link)).pad(readSize, readSize).limitHeight(readSize * 2 + textSize * 5, .4));
+                return background.addNearMajor(1, Glyffin.asciiMultiLine(2, title).minorTop(-textSize, Glyffin.ClearGlyff).minorTop(-textSize, Glyffin.asciiEntireWord(link)).pad(readSize * 2, readSize * 2).limitHeight(readSize * 4 + textSize * 5, .4));
             }
             var unpressedCell = Glyffin.colorPath(midgroundColorPath).rebuild(addTitle);
             var pressedCell = Glyffin.colorPath(midgroundColorPath, .5, backgroundColorPath).rebuild(addTitle);
-            var cell = unpressedCell.clicken("go", pressedCell).pad(readSize, readSize);
+            var cell = unpressedCell.clicken("go", pressedCell);
             function button(label, symbol) {
                 function addLabel(label) {
                     return function (background) {
@@ -70,7 +70,7 @@ function main() {
             }
             var nextButton = button("Next", "next");
             var prevButton = button("Back", "back");
-            var actionBar = nextButton.addLeft(readSize / 2, Glyffin.ClearGlyff).addLeft(screenWidth * .3, prevButton).pad(readSize, readSize).limitHeight(tapHeight + readSize * 2, 0);
+            var actionBar = nextButton.addLeft(readSize / 2, Glyffin.ClearGlyff).addLeft(screenWidth * .3, prevButton).pad(readSize, tapHeight / 2).limitHeight(2 * tapHeight, 0);
             var app = Glyffin.colorPath(backgroundColorPath).addNearMajor(1, cell.combineTop(-tapHeight * 3, actionBar));
             presentation = app.present(metrics, glAudience, function (symbol) {
                 console.log("%s", symbol);
