@@ -28,19 +28,19 @@ function main() {
     var fingerPixels = metrics.tapHeight;
     var readPixels = metrics.readHeight;
     var demo = Glyffin.RedGlyff
-        .minorTop(100, Glyffin.BlueGlyff
-            .minorTop(readPixels * 8, Glyffin.asciiMultiLine(3, alphabet))
+        .shareHeightYield(100, Glyffin.BlueGlyff
+            .shareHeightYield(readPixels * 8, Glyffin.asciiMultiLine(3, alphabet))
             .pad(10, 10))
-        .minorTop(readPixels * 5, Glyffin.BlueGlyff
-            .minorTop(readPixels * 3, Glyffin.asciiMultiLine(2, headline))
+        .shareHeightYield(readPixels * 5, Glyffin.BlueGlyff
+            .shareHeightYield(readPixels * 3, Glyffin.asciiMultiLine(2, headline))
             .pad(readPixels, readPixels))
-        .minorTop(readPixels * 7, Glyffin.BlueGlyff
-            .minorTop(readPixels * 5, Glyffin.asciiMultiLine(3, headline2))
+        .shareHeightYield(readPixels * 7, Glyffin.BlueGlyff
+            .shareHeightYield(readPixels * 5, Glyffin.asciiMultiLine(3, headline2))
             .pad(readPixels, readPixels))
-        .majorTop(fingerPixels, Glyffin.button());
+        .shareHeightRetain(fingerPixels, Glyffin.button());
 
     var app = Glyff.create((metrics : Metrics, audience : Audience, presenter : Presenter<Void>)=> {
-        var page = Glyffin.BeigeGlyff.majorTop(fingerPixels, Glyffin.button());
+        var page = Glyffin.BeigeGlyff.shareHeightRetain(fingerPixels, Glyffin.button());
 
         var presented;
 

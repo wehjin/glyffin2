@@ -43,15 +43,27 @@ module Glyffin {
                 this.age);
         }
 
-        splitHorizontal(pixelsDown : number) : Perimeter[] {
-            if (pixelsDown >= 0) {
-                var split = this.top + pixelsDown;
+        splitHeight(pixels : number) : Perimeter[] {
+            if (pixels >= 0) {
+                var split = this.top + pixels;
                 return [new Perimeter(this.left, this.top, this.right, split, this.age),
                         new Perimeter(this.left, split, this.right, this.bottom, this.age)];
             } else {
-                var split = this.bottom + pixelsDown;
+                var split = this.bottom + pixels;
                 return [new Perimeter(this.left, split, this.right, this.bottom, this.age),
                         new Perimeter(this.left, this.top, this.right, split, this.age)];
+            }
+        }
+
+        splitWidth(pixels : number) : Perimeter[] {
+            if (pixels >= 0) {
+                var split = this.left + pixels;
+                return [new Perimeter(this.left, this.top, split, this.bottom, this.age),
+                        new Perimeter(split, this.top, this.right, this.bottom, this.age)];
+            } else {
+                var split = this.right + pixels;
+                return [new Perimeter(split, this.top, this.right, this.bottom, this.age),
+                        new Perimeter(this.left, this.top, split, this.bottom, this.age)];
             }
         }
 
@@ -66,6 +78,7 @@ module Glyffin {
             return (width <= maxWidth) ? this :
                 this.rightFromLeft((width - maxWidth) * align, maxWidth);
         }
+
     }
 
     export class Color {

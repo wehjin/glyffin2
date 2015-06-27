@@ -38,14 +38,24 @@ var Glyffin;
             var insetLeft = this.left + pixelsX;
             return new Perimeter(insetLeft, this.top, insetLeft + pixelsWide, this.bottom, this.age);
         };
-        Perimeter.prototype.splitHorizontal = function (pixelsDown) {
-            if (pixelsDown >= 0) {
-                var split = this.top + pixelsDown;
+        Perimeter.prototype.splitHeight = function (pixels) {
+            if (pixels >= 0) {
+                var split = this.top + pixels;
                 return [new Perimeter(this.left, this.top, this.right, split, this.age), new Perimeter(this.left, split, this.right, this.bottom, this.age)];
             }
             else {
-                var split = this.bottom + pixelsDown;
+                var split = this.bottom + pixels;
                 return [new Perimeter(this.left, split, this.right, this.bottom, this.age), new Perimeter(this.left, this.top, this.right, split, this.age)];
+            }
+        };
+        Perimeter.prototype.splitWidth = function (pixels) {
+            if (pixels >= 0) {
+                var split = this.left + pixels;
+                return [new Perimeter(this.left, this.top, split, this.bottom, this.age), new Perimeter(split, this.top, this.right, this.bottom, this.age)];
+            }
+            else {
+                var split = this.right + pixels;
+                return [new Perimeter(split, this.top, this.right, this.bottom, this.age), new Perimeter(this.left, this.top, split, this.bottom, this.age)];
             }
         };
         Perimeter.prototype.limitHeight = function (maxHeight, align) {

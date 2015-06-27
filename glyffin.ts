@@ -184,38 +184,31 @@ module Glyffin {
             });
         }
 
-        addLefts<U>(insertions : Insertion<U>[]) : Glyff<T> {
+        addLefts(insertions : Insertion<T>[]) : Glyff<T> {
             var current : Glyff<T> = this;
             var todo = insertions.slice();
             while (todo.length > 0) {
-                var insertion : Insertion<U> = todo.pop();
-                current = current.addLeft(insertion.amount, insertion.glyff);
+                var insertion : Insertion<T> = todo.pop();
+                current = current.shareWidthCombine(insertion.amount, insertion.glyff);
             }
             return current;
         }
 
-        addLeft(insertAmount : number, insertGlyff : Glyff<Void>) : Glyff<T> {
-            var existingGlyff = this;
+        shareWidthCombine(size : number, glyff : Glyff<T>) : Glyff<T> {
             return Glyff.create((metrics : Metrics, audience : Audience,
-                                 presenter : Presenter<Void>)=> {
-                // TODO: Move perimeter computation into RectangleBounds.
-                var perimeter = metrics.perimeter;
-                var insertRight = perimeter.left + insertAmount;
-                var insertPerimeter = new Perimeter(perimeter.left, perimeter.top,
-                    insertRight, perimeter.bottom, perimeter.age);
-                var modifiedPerimeter = new Perimeter(insertRight, perimeter.top,
-                    perimeter.right, perimeter.bottom, perimeter.age);
-                presenter.addPresentation(insertGlyff.present(metrics.withPerimeter(insertPerimeter),
+                                 presenter : Presenter<T>)=> {
+                var split = metrics.perimeter.splitWidth(size);
+                presenter.addPresentation(glyff.present(metrics.withPerimeter(split[0]),
                     audience, presenter));
-                presenter.addPresentation(existingGlyff.present(metrics.withPerimeter(modifiedPerimeter),
+                presenter.addPresentation(this.present(metrics.withPerimeter(split[1]),
                     audience, presenter));
             });
         }
 
-        combineTop(size : number, topGlyff : Glyff<T>) : Glyff<T> {
+        shareHeightCombine(size : number, topGlyff : Glyff<T>) : Glyff<T> {
             return Glyff.create((metrics : Metrics, audience : Audience,
                                  presenter : Presenter<T>) => {
-                var split = metrics.perimeter.splitHorizontal(size);
+                var split = metrics.perimeter.splitHeight(size);
                 presenter.addPresentation(topGlyff.present(metrics.withPerimeter(split[0]),
                     audience, presenter));
                 presenter.addPresentation(this.present(metrics.withPerimeter(split[1]),
@@ -223,10 +216,10 @@ module Glyffin {
             });
         }
 
-        majorTop<U>(size : number, topGlyff : Glyff<U>) : Glyff<U> {
+        shareHeightRetain<U>(size : number, topGlyff : Glyff<U>) : Glyff<U> {
             return Glyff.create((metrics : Metrics, audience : Audience,
                                  presenter : Presenter<U>) => {
-                var split = metrics.perimeter.splitHorizontal(size);
+                var split = metrics.perimeter.splitHeight(size);
                 presenter.addPresentation(topGlyff.present(metrics.withPerimeter(split[0]),
                     audience, presenter));
                 presenter.addPresentation(this.present(metrics.withPerimeter(split[1]),
@@ -234,10 +227,10 @@ module Glyffin {
             });
         }
 
-        minorTop<U>(size : number, addGlyff : Glyff<U>) : Glyff<T> {
+        shareHeightYield<U>(size : number, addGlyff : Glyff<U>) : Glyff<T> {
             return Glyff.create((metrics : Metrics, audience : Audience,
                                  presenter : Presenter<T>) => {
-                var split = metrics.perimeter.splitHorizontal(size);
+                var split = metrics.perimeter.splitHeight(size);
                 presenter.addPresentation(addGlyff.present(metrics.withPerimeter(split[0]),
                     audience, new NoResultPresenter(presenter)));
                 presenter.addPresentation(this.present(metrics.withPerimeter(split[1]),

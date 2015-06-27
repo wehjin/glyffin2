@@ -65,8 +65,8 @@ function main() {
             function addTitle<T>(background : Glyffin.Glyff<T>) : Glyffin.Glyff<T> {
                 return background.addNearMajor(1,
                     Glyffin.asciiMultiLine(2, title)
-                        .minorTop(-textSize, Glyffin.ClearGlyff)
-                        .minorTop(-textSize, Glyffin.asciiEntireWord(link))
+                        .shareHeightYield(-textSize, Glyffin.ClearGlyff)
+                        .shareHeightYield(-textSize, Glyffin.asciiEntireWord(link))
                         .pad(readSize * 2, readSize * 2)
                         .limitHeight(readSize * 4 + textSize * 5, .4)
                 );
@@ -101,13 +101,13 @@ function main() {
             var nextButton = button("Next", "next");
             var prevButton = button("Back", "back");
             var actionBar = nextButton
-                .addLeft(readSize / 2, Glyffin.ClearGlyff)
-                .addLeft(screenWidth * .3, prevButton)
+                .shareWidthCombine(readSize / 2, Glyffin.ClearGlyff)
+                .shareWidthCombine(screenWidth * .3, prevButton)
                 .pad(readSize, tapHeight / 2)
                 .limitHeight(2 * tapHeight, 0);
 
             var app = Glyffin.colorPath(backgroundColorPath)
-                .addNearMajor(1, cell.combineTop(-tapHeight * 3, actionBar));
+                .addNearMajor(1, cell.shareHeightCombine(-tapHeight * 3, actionBar));
 
             var spinnerSize = tapHeight * 3;
             var spinner = Glyff.colorAnimation(Color.BLUE, Color.RED)
