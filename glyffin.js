@@ -64,7 +64,7 @@ var Glyffin;
             if (this.pressTime == 0) {
                 this.doPress();
             }
-            var delay = (this.pressTime + 100) - Date.now();
+            var delay = (this.pressTime + 200) - Date.now();
             // Stayed pressed until minimum duration ends then un-press.
             setTimeout(function () {
                 _this.doEnd();
