@@ -69,9 +69,7 @@ var Glyffin;
             setTimeout(function () {
                 _this.doEnd();
                 // Wait for screen to show the un-press before delivering click.
-                requestAnimationFrame(function () {
-                    setTimeout(_this.onClick, 50);
-                });
+                setTimeout(_this.onClick, 100);
             }, (delay > 0) ? delay : 0);
         };
         ClickGesturing.prototype.move = function (spot, onAbort) {

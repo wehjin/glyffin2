@@ -80,9 +80,7 @@ module Glyffin {
                 this.doEnd();
 
                 // Wait for screen to show the un-press before delivering click.
-                requestAnimationFrame(()=> {
-                    setTimeout(this.onClick, 50);
-                });
+                setTimeout(this.onClick, 100);
             }, (delay > 0) ? delay : 0);
         }
 
