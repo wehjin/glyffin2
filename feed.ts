@@ -114,7 +114,7 @@ function main() {
                 .animate(500)
                 .limitHeight(spinnerSize, .5).limitWidth(spinnerSize, .5);
             // TODO: Disable app during transition.
-            var transition = app.addNearMajor(1, spinner);
+            var transition = app.addNearMajor(10, spinner);
 
             presentation = app.present(metrics, glAudience, (symbol)=> {
                 console.log("%s", symbol);

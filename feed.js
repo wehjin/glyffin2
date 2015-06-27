@@ -76,7 +76,7 @@ function main() {
             var spinnerSize = tapHeight * 3;
             var spinner = Glyff.colorAnimation(Color.BLUE, Color.RED).animate(500).limitHeight(spinnerSize, .5).limitWidth(spinnerSize, .5);
             // TODO: Disable app during transition.
-            var transition = app.addNearMajor(1, spinner);
+            var transition = app.addNearMajor(10, spinner);
             presentation = app.present(metrics, glAudience, function (symbol) {
                 console.log("%s", symbol);
                 if (symbol === "go") {

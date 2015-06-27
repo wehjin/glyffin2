@@ -26,4 +26,6 @@ declare class Matrix4 {
               upZ : number);
 
     multiply(matrix : Matrix4) : Matrix4;
+
+    setPerspective(fov : number, aspectRatio : number, near : number, far : number);
 }

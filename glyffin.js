@@ -203,11 +203,12 @@ var Glyffin;
             });
         };
         Glyff.prototype.addNearMajor = function (level, nearGlyff) {
-            var farGlyff = this;
+            var _this = this;
             return Glyff.create(function (metrics, audience, presenter) {
-                var perimeter = metrics.perimeter.withLevel(level);
-                presenter.addPresentation(farGlyff.present(metrics.withPerimeter(perimeter), audience, new NoResultPresenter(presenter)));
-                presenter.addPresentation(nearGlyff.present(metrics, audience, presenter));
+                presenter.addPresentation(_this.present(metrics, audience, new NoResultPresenter(presenter)));
+                // TODO: Think through relative versus absolute level.
+                var nearPerimeter = metrics.perimeter.withLevel(metrics.perimeter.level + level);
+                presenter.addPresentation(nearGlyff.present(metrics.withPerimeter(nearPerimeter), audience, presenter));
             });
         };
         Glyff.prototype.limitWidth = function (maxWidth, align) {
@@ -271,10 +272,11 @@ var Glyffin;
         Glyff.prototype.clicken = function (symbol, pressed) {
             var _this = this;
             return Glyff.create(function (metrics, audience, presenter) {
+                var perimeter = metrics.perimeter;
                 var unpressed = _this;
-                var unpressedMetrics = metrics.withPerimeter(metrics.perimeter.withLevel(4));
+                var unpressedMetrics = metrics.withPerimeter(perimeter.withLevel(perimeter.level + 4));
                 var removable = presenter.addPresentation(unpressed.present(unpressedMetrics, audience));
-                var zone = audience.addZone(metrics.perimeter, new ClickGesturable(metrics.tapHeight / 2, function () {
+                var zone = audience.addZone(perimeter, new ClickGesturable(metrics.tapHeight / 2, function () {
                     removable.remove();
                     removable = presenter.addPresentation(pressed.present(metrics, audience));
                 }, function () {

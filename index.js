@@ -12,7 +12,7 @@ var Void = Glyffin.Void;
 var Metrics = Glyffin.Metrics;
 function main() {
     var glAudience = new Glyffin.GlAudience();
-    var perimeter = new Glyffin.Perimeter(0, 0, glAudience.canvas.width, glAudience.canvas.height, 1);
+    var perimeter = new Glyffin.Perimeter(0, 0, glAudience.canvas.width, glAudience.canvas.height, 1, 0);
     var metrics = new Glyffin.Metrics(perimeter, 48, 10, new Glyffin.Palette());
     var headline = "Bidding for the 2026 World Cup is suspended by FIFA as Valcke denies wrongdoing";
     var headline2 = "Google didn’t lead the self-driving vehicle revolution. John Deere did";

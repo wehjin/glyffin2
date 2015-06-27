@@ -239,13 +239,15 @@ module Glyffin {
         }
 
         addNearMajor<U>(level : number, nearGlyff : Glyff<U>) : Glyff<U> {
-            var farGlyff = this;
             return Glyff.create((metrics : Metrics, audience : Audience,
                                  presenter : Presenter<U>) => {
-                var perimeter = metrics.perimeter.withLevel(level);
-                presenter.addPresentation(farGlyff.present(metrics.withPerimeter(perimeter),
-                    audience, new NoResultPresenter(presenter)));
-                presenter.addPresentation(nearGlyff.present(metrics, audience, presenter));
+                presenter.addPresentation(this.present(metrics, audience,
+                    new NoResultPresenter(presenter)));
+
+                // TODO: Think through relative versus absolute level.
+                var nearPerimeter = metrics.perimeter.withLevel(metrics.perimeter.level + level);
+                presenter.addPresentation(nearGlyff.present(metrics.withPerimeter(nearPerimeter),
+                    audience, presenter));
             });
         }
 
@@ -316,11 +318,13 @@ module Glyffin {
         clicken<U>(symbol : string, pressed : Glyff<U>) : Glyff<string> {
             return Glyff.create<string>((metrics : Metrics, audience : Audience,
                                          presenter : Presenter<Void>)=> {
+                var perimeter = metrics.perimeter;
                 var unpressed = this;
-                var unpressedMetrics = metrics.withPerimeter(metrics.perimeter.withLevel(4));
+                var unpressedMetrics = metrics.withPerimeter(perimeter.withLevel(perimeter.level +
+                    4));
                 var removable = presenter.addPresentation(unpressed.present(unpressedMetrics,
                     audience));
-                var zone = audience.addZone(metrics.perimeter,
+                var zone = audience.addZone(perimeter,
                     new ClickGesturable(metrics.tapHeight / 2, ()=> {
                         removable.remove();
                         removable = presenter.addPresentation(pressed.present(metrics, audience));

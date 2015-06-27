@@ -105,23 +105,26 @@ var Glyffin;
             var gl = getWebGLContext(canvas, false);
             initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            gl.enable(gl.DEPTH_TEST);
             this.vertices = new VerticesAndColor(MAX_PATCH_COUNT, gl);
             this.gl = gl;
             var modelMatrix = new Matrix4();
-            modelMatrix.setTranslate(-1, 1, -.5);
-            modelMatrix.scale(2 / canvas.width, -2 / canvas.height, -1 / canvas.height);
+            modelMatrix.setTranslate(-1, 1, -1);
+            modelMatrix.scale(2 / canvas.width, -2 / canvas.height, 1 / Math.min(canvas.height, canvas.width));
             var viewMatrix = new Matrix4();
-            viewMatrix.setLookAt(0, 0, 0, 0, 0, -0.5, 0, 1, 0);
-            var modelViewMatrix = viewMatrix.multiply(modelMatrix);
-            var u_ModelViewMatrix = gl.getUniformLocation(gl.program, 'u_viewMatrix');
-            gl.uniformMatrix4fv(u_ModelViewMatrix, false, modelViewMatrix.elements);
+            viewMatrix.setLookAt(0, 0, 0, 0, 0, -1, 0, 1, 0);
+            var projMatrix = new Matrix4();
+            projMatrix.setPerspective(90, 1, .1, 10);
+            var mvpMatrix = projMatrix.multiply(viewMatrix).multiply(modelMatrix);
+            var u_MvpMatrix = gl.getUniformLocation(gl.program, 'u_viewMatrix');
+            gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
         }
         GlAudience.prototype.addPatch = function (bounds, color) {
             var _this = this;
             if (bounds.left >= bounds.right || bounds.top >= bounds.bottom || color.alpha == 0) {
                 return Glyffin.EMPTY_PATCH;
             }
-            var patch = this.vertices.getPatch(bounds.left, bounds.top, bounds.right, bounds.bottom, color);
+            var patch = this.vertices.getPatch(bounds.left, bounds.top, bounds.right, bounds.bottom, bounds.level, color);
             this.scheduleRedraw();
             return {
                 remove: function () {
@@ -147,7 +150,7 @@ var Glyffin;
             this.editCount++;
             requestAnimationFrame(function () {
                 _this.vertices.clearFreePatches();
-                _this.gl.clear(_this.gl.COLOR_BUFFER_BIT);
+                _this.gl.clear(_this.gl.COLOR_BUFFER_BIT | _this.gl.DEPTH_BUFFER_BIT);
                 _this.gl.drawArrays(_this.gl.TRIANGLES, 0, _this.vertices.getActiveVertexCount());
                 _this.drawCount = _this.editCount;
                 console.log("Active %i, Free %i, TotalFreed %", _this.vertices.getActiveVertexCount(), _this.vertices.getFreeVertexCount(), _this.vertices.getTotalFreedVertices());
@@ -159,7 +162,7 @@ var Glyffin;
     var VSHADER_SOURCE = 'attribute vec4 a_Position;\n' + 'attribute vec4 a_Color;\n' + 'varying vec4 v_Color;\n' + 'uniform mat4 u_viewMatrix;\n' + 'void main(){\n' + '  gl_Position = u_viewMatrix * a_Position;\n' + '  v_Color = a_Color;\n' + '}\n';
     var FSHADER_SOURCE = 'precision mediump float;' + 'varying vec4 v_Color;\n' + 'void main(){\n' + '  gl_FragColor = v_Color;\n' + '}\n';
     var VERTICES_PER_PATCH = 6;
-    var FLOATS_PER_POSITION = 2;
+    var FLOATS_PER_POSITION = 3;
     var FLOATS_PER_COLOR = 4;
     var FLOATS_PER_VERTEX = FLOATS_PER_POSITION + FLOATS_PER_COLOR;
     var FLOATS_PER_PATCH = VERTICES_PER_PATCH * FLOATS_PER_VERTEX;
@@ -196,7 +199,7 @@ var Glyffin;
         VerticesAndColor.prototype.getTotalFreedVertices = function () {
             return this.totalFreed * VERTICES_PER_PATCH;
         };
-        VerticesAndColor.prototype.getPatch = function (left, top, right, bottom, color) {
+        VerticesAndColor.prototype.getPatch = function (left, top, right, bottom, level, color) {
             var patchIndex;
             if (this.freePatchIndices.length > 0) {
                 patchIndex = this.freePatchIndices.pop();
@@ -210,7 +213,7 @@ var Glyffin;
                 }
                 patchIndex = this.nextPatchIndex++;
             }
-            this.patchVertices.set([left, top, color.red, color.green, color.blue, color.alpha, right, top, color.red, color.green, color.blue, color.alpha, left, bottom, color.red, color.green, color.blue, color.alpha, left, bottom, color.red, color.green, color.blue, color.alpha, right, top, color.red, color.green, color.blue, color.alpha, right, bottom, color.red, color.green, color.blue, color.alpha,]);
+            this.patchVertices.set([left, top, level, color.red, color.green, color.blue, color.alpha, right, top, level, color.red, color.green, color.blue, color.alpha, left, bottom, level, color.red, color.green, color.blue, color.alpha, left, bottom, level, color.red, color.green, color.blue, color.alpha, right, top, level, color.red, color.green, color.blue, color.alpha, right, bottom, level, color.red, color.green, color.blue, color.alpha,]);
             this.gl.bufferSubData(this.gl.ARRAY_BUFFER, patchIndex * BYTES_PER_PATCH, this.patchVertices);
             return patchIndex;
         };
