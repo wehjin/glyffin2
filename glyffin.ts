@@ -30,7 +30,6 @@ module Glyffin {
     class ClickGesturing implements Gesturing {
 
         private isEnded : boolean = false;
-        private thresholdSquared : number;
         private pressTime : number = 0;
         private willPress : number = 0;
 
@@ -58,9 +57,9 @@ module Glyffin {
             }
         }
 
-        constructor(private startSpot : Spot, threshold : number, private onPress : ()=>void,
+        constructor(private startSpot : Spot, private threshold : number,
+                    private onPress : ()=>void,
                     private onUnpress : ()=>void, private onClick : ()=>void) {
-            this.thresholdSquared = threshold * threshold;
             this.willPress = setTimeout(()=> {
                 this.doPress();
             }, 200);
@@ -91,7 +90,7 @@ module Glyffin {
             if (this.isEnded) {
                 return;
             }
-            if (spot.distanceSquared(this.startSpot) > this.thresholdSquared) {
+            if (spot.gridDistance(this.startSpot) > this.threshold) {
                 this.doEnd();
                 onAbort();
             }

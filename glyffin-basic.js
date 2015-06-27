@@ -101,6 +101,9 @@ var Glyffin;
         Spot.prototype.distanceSquared = function (other) {
             return other.x * this.x + other.y * this.y;
         };
+        Spot.prototype.gridDistance = function (other) {
+            return Math.max(Math.abs(other.x - this.x), Math.abs(other.y - this.y));
+        };
         return Spot;
     })();
     Glyffin.Spot = Spot;

@@ -113,6 +113,10 @@ module Glyffin {
         distanceSquared(other : Spot) : number {
             return other.x * this.x + other.y * this.y;
         }
+
+        gridDistance(other : Spot) : number {
+            return Math.max(Math.abs(other.x - this.x), Math.abs(other.y - this.y));
+        }
     }
 
     export class Metrics {

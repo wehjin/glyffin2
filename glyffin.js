@@ -24,13 +24,13 @@ var Glyffin;
         function ClickGesturing(startSpot, threshold, onPress, onUnpress, onClick) {
             var _this = this;
             this.startSpot = startSpot;
+            this.threshold = threshold;
             this.onPress = onPress;
             this.onUnpress = onUnpress;
             this.onClick = onClick;
             this.isEnded = false;
             this.pressTime = 0;
             this.willPress = 0;
-            this.thresholdSquared = threshold * threshold;
             this.willPress = setTimeout(function () {
                 _this.doPress();
             }, 200);
@@ -78,7 +78,7 @@ var Glyffin;
             if (this.isEnded) {
                 return;
             }
-            if (spot.distanceSquared(this.startSpot) > this.thresholdSquared) {
+            if (spot.gridDistance(this.startSpot) > this.threshold) {
                 this.doEnd();
                 onAbort();
             }
