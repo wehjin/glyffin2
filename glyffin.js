@@ -166,11 +166,11 @@ var Glyffin;
             var todo = insertions.slice();
             while (todo.length > 0) {
                 var insertion = todo.pop();
-                current = current.shareWidthCombine(insertion.amount, insertion.glyff);
+                current = current.splitWidthCombine(insertion.amount, insertion.glyff);
             }
             return current;
         };
-        Glyff.prototype.shareWidthCombine = function (size, glyff) {
+        Glyff.prototype.splitWidthCombine = function (size, glyff) {
             var _this = this;
             return Glyff.create(function (metrics, audience, presenter) {
                 var split = metrics.perimeter.splitWidth(size);
@@ -178,7 +178,7 @@ var Glyffin;
                 presenter.addPresentation(_this.present(metrics.withPerimeter(split[1]), audience, presenter));
             });
         };
-        Glyff.prototype.shareHeightCombine = function (size, topGlyff) {
+        Glyff.prototype.splitHeightCombine = function (size, topGlyff) {
             var _this = this;
             return Glyff.create(function (metrics, audience, presenter) {
                 var split = metrics.perimeter.splitHeight(size);
@@ -186,7 +186,7 @@ var Glyffin;
                 presenter.addPresentation(_this.present(metrics.withPerimeter(split[1]), audience, presenter));
             });
         };
-        Glyff.prototype.shareHeightRetain = function (size, topGlyff) {
+        Glyff.prototype.splitHeightRetain = function (size, topGlyff) {
             var _this = this;
             return Glyff.create(function (metrics, audience, presenter) {
                 var split = metrics.perimeter.splitHeight(size);
@@ -194,7 +194,7 @@ var Glyffin;
                 presenter.addPresentation(_this.present(metrics.withPerimeter(split[1]), audience, new NoResultPresenter(presenter)));
             });
         };
-        Glyff.prototype.shareHeightYield = function (size, addGlyff) {
+        Glyff.prototype.splitHeightYield = function (size, addGlyff) {
             var _this = this;
             return Glyff.create(function (metrics, audience, presenter) {
                 var split = metrics.perimeter.splitHeight(size);

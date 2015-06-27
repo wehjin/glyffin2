@@ -189,12 +189,12 @@ module Glyffin {
             var todo = insertions.slice();
             while (todo.length > 0) {
                 var insertion : Insertion<T> = todo.pop();
-                current = current.shareWidthCombine(insertion.amount, insertion.glyff);
+                current = current.splitWidthCombine(insertion.amount, insertion.glyff);
             }
             return current;
         }
 
-        shareWidthCombine(size : number, glyff : Glyff<T>) : Glyff<T> {
+        splitWidthCombine(size : number, glyff : Glyff<T>) : Glyff<T> {
             return Glyff.create((metrics : Metrics, audience : Audience,
                                  presenter : Presenter<T>)=> {
                 var split = metrics.perimeter.splitWidth(size);
@@ -205,7 +205,7 @@ module Glyffin {
             });
         }
 
-        shareHeightCombine(size : number, topGlyff : Glyff<T>) : Glyff<T> {
+        splitHeightCombine(size : number, topGlyff : Glyff<T>) : Glyff<T> {
             return Glyff.create((metrics : Metrics, audience : Audience,
                                  presenter : Presenter<T>) => {
                 var split = metrics.perimeter.splitHeight(size);
@@ -216,7 +216,7 @@ module Glyffin {
             });
         }
 
-        shareHeightRetain<U>(size : number, topGlyff : Glyff<U>) : Glyff<U> {
+        splitHeightRetain<U>(size : number, topGlyff : Glyff<U>) : Glyff<U> {
             return Glyff.create((metrics : Metrics, audience : Audience,
                                  presenter : Presenter<U>) => {
                 var split = metrics.perimeter.splitHeight(size);
@@ -227,7 +227,7 @@ module Glyffin {
             });
         }
 
-        shareHeightYield<U>(size : number, addGlyff : Glyff<U>) : Glyff<T> {
+        splitHeightYield<U>(size : number, addGlyff : Glyff<U>) : Glyff<T> {
             return Glyff.create((metrics : Metrics, audience : Audience,
                                  presenter : Presenter<T>) => {
                 var split = metrics.perimeter.splitHeight(size);
