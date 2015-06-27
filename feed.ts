@@ -30,7 +30,7 @@ function main() {
     var midgroundColorPath = [0, 1];
 
     var screenWidth = glAudience.canvas.width;
-    var perimeter = new Glyffin.Perimeter(0, 0, screenWidth, glAudience.canvas.height, 1);
+    var perimeter = new Glyffin.Perimeter(0, 0, screenWidth, glAudience.canvas.height, 1, 0);
     var metrics = new Glyffin.Metrics(perimeter, 48, 13, palette);
 
     var hNewsUri = "https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20rss%20where%20url%3D%22https%3A%2F%2Fnews.ycombinator.com%2Frss%22&format=json&diagnostics=true&callback=";

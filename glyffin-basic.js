@@ -11,12 +11,13 @@ var Glyffin;
     })();
     Glyffin.Void = Void;
     var Perimeter = (function () {
-        function Perimeter(left, top, right, bottom, age) {
+        function Perimeter(left, top, right, bottom, age, level) {
             this.left = left;
             this.top = top;
             this.right = right;
             this.bottom = bottom;
             this.age = age;
+            this.level = level;
         }
         Perimeter.prototype.getHeight = function () {
             return this.bottom - this.top;
@@ -25,37 +26,40 @@ var Glyffin;
             return this.right - this.left;
         };
         Perimeter.prototype.withAge = function (age) {
-            return new Perimeter(this.left, this.top, this.right, this.bottom, age);
+            return new Perimeter(this.left, this.top, this.right, this.bottom, age, this.level);
+        };
+        Perimeter.prototype.withLevel = function (level) {
+            return new Perimeter(this.left, this.top, this.right, this.bottom, this.age, level);
         };
         Perimeter.prototype.inset = function (pixelsX, pixelsY) {
-            return new Perimeter(this.left + pixelsX, this.top + pixelsY, this.right - pixelsX, this.bottom - pixelsY, this.age);
+            return new Perimeter(this.left + pixelsX, this.top + pixelsY, this.right - pixelsX, this.bottom - pixelsY, this.age, this.level);
         };
         Perimeter.prototype.downFromTop = function (pixelsY, pixelsHigh) {
             var insetTop = this.top + pixelsY;
-            return new Perimeter(this.left, insetTop, this.right, insetTop + pixelsHigh, this.age);
+            return new Perimeter(this.left, insetTop, this.right, insetTop + pixelsHigh, this.age, this.level);
         };
         Perimeter.prototype.rightFromLeft = function (pixelsX, pixelsWide) {
             var insetLeft = this.left + pixelsX;
-            return new Perimeter(insetLeft, this.top, insetLeft + pixelsWide, this.bottom, this.age);
+            return new Perimeter(insetLeft, this.top, insetLeft + pixelsWide, this.bottom, this.age, this.level);
         };
         Perimeter.prototype.splitHeight = function (pixels) {
             if (pixels >= 0) {
                 var split = this.top + pixels;
-                return [new Perimeter(this.left, this.top, this.right, split, this.age), new Perimeter(this.left, split, this.right, this.bottom, this.age)];
+                return [new Perimeter(this.left, this.top, this.right, split, this.age, this.level), new Perimeter(this.left, split, this.right, this.bottom, this.age, this.level)];
             }
             else {
                 var split = this.bottom + pixels;
-                return [new Perimeter(this.left, split, this.right, this.bottom, this.age), new Perimeter(this.left, this.top, this.right, split, this.age)];
+                return [new Perimeter(this.left, split, this.right, this.bottom, this.age, this.level), new Perimeter(this.left, this.top, this.right, split, this.age, this.level)];
             }
         };
         Perimeter.prototype.splitWidth = function (pixels) {
             if (pixels >= 0) {
                 var split = this.left + pixels;
-                return [new Perimeter(this.left, this.top, split, this.bottom, this.age), new Perimeter(split, this.top, this.right, this.bottom, this.age)];
+                return [new Perimeter(this.left, this.top, split, this.bottom, this.age, this.level), new Perimeter(split, this.top, this.right, this.bottom, this.age, this.level)];
             }
             else {
                 var split = this.right + pixels;
-                return [new Perimeter(split, this.top, this.right, this.bottom, this.age), new Perimeter(this.left, this.top, split, this.bottom, this.age)];
+                return [new Perimeter(split, this.top, this.right, this.bottom, this.age, this.level), new Perimeter(this.left, this.top, split, this.bottom, this.age, this.level)];
             }
         };
         Perimeter.prototype.limitHeight = function (maxHeight, align) {

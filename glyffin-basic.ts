@@ -11,7 +11,7 @@ module Glyffin {
     export class Perimeter {
 
         constructor(public left : number, public top : number, public right : number,
-                    public bottom : number, public age : number) {
+                    public bottom : number, public age : number, public level : number) {
         }
 
         getHeight() : number {
@@ -23,47 +23,58 @@ module Glyffin {
         }
 
         withAge(age : number) : Perimeter {
-            return new Perimeter(this.left, this.top, this.right, this.bottom, age);
+            return new Perimeter(this.left, this.top, this.right, this.bottom, age, this.level);
+        }
+
+        withLevel(level : number) : Perimeter {
+            return new Perimeter(this.left, this.top, this.right, this.bottom, this.age, level);
         }
 
         inset(pixelsX : number, pixelsY : number) : Perimeter {
-            return new Perimeter(this.left + pixelsX,
-                this.top + pixelsY, this.right - pixelsX,
-                this.bottom - pixelsY, this.age);
+            return new Perimeter(this.left + pixelsX, this.top + pixelsY, this.right - pixelsX,
+                this.bottom - pixelsY, this.age, this.level);
         }
 
         downFromTop(pixelsY : number, pixelsHigh : number) : Perimeter {
             var insetTop = this.top + pixelsY;
-            return new Perimeter(this.left, insetTop, this.right, insetTop + pixelsHigh, this.age);
+            return new Perimeter(this.left, insetTop, this.right, insetTop + pixelsHigh, this.age,
+                this.level);
         }
 
         rightFromLeft(pixelsX : number, pixelsWide : number) : Perimeter {
             var insetLeft = this.left + pixelsX;
             return new Perimeter(insetLeft, this.top, insetLeft + pixelsWide, this.bottom,
-                this.age);
+                this.age, this.level);
         }
 
         splitHeight(pixels : number) : Perimeter[] {
             if (pixels >= 0) {
                 var split = this.top + pixels;
-                return [new Perimeter(this.left, this.top, this.right, split, this.age),
-                        new Perimeter(this.left, split, this.right, this.bottom, this.age)];
+                return [new Perimeter(this.left, this.top, this.right, split, this.age, this.level),
+                        new Perimeter(this.left, split, this.right, this.bottom, this.age,
+                            this.level)];
             } else {
                 var split = this.bottom + pixels;
-                return [new Perimeter(this.left, split, this.right, this.bottom, this.age),
-                        new Perimeter(this.left, this.top, this.right, split, this.age)];
+                return [new Perimeter(this.left, split, this.right, this.bottom, this.age,
+                    this.level),
+                        new Perimeter(this.left, this.top, this.right, split, this.age,
+                            this.level)];
             }
         }
 
         splitWidth(pixels : number) : Perimeter[] {
             if (pixels >= 0) {
                 var split = this.left + pixels;
-                return [new Perimeter(this.left, this.top, split, this.bottom, this.age),
-                        new Perimeter(split, this.top, this.right, this.bottom, this.age)];
+                return [new Perimeter(this.left, this.top, split, this.bottom, this.age,
+                    this.level),
+                        new Perimeter(split, this.top, this.right, this.bottom, this.age,
+                            this.level)];
             } else {
                 var split = this.right + pixels;
-                return [new Perimeter(split, this.top, this.right, this.bottom, this.age),
-                        new Perimeter(this.left, this.top, split, this.bottom, this.age)];
+                return [new Perimeter(split, this.top, this.right, this.bottom, this.age,
+                    this.level),
+                        new Perimeter(this.left, this.top, split, this.bottom, this.age,
+                            this.level)];
             }
         }
 
@@ -78,7 +89,6 @@ module Glyffin {
             return (width <= maxWidth) ? this :
                 this.rightFromLeft((width - maxWidth) * align, maxWidth);
         }
-
     }
 
     export class Color {

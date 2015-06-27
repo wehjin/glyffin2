@@ -238,13 +238,13 @@ module Glyffin {
             });
         }
 
-        addNearMajor<U>(distance : number, nearGlyff : Glyff<U>) : Glyff<U> {
+        addNearMajor<U>(level : number, nearGlyff : Glyff<U>) : Glyff<U> {
             var farGlyff = this;
             return Glyff.create((metrics : Metrics, audience : Audience,
                                  presenter : Presenter<U>) => {
-                // TODO: Enable z-level in bounds, support distance.
-                presenter.addPresentation(farGlyff.present(metrics, audience,
-                    new NoResultPresenter(presenter)));
+                var perimeter = metrics.perimeter.withLevel(level);
+                presenter.addPresentation(farGlyff.present(metrics.withPerimeter(perimeter),
+                    audience, new NoResultPresenter(presenter)));
                 presenter.addPresentation(nearGlyff.present(metrics, audience, presenter));
             });
         }
@@ -290,7 +290,7 @@ module Glyffin {
                     var left = perimeter.left + colWidth * spot[0];
                     var top = perimeter.top + rowHeight * spot[1];
                     var spotPerimeter = new Perimeter(left, top, left + colWidth, top + rowHeight,
-                        perimeter.age);
+                        perimeter.age, perimeter.level);
                     presenter.addPresentation(upperGlyff.present(
                         metrics.withPerimeter(spotPerimeter), audience, presenter));
                 });
@@ -317,14 +317,17 @@ module Glyffin {
             return Glyff.create<string>((metrics : Metrics, audience : Audience,
                                          presenter : Presenter<Void>)=> {
                 var unpressed = this;
-                var removable = presenter.addPresentation(unpressed.present(metrics, audience));
+                var unpressedMetrics = metrics.withPerimeter(metrics.perimeter.withLevel(4));
+                var removable = presenter.addPresentation(unpressed.present(unpressedMetrics,
+                    audience));
                 var zone = audience.addZone(metrics.perimeter,
                     new ClickGesturable(metrics.tapHeight / 2, ()=> {
                         removable.remove();
                         removable = presenter.addPresentation(pressed.present(metrics, audience));
                     }, ()=> {
                         removable.remove();
-                        removable = presenter.addPresentation(unpressed.present(metrics, audience));
+                        removable = presenter.addPresentation(unpressed.present(unpressedMetrics,
+                            audience));
                     }, ()=> {
                         presenter.onResult(symbol);
                     }));
