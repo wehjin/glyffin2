@@ -256,6 +256,21 @@ module Glyffin {
             });
         }
 
+        limitWidth(maxWidth : number, align : number) : Glyff<T> {
+            return Glyff.create((metrics : Metrics, audience : Audience,
+                                 presenter : Presenter<T>) => {
+                var perimeter = metrics.perimeter;
+                var width = perimeter.getWidth();
+                if (width <= maxWidth) {
+                    presenter.addPresentation(this.present(metrics, audience, presenter));
+                } else {
+                    var narrowPerimeter : RectangleBounds = perimeter.limitWidth(maxWidth, align);
+                    var narrowMetrics = metrics.withPerimeter(narrowPerimeter);
+                    presenter.addPresentation(this.present(narrowMetrics, audience, presenter));
+                }
+            });
+        }
+
         limitHeight(maxHeight : number, align : number) : Glyff<T> {
             return Glyff.create((metrics : Metrics, audience : Audience,
                                  presenter : Presenter<T>) => {

@@ -214,6 +214,21 @@ var Glyffin;
                 presenter.addPresentation(nearGlyff.present(metrics, audience, presenter));
             });
         };
+        Glyff.prototype.limitWidth = function (maxWidth, align) {
+            var _this = this;
+            return Glyff.create(function (metrics, audience, presenter) {
+                var perimeter = metrics.perimeter;
+                var width = perimeter.getWidth();
+                if (width <= maxWidth) {
+                    presenter.addPresentation(_this.present(metrics, audience, presenter));
+                }
+                else {
+                    var narrowPerimeter = perimeter.limitWidth(maxWidth, align);
+                    var narrowMetrics = metrics.withPerimeter(narrowPerimeter);
+                    presenter.addPresentation(_this.present(narrowMetrics, audience, presenter));
+                }
+            });
+        };
         Glyff.prototype.limitHeight = function (maxHeight, align) {
             var _this = this;
             return Glyff.create(function (metrics, audience, presenter) {

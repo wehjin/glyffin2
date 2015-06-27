@@ -72,12 +72,19 @@ function main() {
             var prevButton = button("Back", "back");
             var actionBar = nextButton.addLeft(readSize / 2, Glyffin.ClearGlyff).addLeft(screenWidth * .3, prevButton).pad(readSize, tapHeight / 2).limitHeight(2 * tapHeight, 0);
             var app = Glyffin.colorPath(backgroundColorPath).addNearMajor(1, cell.combineTop(-tapHeight * 3, actionBar));
+            var spinnerSize = tapHeight * 3;
+            var spinner = Glyffin.BlueGlyff.limitHeight(spinnerSize, .5).limitWidth(spinnerSize, .5);
+            var transition = app.addNearMajor(1, spinner);
             presentation = app.present(metrics, glAudience, function (symbol) {
                 console.log("%s", symbol);
                 if (symbol === "go") {
                     var link = item['link'];
                     sessionStorage.setItem("visitedLink", link);
-                    window.open(link, "_self");
+                    presentation.end();
+                    presentation = transition.present(metrics, glAudience);
+                    setTimeout(function () {
+                        window.open(link, "_self");
+                    }, 300);
                 }
                 else if (symbol === "next") {
                     index++;

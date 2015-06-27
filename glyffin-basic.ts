@@ -27,8 +27,13 @@ module Glyffin {
         }
 
         downFromTop(pixelsY : number, pixelsHigh : number) : RectangleBounds {
-            var inTop = this.top + pixelsY;
-            return new RectangleBounds(this.left, inTop, this.right, inTop + pixelsHigh);
+            var insetTop = this.top + pixelsY;
+            return new RectangleBounds(this.left, insetTop, this.right, insetTop + pixelsHigh);
+        }
+
+        rightFromLeft(pixelsX : number, pixelsWide : number) : RectangleBounds {
+            var insetLeft = this.left + pixelsX;
+            return new RectangleBounds(insetLeft, this.top, insetLeft + pixelsWide, this.bottom);
         }
 
         splitHorizontal(pixelsDown : number) : RectangleBounds[] {
@@ -47,6 +52,12 @@ module Glyffin {
             var height = this.getHeight();
             return (height <= maxHeight) ? this :
                 this.downFromTop((height - maxHeight) * align, maxHeight);
+        }
+
+        limitWidth(maxWidth : number, align : number) : RectangleBounds {
+            var width = this.getWidth();
+            return (width <= maxWidth) ? this :
+                this.rightFromLeft((width - maxWidth) * align, maxWidth);
         }
     }
 

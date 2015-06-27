@@ -107,13 +107,22 @@ function main() {
 
             var app = Glyffin.colorPath(backgroundColorPath)
                 .addNearMajor(1, cell.combineTop(-tapHeight * 3, actionBar));
+
+            var spinnerSize = tapHeight * 3;
+            var spinner = Glyffin.BlueGlyff
+                .limitHeight(spinnerSize, .5).limitWidth(spinnerSize, .5);
+            var transition = app.addNearMajor(1, spinner);
+
             presentation = app.present(metrics, glAudience, (symbol)=> {
                 console.log("%s", symbol);
                 if (symbol === "go") {
                     var link = item['link'];
                     sessionStorage.setItem("visitedLink", link);
-                    window.open(link, "_self");
-                    // TODO: Display loading
+                    presentation.end();
+                    presentation = transition.present(metrics, glAudience);
+                    setTimeout(()=> {
+                        window.open(link, "_self");
+                    }, 300);
                 } else if (symbol === "next") {
                     index++;
                     refresh();

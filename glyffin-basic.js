@@ -26,8 +26,12 @@ var Glyffin;
             return new RectangleBounds(this.left + pixelsX, this.top + pixelsY, this.right - pixelsX, this.bottom - pixelsY);
         };
         RectangleBounds.prototype.downFromTop = function (pixelsY, pixelsHigh) {
-            var inTop = this.top + pixelsY;
-            return new RectangleBounds(this.left, inTop, this.right, inTop + pixelsHigh);
+            var insetTop = this.top + pixelsY;
+            return new RectangleBounds(this.left, insetTop, this.right, insetTop + pixelsHigh);
+        };
+        RectangleBounds.prototype.rightFromLeft = function (pixelsX, pixelsWide) {
+            var insetLeft = this.left + pixelsX;
+            return new RectangleBounds(insetLeft, this.top, insetLeft + pixelsWide, this.bottom);
         };
         RectangleBounds.prototype.splitHorizontal = function (pixelsDown) {
             if (pixelsDown >= 0) {
@@ -42,6 +46,10 @@ var Glyffin;
         RectangleBounds.prototype.limitHeight = function (maxHeight, align) {
             var height = this.getHeight();
             return (height <= maxHeight) ? this : this.downFromTop((height - maxHeight) * align, maxHeight);
+        };
+        RectangleBounds.prototype.limitWidth = function (maxWidth, align) {
+            var width = this.getWidth();
+            return (width <= maxWidth) ? this : this.rightFromLeft((width - maxWidth) * align, maxWidth);
         };
         return RectangleBounds;
     })();
