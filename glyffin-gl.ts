@@ -139,11 +139,17 @@ module Glyffin {
             this.vertices = new VerticesAndColor(MAX_PATCH_COUNT, gl);
             this.gl = gl;
 
+            var modelMatrix = new Matrix4();
+            modelMatrix.setTranslate(-1, 1, -.5);
+            modelMatrix.scale(2 / canvas.width, -2 / canvas.height, -1 / canvas.height);
+
             var viewMatrix = new Matrix4();
-            viewMatrix.setTranslate(-1, 1, 0);
-            viewMatrix.scale(2 / canvas.width, -2 / canvas.height, 1);
-            var u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_viewMatrix');
-            gl.uniformMatrix4fv(u_ModelMatrix, false, viewMatrix.elements);
+            viewMatrix.setLookAt(0, 0, 0, 0, 0, -0.5, 0, 1, 0);
+
+            var modelViewMatrix = viewMatrix.multiply(modelMatrix);
+
+            var u_ModelViewMatrix = gl.getUniformLocation(gl.program, 'u_viewMatrix');
+            gl.uniformMatrix4fv(u_ModelViewMatrix, false, modelViewMatrix.elements);
         }
 
         addPatch(bounds : Perimeter, color : Color) : Patch {
