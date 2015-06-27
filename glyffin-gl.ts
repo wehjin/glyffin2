@@ -22,7 +22,7 @@ module Glyffin {
     }
 
     class Interactive {
-        constructor(public bounds : RectangleBounds, public touchProvider : Gesturable) {
+        constructor(public bounds : Perimeter, public touchProvider : Gesturable) {
         }
 
         isHit(touchX : number, touchY : number) : boolean {
@@ -146,7 +146,7 @@ module Glyffin {
             gl.uniformMatrix4fv(u_ModelMatrix, false, viewMatrix.elements);
         }
 
-        addPatch(bounds : RectangleBounds, color : Color) : Patch {
+        addPatch(bounds : Perimeter, color : Color) : Patch {
             if (bounds.left >= bounds.right || bounds.top >= bounds.bottom || color.alpha == 0) {
                 return EMPTY_PATCH;
             }
@@ -161,7 +161,7 @@ module Glyffin {
             };
         }
 
-        addZone(bounds : Glyffin.RectangleBounds,
+        addZone(bounds : Glyffin.Perimeter,
                 touchProvider : Glyffin.Gesturable) : Glyffin.Zone {
             var interactive = new Interactive(bounds, touchProvider);
             this.interactives.push(interactive);

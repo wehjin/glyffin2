@@ -176,8 +176,8 @@ var Glyffin;
                 // TODO: Move perimeter computation into RectangleBounds.
                 var perimeter = metrics.perimeter;
                 var insertRight = perimeter.left + insertAmount;
-                var insertPerimeter = new Glyffin.RectangleBounds(perimeter.left, perimeter.top, insertRight, perimeter.bottom);
-                var modifiedPerimeter = new Glyffin.RectangleBounds(insertRight, perimeter.top, perimeter.right, perimeter.bottom);
+                var insertPerimeter = new Glyffin.Perimeter(perimeter.left, perimeter.top, insertRight, perimeter.bottom, perimeter.age);
+                var modifiedPerimeter = new Glyffin.Perimeter(insertRight, perimeter.top, perimeter.right, perimeter.bottom, perimeter.age);
                 presenter.addPresentation(insertGlyff.present(metrics.withPerimeter(insertPerimeter), audience, presenter));
                 presenter.addPresentation(existingGlyff.present(metrics.withPerimeter(modifiedPerimeter), audience, presenter));
             });
@@ -253,7 +253,7 @@ var Glyffin;
                 spots.forEach(function (spot) {
                     var left = perimeter.left + colWidth * spot[0];
                     var top = perimeter.top + rowHeight * spot[1];
-                    var spotPerimeter = new Glyffin.RectangleBounds(left, top, left + colWidth, top + rowHeight);
+                    var spotPerimeter = new Glyffin.Perimeter(left, top, left + colWidth, top + rowHeight, perimeter.age);
                     presenter.addPresentation(upperGlyff.present(metrics.withPerimeter(spotPerimeter), audience, presenter));
                 });
             });
@@ -293,6 +293,49 @@ var Glyffin;
                 });
             });
         };
+        Glyff.prototype.animate = function (duration) {
+            var _this = this;
+            return Glyff.create(function (metrics, audience, presenter) {
+                var startTime = Date.now();
+                var endTime = startTime + duration;
+                var glyff = _this;
+                var presentation;
+                var frame;
+                function present() {
+                    if (presentation) {
+                        presentation.end();
+                    }
+                    var now = Date.now();
+                    function currentAge() {
+                        if (now >= endTime) {
+                            return 1;
+                        }
+                        else if (now <= startTime) {
+                            return 0;
+                        }
+                        else {
+                            return (now - startTime) / duration;
+                        }
+                    }
+                    var perimeter = metrics.perimeter.withAge(currentAge());
+                    presentation = glyff.present(metrics.withPerimeter(perimeter), audience, presenter);
+                    if (now < endTime) {
+                        frame = requestAnimationFrame(function () {
+                            present();
+                        });
+                    }
+                }
+                present();
+                presenter.addPresentation({
+                    end: function () {
+                        if (frame) {
+                            cancelAnimationFrame(frame);
+                        }
+                        presentation.end();
+                    }
+                });
+            });
+        };
         Glyff.color = function (color) {
             return Glyff.create(function (metrics, audience, presenter) {
                 var patch = audience.addPatch(metrics.perimeter, color);
@@ -301,6 +344,12 @@ var Glyffin;
                         patch.remove();
                     }
                 });
+            });
+        };
+        Glyff.colorAnimation = function (first, last) {
+            return Glyff.create(function (metrics, audience, presenter) {
+                var colorGlyff = Glyff.color(first.mix(metrics.perimeter.age, last));
+                presenter.addPresentation(colorGlyff.present(metrics, audience, presenter));
             });
         };
         return Glyff;

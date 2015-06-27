@@ -9,6 +9,7 @@
 /// <reference path="rx.ts" />
 var Void = Glyffin.Void;
 var Glyff = Glyffin.Glyff;
+var Color = Glyffin.Color;
 function main() {
     document.addEventListener('touchmove', function (e) {
         e.preventDefault();
@@ -22,7 +23,7 @@ function main() {
     var backgroundColorPath = [0, 0];
     var midgroundColorPath = [0, 1];
     var screenWidth = glAudience.canvas.width;
-    var perimeter = new Glyffin.RectangleBounds(0, 0, screenWidth, glAudience.canvas.height);
+    var perimeter = new Glyffin.Perimeter(0, 0, screenWidth, glAudience.canvas.height, 1);
     var metrics = new Glyffin.Metrics(perimeter, 48, 13, palette);
     var hNewsUri = "https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20rss%20where%20url%3D%22https%3A%2F%2Fnews.ycombinator.com%2Frss%22&format=json&diagnostics=true&callback=";
     var yNewsUri = "https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20rss%20where%20url%3D%22http%3A%2F%2Frss.news.yahoo.com%2Frss%2Ftopstories%22&format=json&callback=";
@@ -73,7 +74,8 @@ function main() {
             var actionBar = nextButton.addLeft(readSize / 2, Glyffin.ClearGlyff).addLeft(screenWidth * .3, prevButton).pad(readSize, tapHeight / 2).limitHeight(2 * tapHeight, 0);
             var app = Glyffin.colorPath(backgroundColorPath).addNearMajor(1, cell.combineTop(-tapHeight * 3, actionBar));
             var spinnerSize = tapHeight * 3;
-            var spinner = Glyffin.BlueGlyff.limitHeight(spinnerSize, .5).limitWidth(spinnerSize, .5);
+            var spinner = Glyff.colorAnimation(Color.BLUE, Color.RED).animate(500).limitHeight(spinnerSize, .5).limitWidth(spinnerSize, .5);
+            // TODO: Disable app during transition.
             var transition = app.addNearMajor(1, spinner);
             presentation = app.present(metrics, glAudience, function (symbol) {
                 console.log("%s", symbol);

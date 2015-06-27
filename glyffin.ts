@@ -201,10 +201,10 @@ module Glyffin {
                 // TODO: Move perimeter computation into RectangleBounds.
                 var perimeter = metrics.perimeter;
                 var insertRight = perimeter.left + insertAmount;
-                var insertPerimeter = new RectangleBounds(perimeter.left, perimeter.top,
-                    insertRight, perimeter.bottom);
-                var modifiedPerimeter = new RectangleBounds(insertRight, perimeter.top,
-                    perimeter.right, perimeter.bottom);
+                var insertPerimeter = new Perimeter(perimeter.left, perimeter.top,
+                    insertRight, perimeter.bottom, perimeter.age);
+                var modifiedPerimeter = new Perimeter(insertRight, perimeter.top,
+                    perimeter.right, perimeter.bottom, perimeter.age);
                 presenter.addPresentation(insertGlyff.present(metrics.withPerimeter(insertPerimeter),
                     audience, presenter));
                 presenter.addPresentation(existingGlyff.present(metrics.withPerimeter(modifiedPerimeter),
@@ -264,7 +264,7 @@ module Glyffin {
                 if (width <= maxWidth) {
                     presenter.addPresentation(this.present(metrics, audience, presenter));
                 } else {
-                    var narrowPerimeter : RectangleBounds = perimeter.limitWidth(maxWidth, align);
+                    var narrowPerimeter : Perimeter = perimeter.limitWidth(maxWidth, align);
                     var narrowMetrics = metrics.withPerimeter(narrowPerimeter);
                     presenter.addPresentation(this.present(narrowMetrics, audience, presenter));
                 }
@@ -279,7 +279,7 @@ module Glyffin {
                 if (height <= maxHeight) {
                     presenter.addPresentation(this.present(metrics, audience, presenter));
                 } else {
-                    var shortPerimeter : RectangleBounds = perimeter.limitHeight(maxHeight, align);
+                    var shortPerimeter : Perimeter = perimeter.limitHeight(maxHeight, align);
                     var shortMetrics = metrics.withPerimeter(shortPerimeter);
                     presenter.addPresentation(this.present(shortMetrics, audience, presenter));
                 }
@@ -296,9 +296,8 @@ module Glyffin {
                 spots.forEach(spot=> {
                     var left = perimeter.left + colWidth * spot[0];
                     var top = perimeter.top + rowHeight * spot[1];
-                    var spotPerimeter = new RectangleBounds(left,
-                        top, left + colWidth, top + rowHeight
-                    );
+                    var spotPerimeter = new Perimeter(left, top, left + colWidth, top + rowHeight,
+                        perimeter.age);
                     presenter.addPresentation(upperGlyff.present(
                         metrics.withPerimeter(spotPerimeter), audience, presenter));
                 });
@@ -344,6 +343,55 @@ module Glyffin {
             });
         }
 
+        animate(duration : number) : Glyff<T> {
+            return Glyff.create((metrics : Metrics, audience : Audience,
+                                 presenter : Presenter<Void>)=> {
+                var startTime = Date.now();
+                var endTime = startTime + duration;
+
+                var glyff = this;
+                var presentation;
+                var frame;
+
+                function present() {
+                    if (presentation) {
+                        presentation.end();
+                    }
+
+                    var now = Date.now();
+
+                    function currentAge() : number {
+                        if (now >= endTime) {
+                            return 1;
+                        } else if (now <= startTime) {
+                            return 0;
+                        } else {
+                            return (now - startTime) / duration;
+                        }
+                    }
+
+                    var perimeter = metrics.perimeter.withAge(currentAge());
+                    presentation = glyff.present(metrics.withPerimeter(perimeter),
+                        audience, presenter);
+                    if (now < endTime) {
+                        frame = requestAnimationFrame(()=> {
+                            present();
+                        })
+                    }
+                }
+
+                present();
+                presenter.addPresentation({
+                    end: ()=> {
+                        if (frame) {
+                            cancelAnimationFrame(frame);
+                        }
+                        presentation.end();
+                    }
+                })
+            });
+        }
+
         static color(color : Color) : Glyff<Void> {
             return Glyff.create<Void>((metrics : Metrics, audience : Audience,
                                        presenter : Presenter<Void>)=> {
@@ -357,6 +405,13 @@ module Glyffin {
             );
         }
 
+        static colorAnimation(first : Color, last : Color) : Glyff<Void> {
+            return Glyff.create((metrics : Metrics, audience : Audience,
+                                 presenter : Presenter<Void>)=> {
+                var colorGlyff = Glyff.color(first.mix(metrics.perimeter.age, last));
+                presenter.addPresentation(colorGlyff.present(metrics, audience, presenter));
+            });
+        }
     }
 
     export var ClearGlyff = Glyff.create<Void>(()=> {

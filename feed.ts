@@ -11,6 +11,7 @@
 
 import Void = Glyffin.Void;
 import Glyff = Glyffin.Glyff;
+import Color = Glyffin.Color;
 
 function main() {
 
@@ -29,7 +30,7 @@ function main() {
     var midgroundColorPath = [0, 1];
 
     var screenWidth = glAudience.canvas.width;
-    var perimeter = new Glyffin.RectangleBounds(0, 0, screenWidth, glAudience.canvas.height);
+    var perimeter = new Glyffin.Perimeter(0, 0, screenWidth, glAudience.canvas.height, 1);
     var metrics = new Glyffin.Metrics(perimeter, 48, 13, palette);
 
     var hNewsUri = "https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20rss%20where%20url%3D%22https%3A%2F%2Fnews.ycombinator.com%2Frss%22&format=json&diagnostics=true&callback=";
@@ -109,8 +110,10 @@ function main() {
                 .addNearMajor(1, cell.combineTop(-tapHeight * 3, actionBar));
 
             var spinnerSize = tapHeight * 3;
-            var spinner = Glyffin.BlueGlyff
+            var spinner = Glyff.colorAnimation(Color.BLUE, Color.RED)
+                .animate(500)
                 .limitHeight(spinnerSize, .5).limitWidth(spinnerSize, .5);
+            // TODO: Disable app during transition.
             var transition = app.addNearMajor(1, spinner);
 
             presentation = app.present(metrics, glAudience, (symbol)=> {

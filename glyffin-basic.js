@@ -1,6 +1,7 @@
 /**
  * Created by wehjin on 5/24/15.
  */
+/// <reference path="glyffin.ts" />
 var Glyffin;
 (function (Glyffin) {
     var Void = (function () {
@@ -9,51 +10,55 @@ var Glyffin;
         return Void;
     })();
     Glyffin.Void = Void;
-    var RectangleBounds = (function () {
-        function RectangleBounds(left, top, right, bottom) {
+    var Perimeter = (function () {
+        function Perimeter(left, top, right, bottom, age) {
             this.left = left;
             this.top = top;
             this.right = right;
             this.bottom = bottom;
+            this.age = age;
         }
-        RectangleBounds.prototype.getHeight = function () {
+        Perimeter.prototype.getHeight = function () {
             return this.bottom - this.top;
         };
-        RectangleBounds.prototype.getWidth = function () {
+        Perimeter.prototype.getWidth = function () {
             return this.right - this.left;
         };
-        RectangleBounds.prototype.inset = function (pixelsX, pixelsY) {
-            return new RectangleBounds(this.left + pixelsX, this.top + pixelsY, this.right - pixelsX, this.bottom - pixelsY);
+        Perimeter.prototype.withAge = function (age) {
+            return new Perimeter(this.left, this.top, this.right, this.bottom, age);
         };
-        RectangleBounds.prototype.downFromTop = function (pixelsY, pixelsHigh) {
+        Perimeter.prototype.inset = function (pixelsX, pixelsY) {
+            return new Perimeter(this.left + pixelsX, this.top + pixelsY, this.right - pixelsX, this.bottom - pixelsY, this.age);
+        };
+        Perimeter.prototype.downFromTop = function (pixelsY, pixelsHigh) {
             var insetTop = this.top + pixelsY;
-            return new RectangleBounds(this.left, insetTop, this.right, insetTop + pixelsHigh);
+            return new Perimeter(this.left, insetTop, this.right, insetTop + pixelsHigh, this.age);
         };
-        RectangleBounds.prototype.rightFromLeft = function (pixelsX, pixelsWide) {
+        Perimeter.prototype.rightFromLeft = function (pixelsX, pixelsWide) {
             var insetLeft = this.left + pixelsX;
-            return new RectangleBounds(insetLeft, this.top, insetLeft + pixelsWide, this.bottom);
+            return new Perimeter(insetLeft, this.top, insetLeft + pixelsWide, this.bottom, this.age);
         };
-        RectangleBounds.prototype.splitHorizontal = function (pixelsDown) {
+        Perimeter.prototype.splitHorizontal = function (pixelsDown) {
             if (pixelsDown >= 0) {
                 var split = this.top + pixelsDown;
-                return [new RectangleBounds(this.left, this.top, this.right, split), new RectangleBounds(this.left, split, this.right, this.bottom)];
+                return [new Perimeter(this.left, this.top, this.right, split, this.age), new Perimeter(this.left, split, this.right, this.bottom, this.age)];
             }
             else {
                 var split = this.bottom + pixelsDown;
-                return [new RectangleBounds(this.left, split, this.right, this.bottom), new RectangleBounds(this.left, this.top, this.right, split)];
+                return [new Perimeter(this.left, split, this.right, this.bottom, this.age), new Perimeter(this.left, this.top, this.right, split, this.age)];
             }
         };
-        RectangleBounds.prototype.limitHeight = function (maxHeight, align) {
+        Perimeter.prototype.limitHeight = function (maxHeight, align) {
             var height = this.getHeight();
             return (height <= maxHeight) ? this : this.downFromTop((height - maxHeight) * align, maxHeight);
         };
-        RectangleBounds.prototype.limitWidth = function (maxWidth, align) {
+        Perimeter.prototype.limitWidth = function (maxWidth, align) {
             var width = this.getWidth();
             return (width <= maxWidth) ? this : this.rightFromLeft((width - maxWidth) * align, maxWidth);
         };
-        return RectangleBounds;
+        return Perimeter;
     })();
-    Glyffin.RectangleBounds = RectangleBounds;
+    Glyffin.Perimeter = Perimeter;
     var Color = (function () {
         function Color(red, green, blue, alpha) {
             this.red = red;
@@ -71,11 +76,11 @@ var Glyffin;
             });
             return array;
         };
-        Color.prototype.mixComponent = function (mix, start, end) {
+        Color.mixComponent = function (mix, start, end) {
             return start + (end - start) * mix;
         };
         Color.prototype.mix = function (mix, endColor) {
-            return new Color(this.mixComponent(mix, this.red, endColor.red), this.mixComponent(mix, this.green, endColor.green), this.mixComponent(mix, this.blue, endColor.blue), this.mixComponent(mix, this.alpha, endColor.alpha));
+            return new Color(Color.mixComponent(mix, this.red, endColor.red), Color.mixComponent(mix, this.green, endColor.green), Color.mixComponent(mix, this.blue, endColor.blue), Color.mixComponent(mix, this.alpha, endColor.alpha));
         };
         Color.WHITE = new Color(1, 1, 1, 1);
         Color.BLACK = new Color(0, 0, 0, 1);
@@ -106,9 +111,6 @@ var Glyffin;
             this.x = x;
             this.y = y;
         }
-        Spot.prototype.distanceSquared = function (other) {
-            return other.x * this.x + other.y * this.y;
-        };
         Spot.prototype.gridDistance = function (other) {
             return Math.max(Math.abs(other.x - this.x), Math.abs(other.y - this.y));
         };

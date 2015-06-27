@@ -1,15 +1,17 @@
 /**
  * Created by wehjin on 5/24/15.
  */
+/// <reference path="glyffin.ts" />
 
 module Glyffin {
 
     export class Void {
     }
 
-    export class RectangleBounds {
+    export class Perimeter {
+
         constructor(public left : number, public top : number, public right : number,
-                    public bottom : number) {
+                    public bottom : number, public age : number) {
         }
 
         getHeight() : number {
@@ -20,41 +22,46 @@ module Glyffin {
             return this.right - this.left;
         }
 
-        inset(pixelsX : number, pixelsY : number) : RectangleBounds {
-            return new RectangleBounds(this.left + pixelsX,
+        withAge(age : number) : Perimeter {
+            return new Perimeter(this.left, this.top, this.right, this.bottom, age);
+        }
+
+        inset(pixelsX : number, pixelsY : number) : Perimeter {
+            return new Perimeter(this.left + pixelsX,
                 this.top + pixelsY, this.right - pixelsX,
-                this.bottom - pixelsY);
+                this.bottom - pixelsY, this.age);
         }
 
-        downFromTop(pixelsY : number, pixelsHigh : number) : RectangleBounds {
+        downFromTop(pixelsY : number, pixelsHigh : number) : Perimeter {
             var insetTop = this.top + pixelsY;
-            return new RectangleBounds(this.left, insetTop, this.right, insetTop + pixelsHigh);
+            return new Perimeter(this.left, insetTop, this.right, insetTop + pixelsHigh, this.age);
         }
 
-        rightFromLeft(pixelsX : number, pixelsWide : number) : RectangleBounds {
+        rightFromLeft(pixelsX : number, pixelsWide : number) : Perimeter {
             var insetLeft = this.left + pixelsX;
-            return new RectangleBounds(insetLeft, this.top, insetLeft + pixelsWide, this.bottom);
+            return new Perimeter(insetLeft, this.top, insetLeft + pixelsWide, this.bottom,
+                this.age);
         }
 
-        splitHorizontal(pixelsDown : number) : RectangleBounds[] {
+        splitHorizontal(pixelsDown : number) : Perimeter[] {
             if (pixelsDown >= 0) {
                 var split = this.top + pixelsDown;
-                return [new RectangleBounds(this.left, this.top, this.right, split),
-                        new RectangleBounds(this.left, split, this.right, this.bottom)];
+                return [new Perimeter(this.left, this.top, this.right, split, this.age),
+                        new Perimeter(this.left, split, this.right, this.bottom, this.age)];
             } else {
                 var split = this.bottom + pixelsDown;
-                return [new RectangleBounds(this.left, split, this.right, this.bottom),
-                        new RectangleBounds(this.left, this.top, this.right, split)];
+                return [new Perimeter(this.left, split, this.right, this.bottom, this.age),
+                        new Perimeter(this.left, this.top, this.right, split, this.age)];
             }
         }
 
-        limitHeight(maxHeight : number, align : number) : RectangleBounds {
+        limitHeight(maxHeight : number, align : number) : Perimeter {
             var height = this.getHeight();
             return (height <= maxHeight) ? this :
                 this.downFromTop((height - maxHeight) * align, maxHeight);
         }
 
-        limitWidth(maxWidth : number, align : number) : RectangleBounds {
+        limitWidth(maxWidth : number, align : number) : Perimeter {
             var width = this.getWidth();
             return (width <= maxWidth) ? this :
                 this.rightFromLeft((width - maxWidth) * align, maxWidth);
@@ -86,15 +93,15 @@ module Glyffin {
             return array;
         }
 
-        private mixComponent(mix : number, start : number, end : number) : number {
+        private static mixComponent(mix : number, start : number, end : number) : number {
             return start + (end - start) * mix;
         }
 
         mix(mix : number, endColor : Color) : Color {
-            return new Color(this.mixComponent(mix, this.red, endColor.red),
-                this.mixComponent(mix, this.green, endColor.green),
-                this.mixComponent(mix, this.blue, endColor.blue),
-                this.mixComponent(mix, this.alpha, endColor.alpha));
+            return new Color(Color.mixComponent(mix, this.red, endColor.red),
+                Color.mixComponent(mix, this.green, endColor.green),
+                Color.mixComponent(mix, this.blue, endColor.blue),
+                Color.mixComponent(mix, this.alpha, endColor.alpha));
         }
     }
 
@@ -121,10 +128,6 @@ module Glyffin {
         constructor(public x : number, public y : number) {
         }
 
-        distanceSquared(other : Spot) : number {
-            return other.x * this.x + other.y * this.y;
-        }
-
         gridDistance(other : Spot) : number {
             return Math.max(Math.abs(other.x - this.x), Math.abs(other.y - this.y));
         }
@@ -132,11 +135,11 @@ module Glyffin {
 
     export class Metrics {
 
-        constructor(public perimeter : RectangleBounds, public tapHeight : number,
+        constructor(public perimeter : Perimeter, public tapHeight : number,
                     public readHeight : number, public palette : Palette) {
         }
 
-        withPerimeter(perimeter : RectangleBounds) : Metrics {
+        withPerimeter(perimeter : Perimeter) : Metrics {
             return new Metrics(perimeter, this.tapHeight, this.readHeight, this.palette);
         }
     }
@@ -148,8 +151,8 @@ module Glyffin {
     }
 
     export interface Audience {
-        addPatch(bounds : RectangleBounds, color : Color):Patch;
-        addZone(bounds : RectangleBounds,
+        addPatch(bounds : Perimeter, color : Color):Patch;
+        addZone(bounds : Perimeter,
                 touchProvider : Gesturable):Zone;
 
     }
@@ -208,5 +211,4 @@ module Glyffin {
         constructor(public amount : number, public glyff : Glyff<T>) {
         }
     }
-
 }
