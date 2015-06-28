@@ -101,6 +101,26 @@ var Glyffin;
         };
         return ClickGesturable;
     })();
+    var AnimationPath = (function () {
+        function AnimationPath(startTime, duration) {
+            this.startTime = startTime;
+            this.duration = duration;
+            this.endTime = startTime + duration;
+        }
+        AnimationPath.prototype.getAge = function (now) {
+            if (now >= this.endTime) {
+                return 1;
+            }
+            if (now <= this.startTime) {
+                return 0;
+            }
+            return (now - this.startTime) / this.duration;
+        };
+        AnimationPath.prototype.hasMore = function (now) {
+            return now < this.endTime;
+        };
+        return AnimationPath;
+    })();
     var Glyff = (function () {
         function Glyff(onPresent) {
             this.onPresent = onPresent;
@@ -295,35 +315,20 @@ var Glyffin;
         Glyff.prototype.animate = function (duration) {
             var _this = this;
             return Glyff.create(function (metrics, audience, presenter) {
-                var startTime = Date.now();
-                var endTime = startTime + duration;
-                var glyff = _this;
+                var path = new AnimationPath(Date.now(), duration);
                 var presentation;
                 var frame;
-                function present() {
-                    if (presentation) {
-                        presentation.end();
-                    }
+                var present = function () {
                     var now = Date.now();
-                    function currentAge() {
-                        if (now >= endTime) {
-                            return 1;
-                        }
-                        else if (now <= startTime) {
-                            return 0;
-                        }
-                        else {
-                            return (now - startTime) / duration;
-                        }
-                    }
-                    var perimeter = metrics.perimeter.withAge(currentAge());
-                    presentation = glyff.present(metrics.withPerimeter(perimeter), audience, presenter);
-                    if (now < endTime) {
+                    var perimeter = metrics.perimeter.withAge(path.getAge(now));
+                    presentation = _this.present(metrics.withPerimeter(perimeter), audience, presenter);
+                    if (path.hasMore(now)) {
                         frame = requestAnimationFrame(function () {
+                            presentation.end();
                             present();
                         });
                     }
-                }
+                };
                 present();
                 presenter.addPresentation({
                     end: function () {

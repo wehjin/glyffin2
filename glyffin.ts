@@ -112,6 +112,28 @@ module Glyffin {
         }
     }
 
+    class AnimationPath {
+        private endTime;
+
+        constructor(private startTime : number, private duration : number) {
+            this.endTime = startTime + duration;
+        }
+
+        getAge(now : number) : number {
+            if (now >= this.endTime) {
+                return 1;
+            }
+            if (now <= this.startTime) {
+                return 0;
+            }
+            return (now - this.startTime) / this.duration;
+        }
+
+        hasMore(now : number) : boolean {
+            return now < this.endTime;
+        }
+    }
+
     export class Glyff<T> {
         constructor(private onPresent : (metrics : Metrics, audience : Audience,
                                          presenter : Presenter<T>)=>void) {
@@ -346,40 +368,21 @@ module Glyffin {
         animate(duration : number) : Glyff<T> {
             return Glyff.create((metrics : Metrics, audience : Audience,
                                  presenter : Presenter<Void>)=> {
-                var startTime = Date.now();
-                var endTime = startTime + duration;
-
-                var glyff = this;
+                var path = new AnimationPath(Date.now(), duration);
                 var presentation;
                 var frame;
-
-                function present() {
-                    if (presentation) {
-                        presentation.end();
-                    }
-
+                var present = ()=> {
                     var now = Date.now();
-
-                    function currentAge() : number {
-                        if (now >= endTime) {
-                            return 1;
-                        } else if (now <= startTime) {
-                            return 0;
-                        } else {
-                            return (now - startTime) / duration;
-                        }
-                    }
-
-                    var perimeter = metrics.perimeter.withAge(currentAge());
-                    presentation = glyff.present(metrics.withPerimeter(perimeter),
+                    var perimeter = metrics.perimeter.withAge(path.getAge(now));
+                    presentation = this.present(metrics.withPerimeter(perimeter),
                         audience, presenter);
-                    if (now < endTime) {
+                    if (path.hasMore(now)) {
                         frame = requestAnimationFrame(()=> {
+                            presentation.end();
                             present();
                         })
                     }
-                }
-
+                };
                 present();
                 presenter.addPresentation({
                     end: ()=> {

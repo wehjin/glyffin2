@@ -85,7 +85,7 @@ function main() {
                     presentation.end();
                     presentation = transition.present(metrics, glAudience);
                     setTimeout(function () {
-                        window.open(link, "_self");
+                        //                        window.open(link, "_self");
                     }, 300);
                 }
                 else if (symbol === "next") {
