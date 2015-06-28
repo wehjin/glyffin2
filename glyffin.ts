@@ -112,25 +112,73 @@ module Glyffin {
         }
     }
 
-    class AnimationPath {
+    interface AnimationPath {
+        start(now : number);
+        getAge(now : number) : number;
+        hasMore(now : number) : boolean;
+    }
+
+    class LinearAnimationPath implements AnimationPath {
+        private startTime;
         private endTime;
 
-        constructor(private startTime : number, private duration : number) {
-            this.endTime = startTime + duration;
+        constructor(private duration : number, private reverse : boolean) {
+        }
+
+        start(now : number) {
+            this.startTime = now;
+            this.endTime = this.startTime + this.duration;
         }
 
         getAge(now : number) : number {
             if (now >= this.endTime) {
-                return 1;
+                return this.reverse ? 0 : 1;
             }
             if (now <= this.startTime) {
-                return 0;
+                return this.reverse ? 1 : 0;
             }
-            return (now - this.startTime) / this.duration;
+            var age = (now - this.startTime) / this.duration;
+            return this.reverse ? (1 - age) : age;
         }
 
         hasMore(now : number) : boolean {
             return now < this.endTime;
+        }
+    }
+
+    class CycleAnimationPath implements AnimationPath {
+        private reversed;
+        private innerPath;
+        private lives;
+        private started;
+
+        constructor(private duration : number, count : number) {
+            this.reversed = false;
+            this.innerPath = new LinearAnimationPath(duration, this.reversed);
+            this.lives = count * 2 - 1;
+        }
+
+        start(now : number) {
+            this.started = true;
+            this.innerPath.start(now);
+        }
+
+        getAge(now : number) : number {
+            return this.innerPath.getAge(now);
+        }
+
+        hasMore(now : number) : boolean {
+            var hasMore = this.innerPath.hasMore(now);
+            if (!hasMore) {
+                if (this.started && this.lives > 0) {
+                    this.lives--;
+                    this.reversed = !this.reversed;
+                    this.innerPath = new LinearAnimationPath(this.duration, this.reversed);
+                    this.innerPath.start(now);
+                    hasMore = this.innerPath.hasMore(now);
+                }
+            }
+            return hasMore;
         }
     }
 
@@ -365,10 +413,11 @@ module Glyffin {
             });
         }
 
-        animate(duration : number) : Glyff<T> {
+        private animateWithPath(path : AnimationPath) {
             return Glyff.create((metrics : Metrics, audience : Audience,
                                  presenter : Presenter<Void>)=> {
-                var path = new AnimationPath(Date.now(), duration);
+                path.start(Date.now());
+
                 var presentation;
                 var frame;
                 var present = ()=> {
@@ -393,6 +442,14 @@ module Glyffin {
                     }
                 })
             });
+        }
+
+        animate(duration : number) : Glyff<T> {
+            return this.animateWithPath(new LinearAnimationPath(duration, true));
+        }
+
+        pulseAnimate(duration : number, count : number) : Glyff<T> {
+            return this.animateWithPath(new CycleAnimationPath(duration, count));
         }
 
         static color(color : Color) : Glyff<Void> {

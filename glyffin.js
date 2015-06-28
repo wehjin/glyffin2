@@ -101,25 +101,58 @@ var Glyffin;
         };
         return ClickGesturable;
     })();
-    var AnimationPath = (function () {
-        function AnimationPath(startTime, duration) {
-            this.startTime = startTime;
+    var LinearAnimationPath = (function () {
+        function LinearAnimationPath(duration, reverse) {
             this.duration = duration;
-            this.endTime = startTime + duration;
+            this.reverse = reverse;
         }
-        AnimationPath.prototype.getAge = function (now) {
+        LinearAnimationPath.prototype.start = function (now) {
+            this.startTime = now;
+            this.endTime = this.startTime + this.duration;
+        };
+        LinearAnimationPath.prototype.getAge = function (now) {
             if (now >= this.endTime) {
-                return 1;
+                return this.reverse ? 0 : 1;
             }
             if (now <= this.startTime) {
-                return 0;
+                return this.reverse ? 1 : 0;
             }
-            return (now - this.startTime) / this.duration;
+            var age = (now - this.startTime) / this.duration;
+            return this.reverse ? (1 - age) : age;
         };
-        AnimationPath.prototype.hasMore = function (now) {
+        LinearAnimationPath.prototype.hasMore = function (now) {
             return now < this.endTime;
         };
-        return AnimationPath;
+        return LinearAnimationPath;
+    })();
+    var CycleAnimationPath = (function () {
+        function CycleAnimationPath(duration, count) {
+            this.duration = duration;
+            this.reversed = false;
+            this.innerPath = new LinearAnimationPath(duration, this.reversed);
+            this.lives = count * 2 - 1;
+        }
+        CycleAnimationPath.prototype.start = function (now) {
+            this.started = true;
+            this.innerPath.start(now);
+        };
+        CycleAnimationPath.prototype.getAge = function (now) {
+            return this.innerPath.getAge(now);
+        };
+        CycleAnimationPath.prototype.hasMore = function (now) {
+            var hasMore = this.innerPath.hasMore(now);
+            if (!hasMore) {
+                if (this.started && this.lives > 0) {
+                    this.lives--;
+                    this.reversed = !this.reversed;
+                    this.innerPath = new LinearAnimationPath(this.duration, this.reversed);
+                    this.innerPath.start(now);
+                    hasMore = this.innerPath.hasMore(now);
+                }
+            }
+            return hasMore;
+        };
+        return CycleAnimationPath;
     })();
     var Glyff = (function () {
         function Glyff(onPresent) {
@@ -312,10 +345,10 @@ var Glyffin;
                 });
             });
         };
-        Glyff.prototype.animate = function (duration) {
+        Glyff.prototype.animateWithPath = function (path) {
             var _this = this;
             return Glyff.create(function (metrics, audience, presenter) {
-                var path = new AnimationPath(Date.now(), duration);
+                path.start(Date.now());
                 var presentation;
                 var frame;
                 var present = function () {
@@ -339,6 +372,12 @@ var Glyffin;
                     }
                 });
             });
+        };
+        Glyff.prototype.animate = function (duration) {
+            return this.animateWithPath(new LinearAnimationPath(duration, true));
+        };
+        Glyff.prototype.pulseAnimate = function (duration, count) {
+            return this.animateWithPath(new CycleAnimationPath(duration, count));
         };
         Glyff.color = function (color) {
             return Glyff.create(function (metrics, audience, presenter) {

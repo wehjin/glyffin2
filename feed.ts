@@ -111,7 +111,7 @@ function main() {
 
             var spinnerSize = tapHeight * 3;
             var spinner = Glyff.colorAnimation(Color.BLUE, Color.RED)
-                .animate(500)
+                .pulseAnimate(1000, 50)
                 .limitHeight(spinnerSize, .5).limitWidth(spinnerSize, .5);
             // TODO: Disable app during transition.
             var transition = app.addNearMajor(10, spinner);
@@ -124,7 +124,7 @@ function main() {
                     presentation.end();
                     presentation = transition.present(metrics, glAudience);
                     setTimeout(()=> {
-//                        window.open(link, "_self");
+                        window.open(link, "_self");
                     }, 300);
                 } else if (symbol === "next") {
                     index++;
