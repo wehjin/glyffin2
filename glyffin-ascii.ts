@@ -16,10 +16,12 @@ module Glyffin {
         if (charCode < x_weights.length) {
             return charCode;
         }
-        if (charCode == 8217) {
-            return 39;
+        if (charCode == 0x2019) {
+            return 39;//single quote
         } else if (charCode === 0x2013) {
-            return 45;
+            return 45;//minus
+        } else if (charCode === 0x201C || charCode === 0x201D) {
+            return 34;//double quote
         }
         return charCode;
     }
@@ -680,6 +682,13 @@ module Glyffin {
     var minus_spots = [
         [0, 4], [1, 4], [2, 4], [3, 4], [4, 4]
     ];
+    var plus_spots = [
+        [2, 2],
+        [2, 3],
+        [0, 4], [1, 4], [2, 4], [3, 4], [4, 4],
+        [2, 5],
+        [2, 6]
+    ];
     var quote_spots = [
         [0, 0],
         [0, 1]
@@ -745,7 +754,7 @@ module Glyffin {
         no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
 
         no_spots, no_spots, dquote_spots, no_spots, no_spots, no_spots, no_spots, quote_spots,
-        lparen_spots, rparen_spots, no_spots, no_spots, comma_spots, minus_spots, period_spots,
+        lparen_spots, rparen_spots, no_spots, plus_spots, comma_spots, minus_spots, period_spots,
         slash_spots,
         d0_spots, d1_spots, d2_spots, d3_spots, d4_spots, d5_spots, d6_spots, d7_spots,
         d8_spots, d9_spots, colon_spots, no_spots, no_spots, no_spots, no_spots, qmark_spots,
