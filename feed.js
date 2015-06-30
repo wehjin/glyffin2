@@ -99,6 +99,7 @@ function main() {
             });
         }
         refresh();
+        window.scrollTo(0, 0);
     });
 }
 //# sourceMappingURL=feed.js.map

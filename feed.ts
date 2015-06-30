@@ -137,6 +137,7 @@ function main() {
         }
 
         refresh();
+        window.scrollTo(0, 0);
     });
 }
 
