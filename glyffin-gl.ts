@@ -59,6 +59,8 @@ module Glyffin {
     interface JsTouch {
         clientX: number;
         clientY: number;
+        pageX: number;
+        pageY: number;
     }
     interface JsTouchList {
         length: number;
@@ -114,12 +116,12 @@ module Glyffin {
                     return;
                 }
                 var jsTouch = touches.item(0);
-                var hits = Interactive.findHits(this.interactives, jsTouch.clientX,
-                    jsTouch.clientY);
+                var hits = Interactive.findHits(this.interactives, jsTouch.pageX,
+                    jsTouch.pageY);
                 if (hits.length > 0) {
                     var interactive = hits[0];
-                    var touch = interactive.touchProvider.init(new Spot(jsTouch.clientX,
-                        jsTouch.clientY));
+                    var touch = interactive.touchProvider.init(new Spot(jsTouch.pageX,
+                        jsTouch.pageY));
 
                     var ontouchcancel;
                     var ontouchmove;
@@ -138,7 +140,7 @@ module Glyffin {
                     };
                     ontouchmove = function (ev : Event) {
                         var jsTouch = (<JsTouchEvent>ev).touches.item(0);
-                        touch.move(new Spot(jsTouch.clientX, jsTouch.clientY), ()=> {
+                        touch.move(new Spot(jsTouch.pageX, jsTouch.pageY), ()=> {
                             removeListeners();
                         });
                     };
@@ -156,17 +158,17 @@ module Glyffin {
             }, false);
 
             canvas.onmousedown = (ev : MouseEvent)=> {
-                var hits = Interactive.findHits(this.interactives, ev.clientX, ev.clientY);
+                var hits = Interactive.findHits(this.interactives, ev.pageX, ev.pageY);
                 if (hits.length > 0) {
                     var interactive = hits[0];
-                    var touch = interactive.touchProvider.init(new Spot(ev.clientX,
-                        ev.clientY));
+                    var touch = interactive.touchProvider.init(new Spot(ev.pageX,
+                        ev.pageY));
                     canvas.onmouseup = ()=> {
                         touch.release();
                         canvas.onmouseout = canvas.onmousemove = canvas.onmouseup = null;
                     };
                     canvas.onmousemove = (ev : MouseEvent)=> {
-                        touch.move(new Spot(ev.clientX, ev.clientY), ()=> {
+                        touch.move(new Spot(ev.pageX, ev.pageY), ()=> {
                             canvas.onmouseout = canvas.onmousemove = canvas.onmouseup = null;
                         });
                     };
