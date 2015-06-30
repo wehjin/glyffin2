@@ -14,12 +14,13 @@ import Glyff = Glyffin.Glyff;
 import Color = Glyffin.Color;
 
 function main() {
-
-    document.addEventListener('touchmove', function (e) {
-        e.preventDefault();
-        window.scroll(0, 0);
-        return false;
-    }, false);
+    /*
+     document.addEventListener('touchmove', function (e) {
+     e.preventDefault();
+     window.scroll(0, 0);
+     return false;
+     }, false);
+     */
 
     var glAudience = new Glyffin.GlAudience();
 
@@ -137,7 +138,7 @@ function main() {
         }
 
         refresh();
-        window.scrollTo(0, 0);
+        //window.scrollTo(0, 0);
     });
 }
 

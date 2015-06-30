@@ -11,11 +11,13 @@ var Void = Glyffin.Void;
 var Glyff = Glyffin.Glyff;
 var Color = Glyffin.Color;
 function main() {
-    document.addEventListener('touchmove', function (e) {
-        e.preventDefault();
-        window.scroll(0, 0);
-        return false;
-    }, false);
+    /*
+     document.addEventListener('touchmove', function (e) {
+     e.preventDefault();
+     window.scroll(0, 0);
+     return false;
+     }, false);
+     */
     var glAudience = new Glyffin.GlAudience();
     var background = [0xbb, 0xbb, 0xbb, 0xff];
     var midground = [0x55, 0x055, 0x55, 0xff];
@@ -99,7 +101,7 @@ function main() {
             });
         }
         refresh();
-        window.scrollTo(0, 0);
+        //window.scrollTo(0, 0);
     });
 }
 //# sourceMappingURL=feed.js.map
