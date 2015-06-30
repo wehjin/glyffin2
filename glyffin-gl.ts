@@ -116,7 +116,7 @@ module Glyffin {
                     return;
                 }
                 var jsTouch = touches.item(0);
-                var canvasY = jsTouch.clientY - canvas.getBoundingClientRect().top;
+                var canvasY = jsTouch.pageY - canvas.offsetTop;
                 var hits = Interactive.findHits(this.interactives, jsTouch.pageX, canvasY);
                 if (hits.length > 0) {
                     var interactive = hits[0];
@@ -139,7 +139,7 @@ module Glyffin {
                     };
                     ontouchmove = function (ev : Event) {
                         var jsTouch = (<JsTouchEvent>ev).touches.item(0);
-                        var canvasY = jsTouch.clientY - canvas.getBoundingClientRect().top;
+                        var canvasY = jsTouch.pageY - canvas.offsetTop;
                         touch.move(new Spot(jsTouch.pageX, canvasY), ()=> {
                             removeListeners();
                         });
@@ -158,7 +158,7 @@ module Glyffin {
             }, false);
 
             canvas.onmousedown = (ev : MouseEvent)=> {
-                var canvasY = ev.clientY - canvas.getBoundingClientRect().top;
+                var canvasY = ev.pageY - canvas.offsetTop;
                 var hits = Interactive.findHits(this.interactives, ev.pageX, canvasY);
                 if (hits.length > 0) {
                     var interactive = hits[0];
@@ -168,7 +168,7 @@ module Glyffin {
                         canvas.onmouseout = canvas.onmousemove = canvas.onmouseup = null;
                     };
                     canvas.onmousemove = (ev : MouseEvent)=> {
-                        var canvasY = ev.clientY - canvas.getBoundingClientRect().top;
+                        var canvasY = ev.pageY - canvas.offsetTop;
                         touch.move(new Spot(ev.pageX, canvasY), ()=> {
                             canvas.onmouseout = canvas.onmousemove = canvas.onmouseup = null;
                         });

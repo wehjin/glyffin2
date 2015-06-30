@@ -56,7 +56,7 @@ var Glyffin;
                     return;
                 }
                 var jsTouch = touches.item(0);
-                var canvasY = jsTouch.clientY - canvas.getBoundingClientRect().top;
+                var canvasY = jsTouch.pageY - canvas.offsetTop;
                 var hits = Interactive.findHits(_this.interactives, jsTouch.pageX, canvasY);
                 if (hits.length > 0) {
                     var interactive = hits[0];
@@ -76,7 +76,7 @@ var Glyffin;
                     };
                     ontouchmove = function (ev) {
                         var jsTouch = ev.touches.item(0);
-                        var canvasY = jsTouch.clientY - canvas.getBoundingClientRect().top;
+                        var canvasY = jsTouch.pageY - canvas.offsetTop;
                         touch.move(new Glyffin.Spot(jsTouch.pageX, canvasY), function () {
                             removeListeners();
                         });
@@ -94,7 +94,7 @@ var Glyffin;
                 ev.preventDefault();
             }, false);
             canvas.onmousedown = function (ev) {
-                var canvasY = ev.clientY - canvas.getBoundingClientRect().top;
+                var canvasY = ev.pageY - canvas.offsetTop;
                 var hits = Interactive.findHits(_this.interactives, ev.pageX, canvasY);
                 if (hits.length > 0) {
                     var interactive = hits[0];
@@ -104,7 +104,7 @@ var Glyffin;
                         canvas.onmouseout = canvas.onmousemove = canvas.onmouseup = null;
                     };
                     canvas.onmousemove = function (ev) {
-                        var canvasY = ev.clientY - canvas.getBoundingClientRect().top;
+                        var canvasY = ev.pageY - canvas.offsetTop;
                         touch.move(new Glyffin.Spot(ev.pageX, canvasY), function () {
                             canvas.onmouseout = canvas.onmousemove = canvas.onmouseup = null;
                         });
