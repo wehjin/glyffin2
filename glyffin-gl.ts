@@ -9,6 +9,53 @@ module Glyffin {
 
     var MAX_PATCH_COUNT = 10000;
 
+    var VSHADER_SOURCE : string =
+        'const vec3 c_Normal = vec3( 0.0, 0.0, 1.0 );\n' +
+        'uniform mat4 u_MvpMatrix;\n' +
+        'uniform mat4 u_ModelMatrix;\n' +
+        'attribute vec4 a_Position;\n' +
+        'attribute vec4 a_Color;\n' +
+        'varying vec4 v_Color;\n' +
+        'varying vec3 v_Normal;\n' +
+        'varying vec3 v_Position;\n' +
+        'void main(){\n' +
+        '  gl_Position = u_MvpMatrix * a_Position;\n' +
+        '  v_Position = vec3(u_ModelMatrix * a_Position);\n' +
+        '  v_Normal = c_Normal;\n' +
+        '  v_Color = a_Color;\n' +
+        '}\n';
+
+    var FSHADER_SOURCE : string =
+        '#ifdef GL_ES\n' +
+        'precision mediump float;\n' +
+        '#endif\n' +
+        'uniform vec3 u_LightColor;\n' +
+        'uniform vec3 u_LightPosition;\n' +
+        'uniform vec3 u_AmbientLight;\n' +
+        'varying vec3 v_Position;\n' +
+        'varying vec3 v_Normal;\n' +
+        'varying vec4 v_Color;\n' +
+        'void main(){\n' +
+            // Normalize the normal because it is interpolated and not 1.0 in length any more
+        '  vec3 normal = normalize(v_Normal);\n' +
+        '  vec3 lightDirection = normalize(u_LightPosition - v_Position);\n' +
+        '  float lightIntensity = max(dot(lightDirection, normal), 0.0);\n' +
+        '  vec3 diffuse = u_LightColor * v_Color.rgb * lightIntensity;\n' +
+        '  vec3 ambient = u_AmbientLight * v_Color.rgb;\n' +
+        '  gl_FragColor = vec4(diffuse + ambient, v_Color.a);\n' +
+        '}\n';
+
+    var VERTICES_PER_PATCH = 6;
+    var FLOATS_PER_POSITION = 3;
+    var FLOATS_PER_COLOR = 4;
+    var FLOATS_PER_VERTEX = FLOATS_PER_POSITION + FLOATS_PER_COLOR;
+    var FLOATS_PER_PATCH = VERTICES_PER_PATCH * FLOATS_PER_VERTEX;
+    var BYTES_PER_FLOAT = 4;
+    var BYTES_BEFORE_COLOR = FLOATS_PER_POSITION * BYTES_PER_FLOAT;
+    var BYTES_PER_VERTEX = FLOATS_PER_VERTEX * BYTES_PER_FLOAT;
+    var BYTES_PER_PATCH = FLOATS_PER_PATCH * BYTES_PER_FLOAT;
+
+
     interface JsTouch {
         clientX: number;
         clientY: number;
@@ -136,24 +183,44 @@ module Glyffin {
             initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
             gl.enable(gl.DEPTH_TEST);
+            gl.enable(gl.CULL_FACE);
+            gl.cullFace(gl.BACK);
+            gl.frontFace(gl.CW);
 
             this.vertices = new VerticesAndColor(MAX_PATCH_COUNT, gl);
             this.gl = gl;
 
+            var u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_ModelMatrix');
+            var u_MvpMatrix = gl.getUniformLocation(gl.program, 'u_MvpMatrix');
+            var u_LightColor = gl.getUniformLocation(gl.program, 'u_LightColor');
+            var u_LightPosition = gl.getUniformLocation(gl.program, 'u_LightPosition');
+            var u_AmbientLight = gl.getUniformLocation(gl.program, 'u_AmbientLight');
+            if (!u_MvpMatrix || !u_LightColor || !u_LightPosition || !u_AmbientLight) {
+                console.log('Failed to get uniform storage location');
+                return;
+            }
+
+            // White light.
+            gl.uniform3f(u_LightColor, 1.0, 1.0, 1.0);
+
+            // Overhead light in world coordinates
+            gl.uniform3f(u_LightPosition, 0.0, 0.5, 0.0);
+
+            // Ambient light
+            gl.uniform3f(u_AmbientLight, 0.2, 0.2, 0.2);
+
+            // Model
             var modelMatrix = new Matrix4();
             modelMatrix.setTranslate(-1, 1, -1);
             modelMatrix.scale(2 / canvas.width, -2 / canvas.height,
                 1 / Math.min(canvas.height, canvas.width));
+            gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
 
-            var viewMatrix = new Matrix4();
-            viewMatrix.setLookAt(0, 0, 0, 0, 0, -1, 0, 1, 0);
-
-            var projMatrix = new Matrix4();
-            projMatrix.setPerspective(90, 1, .1, 10);
-
-            var mvpMatrix = projMatrix.multiply(viewMatrix).multiply(modelMatrix);
-
-            var u_MvpMatrix = gl.getUniformLocation(gl.program, 'u_viewMatrix');
+            // Mvp
+            var mvpMatrix = new Matrix4();    // Model view projection matrix
+            mvpMatrix.setPerspective(90, 1, .1, 10);
+            mvpMatrix.lookAt(0, 0, 0, 0, 0, -1, 0, 1, 0);
+            mvpMatrix.multiply(modelMatrix);
             gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
         }
 
@@ -201,33 +268,6 @@ module Glyffin {
         }
 
     }
-
-    var VSHADER_SOURCE : string =
-        'attribute vec4 a_Position;\n' +
-        'attribute vec4 a_Color;\n' +
-        'varying vec4 v_Color;\n' +
-        'uniform mat4 u_viewMatrix;\n' +
-        'void main(){\n' +
-        '  gl_Position = u_viewMatrix * a_Position;\n' +
-        '  v_Color = a_Color;\n' +
-        '}\n';
-
-    var FSHADER_SOURCE : string =
-        'precision mediump float;' +
-        'varying vec4 v_Color;\n' +
-        'void main(){\n' +
-        '  gl_FragColor = v_Color;\n' +
-        '}\n';
-
-    var VERTICES_PER_PATCH = 6;
-    var FLOATS_PER_POSITION = 3;
-    var FLOATS_PER_COLOR = 4;
-    var FLOATS_PER_VERTEX = FLOATS_PER_POSITION + FLOATS_PER_COLOR;
-    var FLOATS_PER_PATCH = VERTICES_PER_PATCH * FLOATS_PER_VERTEX;
-    var BYTES_PER_FLOAT = 4;
-    var BYTES_BEFORE_COLOR = FLOATS_PER_POSITION * BYTES_PER_FLOAT;
-    var BYTES_PER_VERTEX = FLOATS_PER_VERTEX * BYTES_PER_FLOAT;
-    var BYTES_PER_PATCH = FLOATS_PER_PATCH * BYTES_PER_FLOAT;
 
     class VerticesAndColor {
 
