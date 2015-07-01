@@ -180,15 +180,14 @@ module Glyffin {
         private interactives : Interactive[] = [];
         private drawCount = 0;
         private editCount = 0;
-        private unsubscribeGestures;
+        private unsubscribeSpots;
 
         beginGestures() {
-            if (this.unsubscribeGestures) {
-                this.unsubscribeGestures();
-                this.unsubscribeGestures = null;
+            if (this.unsubscribeSpots) {
+                this.unsubscribeSpots();
             }
             var touch;
-            this.unsubscribeGestures = new SpotObservable(this.canvas).subscribe({
+            this.unsubscribeSpots = new SpotObservable(this.canvas).subscribe({
                 onStart: (spot : Spot) : boolean => {
                     var hits = Interactive.findHits(this.interactives, spot.x, spot.y);
                     if (hits.length < 1) {
@@ -205,9 +204,11 @@ module Glyffin {
                 },
                 onCancel: ()=> {
                     touch.cancel();
+                    this.beginGestures();
                 },
                 onEnd: ()=> {
                     touch.release();
+                    this.beginGestures();
                 }
             });
         }

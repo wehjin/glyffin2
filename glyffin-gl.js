@@ -175,12 +175,11 @@ var Glyffin;
         }
         GlAudience.prototype.beginGestures = function () {
             var _this = this;
-            if (this.unsubscribeGestures) {
-                this.unsubscribeGestures();
-                this.unsubscribeGestures = null;
+            if (this.unsubscribeSpots) {
+                this.unsubscribeSpots();
             }
             var touch;
-            this.unsubscribeGestures = new SpotObservable(this.canvas).subscribe({
+            this.unsubscribeSpots = new SpotObservable(this.canvas).subscribe({
                 onStart: function (spot) {
                     var hits = Interactive.findHits(_this.interactives, spot.x, spot.y);
                     if (hits.length < 1) {
@@ -197,9 +196,11 @@ var Glyffin;
                 },
                 onCancel: function () {
                     touch.cancel();
+                    _this.beginGestures();
                 },
                 onEnd: function () {
                     touch.release();
+                    _this.beginGestures();
                 }
             });
         };
