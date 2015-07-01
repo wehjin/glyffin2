@@ -36,6 +36,72 @@ var Glyffin;
         };
         return Interactive;
     })();
+    var SpotObservable = (function () {
+        function SpotObservable(canvas) {
+            this.canvas = canvas;
+        }
+        SpotObservable.prototype.addTouchListeners = function (onMove, onCancel, onEnd) {
+            this.canvas.addEventListener("touchmove", this.ontouchmove = onMove, false);
+            this.canvas.addEventListener("touchcancel", this.ontouchcancel = onCancel, false);
+            this.canvas.addEventListener("touchend", this.ontouchcancel = onEnd, false);
+        };
+        SpotObservable.prototype.removeTouchListeners = function () {
+            this.canvas.removeEventListener("touchmove", this.ontouchmove, false);
+            this.canvas.removeEventListener("touchcancel", this.ontouchcancel, false);
+            this.canvas.removeEventListener("touchend", this.ontouchend, false);
+            this.ontouchcancel = this.ontouchmove = this.ontouchend = null;
+        };
+        SpotObservable.prototype.subscribe = function (spotObserver) {
+            var _this = this;
+            var started;
+            var stop = function () {
+                _this.removeTouchListeners();
+                started = false;
+            };
+            var ontouchstart;
+            this.canvas.addEventListener("touchstart", ontouchstart = function (ev) {
+                var touches = ev.touches;
+                if (touches.length > 1) {
+                    if (started) {
+                        stop();
+                        spotObserver.onCancel();
+                    }
+                    return;
+                }
+                if (!spotObserver.onStart(_this.getTouchSpot(touches))) {
+                    return;
+                }
+                started = true;
+                _this.addTouchListeners(function (ev) {
+                    var carryOn = spotObserver.onMove(_this.getTouchSpot(ev.touches));
+                    if (!carryOn) {
+                        stop();
+                    }
+                }, function () {
+                    stop();
+                    spotObserver.onCancel();
+                }, function () {
+                    stop();
+                    spotObserver.onEnd();
+                });
+                ev.stopPropagation();
+                ev.preventDefault();
+            }, false);
+            return function () {
+                if (started) {
+                    stop();
+                }
+                _this.canvas.removeEventListener("touchstart", ontouchstart, false);
+            };
+        };
+        SpotObservable.prototype.getTouchSpot = function (touches) {
+            var jsTouch = touches.item(0);
+            var canvasX = jsTouch.pageX - this.canvas.offsetLeft;
+            var canvasY = jsTouch.pageY - this.canvas.offsetTop;
+            return new Glyffin.Spot(canvasX, canvasY);
+        };
+        return SpotObservable;
+    })();
     var GlAudience = (function () {
         function GlAudience() {
             var _this = this;
@@ -46,53 +112,7 @@ var Glyffin;
             canvas.width = canvas.clientWidth;
             canvas.height = canvas.clientHeight;
             this.canvas = canvas;
-            canvas.addEventListener("touchstart", function (ev) {
-                var cancel;
-                var touches = ev.touches;
-                if (touches.length > 1) {
-                    if (cancel) {
-                        cancel();
-                    }
-                    return;
-                }
-                var jsTouch = touches.item(0);
-                var canvasY = jsTouch.pageY - canvas.offsetTop;
-                var hits = Interactive.findHits(_this.interactives, jsTouch.pageX, canvasY);
-                if (hits.length > 0) {
-                    var interactive = hits[0];
-                    var touch = interactive.touchProvider.init(new Glyffin.Spot(jsTouch.pageX, canvasY));
-                    var ontouchcancel;
-                    var ontouchmove;
-                    var ontouchend;
-                    function removeListeners() {
-                        canvas.removeEventListener("touchend", ontouchend, false);
-                        canvas.removeEventListener("touchmove", ontouchmove, false);
-                        canvas.removeEventListener("touchcancel", ontouchcancel, false);
-                        cancel = ontouchcancel = ontouchmove = ontouchend = null;
-                    }
-                    ontouchend = function () {
-                        touch.release();
-                        removeListeners();
-                    };
-                    ontouchmove = function (ev) {
-                        var jsTouch = ev.touches.item(0);
-                        var canvasY = jsTouch.pageY - canvas.offsetTop;
-                        touch.move(new Glyffin.Spot(jsTouch.pageX, canvasY), function () {
-                            removeListeners();
-                        });
-                    };
-                    ontouchcancel = function () {
-                        touch.cancel();
-                        removeListeners();
-                    };
-                    canvas.addEventListener("touchend", ontouchend, false);
-                    canvas.addEventListener("touchmove", ontouchmove, false);
-                    canvas.addEventListener("touchcancel", ontouchcancel, false);
-                    cancel = ontouchcancel;
-                }
-                ev.stopPropagation();
-                ev.preventDefault();
-            }, false);
+            this.beginGestures();
             canvas.onmousedown = function (ev) {
                 var canvasY = ev.pageY - canvas.offsetTop;
                 var hits = Interactive.findHits(_this.interactives, ev.pageX, canvasY);
@@ -153,6 +173,36 @@ var Glyffin;
             mvpMatrix.multiply(modelMatrix);
             gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
         }
+        GlAudience.prototype.beginGestures = function () {
+            var _this = this;
+            if (this.unsubscribeGestures) {
+                this.unsubscribeGestures();
+                this.unsubscribeGestures = null;
+            }
+            var touch;
+            this.unsubscribeGestures = new SpotObservable(this.canvas).subscribe({
+                onStart: function (spot) {
+                    var hits = Interactive.findHits(_this.interactives, spot.x, spot.y);
+                    if (hits.length < 1) {
+                        return false;
+                    }
+                    touch = hits[0].touchProvider.init(spot);
+                    return true;
+                },
+                onMove: function (spot) {
+                    touch.move(spot, function () {
+                        _this.beginGestures();
+                    });
+                    return true;
+                },
+                onCancel: function () {
+                    touch.cancel();
+                },
+                onEnd: function () {
+                    touch.release();
+                }
+            });
+        };
         GlAudience.prototype.addPatch = function (bounds, color) {
             var _this = this;
             if (bounds.left >= bounds.right || bounds.top >= bounds.bottom || color.alpha == 0) {

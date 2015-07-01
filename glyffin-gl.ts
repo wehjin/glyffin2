@@ -92,6 +92,87 @@ module Glyffin {
         }
     }
 
+    interface SpotObserver {
+        onStart(spot : Spot):boolean;
+        onMove(spot : Spot):boolean;
+        onEnd();
+        onCancel();
+    }
+
+    class SpotObservable {
+
+        ontouchmove : (ev : Event)=>void;
+        ontouchcancel : (ev : Event)=>void;
+        ontouchend : (ev : Event)=>void;
+
+        constructor(private canvas : HTMLCanvasElement) {
+        }
+
+        private addTouchListeners(onMove : (ev : Event)=>void, onCancel : (ev : Event)=>void,
+                                  onEnd : (ev : Event)=>void) {
+            this.canvas.addEventListener("touchmove", this.ontouchmove = onMove, false);
+            this.canvas.addEventListener("touchcancel", this.ontouchcancel = onCancel, false);
+            this.canvas.addEventListener("touchend", this.ontouchcancel = onEnd, false);
+        }
+
+        private removeTouchListeners() {
+            this.canvas.removeEventListener("touchmove", this.ontouchmove, false);
+            this.canvas.removeEventListener("touchcancel", this.ontouchcancel, false);
+            this.canvas.removeEventListener("touchend", this.ontouchend, false);
+            this.ontouchcancel = this.ontouchmove = this.ontouchend = null;
+        }
+
+        subscribe(spotObserver : SpotObserver) : ()=>void {
+            var started : boolean;
+            var stop = ()=> {
+                this.removeTouchListeners();
+                started = false;
+            };
+            var ontouchstart : (ev : Event)=>void;
+            this.canvas.addEventListener("touchstart", ontouchstart = (ev : Event) => {
+                var touches = (<JsTouchEvent>ev).touches;
+                if (touches.length > 1) {
+                    if (started) {
+                        stop();
+                        spotObserver.onCancel();
+                    }
+                    return;
+                }
+                if (!spotObserver.onStart(this.getTouchSpot(touches))) {
+                    return;
+                }
+                started = true;
+                this.addTouchListeners((ev : Event) => {
+                    var carryOn = spotObserver.onMove(this.getTouchSpot((<JsTouchEvent>ev).touches));
+                    if (!carryOn) {
+                        stop();
+                    }
+                }, ()=> {
+                    stop();
+                    spotObserver.onCancel();
+                }, ()=> {
+                    stop();
+                    spotObserver.onEnd();
+                });
+                ev.stopPropagation();
+                ev.preventDefault();
+            }, false);
+            return ()=> {
+                if (started) {
+                    stop();
+                }
+                this.canvas.removeEventListener("touchstart", ontouchstart, false);
+            }
+        }
+
+        private getTouchSpot(touches : JsTouchList) : Spot {
+            var jsTouch = touches.item(0);
+            var canvasX = jsTouch.pageX - this.canvas.offsetLeft;
+            var canvasY = jsTouch.pageY - this.canvas.offsetTop;
+            return new Spot(canvasX, canvasY);
+        }
+    }
+
     export class GlAudience implements Audience {
         public canvas : HTMLCanvasElement;
         private gl : WebGLBookContext;
@@ -99,6 +180,37 @@ module Glyffin {
         private interactives : Interactive[] = [];
         private drawCount = 0;
         private editCount = 0;
+        private unsubscribeGestures;
+
+        beginGestures() {
+            if (this.unsubscribeGestures) {
+                this.unsubscribeGestures();
+                this.unsubscribeGestures = null;
+            }
+            var touch;
+            this.unsubscribeGestures = new SpotObservable(this.canvas).subscribe({
+                onStart: (spot : Spot) : boolean => {
+                    var hits = Interactive.findHits(this.interactives, spot.x, spot.y);
+                    if (hits.length < 1) {
+                        return false;
+                    }
+                    touch = hits[0].touchProvider.init(spot);
+                    return true;
+                },
+                onMove: (spot : Spot) : boolean=> {
+                    touch.move(spot, ()=> {
+                        this.beginGestures();
+                    });
+                    return true;
+                },
+                onCancel: ()=> {
+                    touch.cancel();
+                },
+                onEnd: ()=> {
+                    touch.release();
+                }
+            });
+        }
 
         constructor() {
             var canvas = <HTMLCanvasElement>document.getElementById('webgl');
@@ -106,56 +218,7 @@ module Glyffin {
             canvas.height = canvas.clientHeight;
             this.canvas = canvas;
 
-            canvas.addEventListener("touchstart", (ev : Event) => {
-                var cancel;
-                var touches = (<JsTouchEvent>ev).touches;
-                if (touches.length > 1) {
-                    if (cancel) {
-                        cancel();
-                    }
-                    return;
-                }
-                var jsTouch = touches.item(0);
-                var canvasY = jsTouch.pageY - canvas.offsetTop;
-                var hits = Interactive.findHits(this.interactives, jsTouch.pageX, canvasY);
-                if (hits.length > 0) {
-                    var interactive = hits[0];
-                    var touch = interactive.touchProvider.init(new Spot(jsTouch.pageX, canvasY));
-
-                    var ontouchcancel;
-                    var ontouchmove;
-                    var ontouchend;
-
-                    function removeListeners() {
-                        canvas.removeEventListener("touchend", ontouchend, false);
-                        canvas.removeEventListener("touchmove", ontouchmove, false);
-                        canvas.removeEventListener("touchcancel", ontouchcancel, false);
-                        cancel = ontouchcancel = ontouchmove = ontouchend = null;
-                    }
-
-                    ontouchend = function () {
-                        touch.release();
-                        removeListeners();
-                    };
-                    ontouchmove = function (ev : Event) {
-                        var jsTouch = (<JsTouchEvent>ev).touches.item(0);
-                        var canvasY = jsTouch.pageY - canvas.offsetTop;
-                        touch.move(new Spot(jsTouch.pageX, canvasY), ()=> {
-                            removeListeners();
-                        });
-                    };
-                    ontouchcancel = function () {
-                        touch.cancel();
-                        removeListeners();
-                    };
-                    canvas.addEventListener("touchend", ontouchend, false);
-                    canvas.addEventListener("touchmove", ontouchmove, false);
-                    canvas.addEventListener("touchcancel", ontouchcancel, false);
-                    cancel = ontouchcancel;
-                }
-                ev.stopPropagation();
-                ev.preventDefault();
-            }, false);
+            this.beginGestures();
 
             canvas.onmousedown = (ev : MouseEvent)=> {
                 var canvasY = ev.pageY - canvas.offsetTop;
