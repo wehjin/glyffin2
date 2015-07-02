@@ -7,10 +7,16 @@
 /// <reference path="glyffin-html.ts" />
 /// <reference path="glyffin-touch.ts" />
 
-var lightX : number = 0.0;
-var lightY : number = 0.5;
-var lightZ : number = 0.0;
+var LIGHT_X = 0.0;
+var LIGHT_Y = 0.5;
+var LIGHT_Z = 0.0;
+var AUDIENCE_X = 0;
+var AUDIENCE_Y = 0;
+var AUDIENCE_Z = -1;
 var OFFSCREEN_WIDTH = 2048, OFFSCREEN_HEIGHT = 2048;
+var UP_X = 0;
+var UP_Y = 1;
+var UP_Z = 0;
 
 class FrameBuffer {
 
@@ -118,7 +124,8 @@ module Glyffin {
         private u_MvpMatrix;
 
 
-        constructor(gl : WebGLRenderingContext) {
+        constructor(gl : WebGLRenderingContext, modelMatrix : Matrix4,
+                    private vertices : VerticesAndColor) {
             var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
             this.program = program;
 
@@ -128,6 +135,18 @@ module Glyffin {
                 console.log('Failed to get the storage location of attribute or uniform variable from shadowProgram');
                 return;
             }
+
+            var mvpMatrix = new Matrix4(); // Prepare a view projection matrix for generating a shadow map
+            mvpMatrix.setPerspective(70.0, OFFSCREEN_WIDTH / OFFSCREEN_HEIGHT, .1, 10.0);
+            mvpMatrix.lookAt(LIGHT_X, LIGHT_Y, LIGHT_Z, AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z, UP_X,
+                UP_Y, UP_Z);
+            mvpMatrix.multiply(modelMatrix);
+
+            gl.useProgram(program);
+        }
+
+        public enableVertexAttributes() {
+            this.vertices.enablePositionAttributes(this.program);
         }
     }
 
@@ -176,9 +195,10 @@ module Glyffin {
         private u_AmbientLight;
 
         constructor(gl : WebGLRenderingContext, modelMatrix : Matrix4,
-                    vertices : VerticesAndColor) {
+                    private vertices : VerticesAndColor) {
             var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
             this.program = program;
+
             this.u_ModelMatrix = gl.getUniformLocation(program, 'u_ModelMatrix');
             this.u_MvpMatrix = gl.getUniformLocation(program, 'u_MvpMatrix');
             this.u_AmbientLight = gl.getUniformLocation(program, 'u_AmbientLight');
@@ -191,16 +211,20 @@ module Glyffin {
 
             var mvpMatrix = new Matrix4();
             mvpMatrix.setPerspective(90, 1, .1, 10);
-            mvpMatrix.lookAt(0, 0, 0, 0, 0, -1, 0, 1, 0);
+            mvpMatrix.lookAt(0, 0, 0, AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z, UP_X, UP_Y, UP_Z);
             mvpMatrix.multiply(modelMatrix);
 
             gl.useProgram(program);
             gl.uniform3f(this.u_AmbientLight, 0.2, 0.2, 0.2);
             gl.uniform3f(this.u_LightColor, 1.0, 1.0, 1.0);
-            gl.uniform3f(this.u_LightPosition, lightX, lightY, lightZ);
+            gl.uniform3f(this.u_LightPosition, LIGHT_X, LIGHT_Y, LIGHT_Z);
             gl.uniformMatrix4fv(this.u_ModelMatrix, false, modelMatrix.elements);
             gl.uniformMatrix4fv(this.u_MvpMatrix, false, mvpMatrix.elements);
-            vertices.enableInProgram(program);
+        }
+
+        public enableVertexAttributes() {
+            this.vertices.enablePositionAttributes(this.program);
+            this.vertices.enableColorAttributes(this.program);
         }
     }
 
@@ -213,6 +237,7 @@ module Glyffin {
         private editCount = 0;
         private unsubscribeSpots;
         private lightProgram;
+        private shadowProgram;
 
         beginGestures() {
             if (this.unsubscribeSpots) {
@@ -251,16 +276,7 @@ module Glyffin {
             canvas.height = canvas.clientHeight;
             this.canvas = canvas;
 
-            this.beginGestures();
-
             var gl = getWebGLContext(canvas, false);
-
-            gl.clearColor(0.0, 0.0, 0.0, 1.0);
-            gl.enable(gl.DEPTH_TEST);
-            gl.enable(gl.CULL_FACE);
-            gl.cullFace(gl.BACK);
-            gl.frontFace(gl.CW);
-
             this.gl = gl;
 
             var modelMatrix = new Matrix4();
@@ -270,7 +286,7 @@ module Glyffin {
 
             this.vertices = new VerticesAndColor(MAX_PATCH_COUNT, gl);
             this.lightProgram = new LightProgram(gl, modelMatrix, this.vertices);
-            var shadowProgram = new ShadowProgram(gl);
+            this.shadowProgram = new ShadowProgram(gl, modelMatrix, this.vertices);
 
             // Initialize framebuffer object (FBO)
             var fbo = new FrameBuffer(gl);
@@ -280,6 +296,13 @@ module Glyffin {
             }
             gl.activeTexture(gl.TEXTURE0); // Set a texture object to the texture unit
             gl.bindTexture(gl.TEXTURE_2D, fbo.texture);
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            gl.enable(gl.DEPTH_TEST);
+            gl.enable(gl.CULL_FACE);
+            gl.cullFace(gl.BACK);
+            gl.frontFace(gl.CW);
+
+            this.beginGestures();
         }
 
         scheduleRedraw() {
@@ -289,9 +312,17 @@ module Glyffin {
             this.editCount++;
             requestAnimationFrame(()=> {
                 this.vertices.clearFreePatches();
-                this.gl.useProgram(this.lightProgram.program);
+
+                this.gl.useProgram(this.shadowProgram.program);
+                this.shadowProgram.enableVertexAttributes();
                 this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
                 this.gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
+
+                this.gl.useProgram(this.lightProgram.program);
+                this.lightProgram.enableVertexAttributes();
+                this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+                this.gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
+
                 this.drawCount = this.editCount;
                 console.log("Active %i, Free %i, TotalFreed %",
                     this.vertices.getActiveVertexCount(),
@@ -348,17 +379,21 @@ module Glyffin {
             gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
         }
 
-        enableInProgram(program) {
-            var a_Position = this.gl.getAttribLocation(program, 'a_Position');
-            this.gl.vertexAttribPointer(a_Position, FLOATS_PER_POSITION, this.gl.FLOAT, false,
-                BYTES_PER_VERTEX, 0);
-            this.gl.enableVertexAttribArray(a_Position);
-
+        enableColorAttributes(program) {
+            // TODO Take a_Color as parameter.
             var a_Color = this.gl.getAttribLocation(program, 'a_Color');
             this.gl.vertexAttribPointer(a_Color, FLOATS_PER_COLOR, this.gl.FLOAT, false,
                 BYTES_PER_VERTEX,
                 BYTES_BEFORE_COLOR);
             this.gl.enableVertexAttribArray(a_Color);
+        }
+
+        enablePositionAttributes(program) {
+            // TODO Take a_Position as a parameter.
+            var a_Position = this.gl.getAttribLocation(program, 'a_Position');
+            this.gl.vertexAttribPointer(a_Position, FLOATS_PER_POSITION, this.gl.FLOAT, false,
+                BYTES_PER_VERTEX, 0);
+            this.gl.enableVertexAttribArray(a_Position);
         }
 
         getActiveVertexCount() : number {

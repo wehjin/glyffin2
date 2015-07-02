@@ -5,10 +5,16 @@
 /// <reference path="glyffin.ts" />
 /// <reference path="glyffin-html.ts" />
 /// <reference path="glyffin-touch.ts" />
-var lightX = 0.0;
-var lightY = 0.5;
-var lightZ = 0.0;
+var LIGHT_X = 0.0;
+var LIGHT_Y = 0.5;
+var LIGHT_Z = 0.0;
+var AUDIENCE_X = 0;
+var AUDIENCE_Y = 0;
+var AUDIENCE_Z = -1;
 var OFFSCREEN_WIDTH = 2048, OFFSCREEN_HEIGHT = 2048;
+var UP_X = 0;
+var UP_Y = 1;
+var UP_Z = 0;
 var FrameBuffer = (function () {
     function FrameBuffer(gl) {
         var framebuffer;
@@ -82,7 +88,8 @@ var Glyffin;
     var BYTES_PER_VERTEX = FLOATS_PER_VERTEX * BYTES_PER_FLOAT;
     var BYTES_PER_PATCH = FLOATS_PER_PATCH * BYTES_PER_FLOAT;
     var ShadowProgram = (function () {
-        function ShadowProgram(gl) {
+        function ShadowProgram(gl, modelMatrix, vertices) {
+            this.vertices = vertices;
             this.VSHADER_SOURCE = 'attribute vec4 a_Position;\n' + 'uniform mat4 u_MvpMatrix;\n' + 'void main() {\n' + '  gl_Position = u_MvpMatrix * a_Position;\n' + '}\n';
             this.FSHADER_SOURCE = '#ifdef GL_ES\n' + 'precision mediump float;\n' + '#endif\n' + 'void main() {\n' + '  gl_FragColor = vec4(gl_FragCoord.z, 0.0, 0.0, 0.0);\n' + '}\n';
             var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
@@ -93,11 +100,20 @@ var Glyffin;
                 console.log('Failed to get the storage location of attribute or uniform variable from shadowProgram');
                 return;
             }
+            var mvpMatrix = new Matrix4(); // Prepare a view projection matrix for generating a shadow map
+            mvpMatrix.setPerspective(70.0, OFFSCREEN_WIDTH / OFFSCREEN_HEIGHT, .1, 10.0);
+            mvpMatrix.lookAt(LIGHT_X, LIGHT_Y, LIGHT_Z, AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z, UP_X, UP_Y, UP_Z);
+            mvpMatrix.multiply(modelMatrix);
+            gl.useProgram(program);
         }
+        ShadowProgram.prototype.enableVertexAttributes = function () {
+            this.vertices.enablePositionAttributes(this.program);
+        };
         return ShadowProgram;
     })();
     var LightProgram = (function () {
         function LightProgram(gl, modelMatrix, vertices) {
+            this.vertices = vertices;
             this.VSHADER_SOURCE = 'const vec3 c_Normal = vec3( 0.0, 0.0, 1.0 );\n' + 'uniform mat4 u_MvpMatrix;\n' + 'uniform mat4 u_ModelMatrix;\n' + 'attribute vec4 a_Position;\n' + 'attribute vec4 a_Color;\n' + 'varying vec4 v_Color;\n' + 'varying vec3 v_Normal;\n' + 'varying vec3 v_Position;\n' + 'void main(){\n' + '  gl_Position = u_MvpMatrix * a_Position;\n' + '  v_Position = vec3(u_ModelMatrix * a_Position);\n' + '  v_Normal = c_Normal;\n' + '  v_Color = a_Color;\n' + '}\n';
             this.FSHADER_SOURCE = '#ifdef GL_ES\n' + 'precision mediump float;\n' + '#endif\n' + 'uniform vec3 u_LightColor;\n' + 'uniform vec3 u_LightPosition;\n' + 'uniform vec3 u_AmbientLight;\n' + 'varying vec3 v_Position;\n' + 'varying vec3 v_Normal;\n' + 'varying vec4 v_Color;\n' + 'void main(){\n' + '  vec3 normal = normalize(v_Normal);\n' + '  vec3 lightDirection = normalize(u_LightPosition - v_Position);\n' + '  float lightIntensity = max(dot(lightDirection, normal), 0.0);\n' + '  vec3 diffuse = u_LightColor * v_Color.rgb * lightIntensity;\n' + '  vec3 ambient = u_AmbientLight * v_Color.rgb;\n' + '  gl_FragColor = vec4(diffuse + ambient, v_Color.a);\n' + '}\n';
             var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
@@ -112,16 +128,19 @@ var Glyffin;
             }
             var mvpMatrix = new Matrix4();
             mvpMatrix.setPerspective(90, 1, .1, 10);
-            mvpMatrix.lookAt(0, 0, 0, 0, 0, -1, 0, 1, 0);
+            mvpMatrix.lookAt(0, 0, 0, AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z, UP_X, UP_Y, UP_Z);
             mvpMatrix.multiply(modelMatrix);
             gl.useProgram(program);
             gl.uniform3f(this.u_AmbientLight, 0.2, 0.2, 0.2);
             gl.uniform3f(this.u_LightColor, 1.0, 1.0, 1.0);
-            gl.uniform3f(this.u_LightPosition, lightX, lightY, lightZ);
+            gl.uniform3f(this.u_LightPosition, LIGHT_X, LIGHT_Y, LIGHT_Z);
             gl.uniformMatrix4fv(this.u_ModelMatrix, false, modelMatrix.elements);
             gl.uniformMatrix4fv(this.u_MvpMatrix, false, mvpMatrix.elements);
-            vertices.enableInProgram(program);
         }
+        LightProgram.prototype.enableVertexAttributes = function () {
+            this.vertices.enablePositionAttributes(this.program);
+            this.vertices.enableColorAttributes(this.program);
+        };
         return LightProgram;
     })();
     var GlAudience = (function () {
@@ -133,20 +152,14 @@ var Glyffin;
             canvas.width = canvas.clientWidth;
             canvas.height = canvas.clientHeight;
             this.canvas = canvas;
-            this.beginGestures();
             var gl = getWebGLContext(canvas, false);
-            gl.clearColor(0.0, 0.0, 0.0, 1.0);
-            gl.enable(gl.DEPTH_TEST);
-            gl.enable(gl.CULL_FACE);
-            gl.cullFace(gl.BACK);
-            gl.frontFace(gl.CW);
             this.gl = gl;
             var modelMatrix = new Matrix4();
             modelMatrix.setTranslate(-1, 1, -1);
             modelMatrix.scale(2 / canvas.width, -2 / canvas.height, 1 / Math.min(canvas.height, canvas.width));
             this.vertices = new VerticesAndColor(MAX_PATCH_COUNT, gl);
             this.lightProgram = new LightProgram(gl, modelMatrix, this.vertices);
-            var shadowProgram = new ShadowProgram(gl);
+            this.shadowProgram = new ShadowProgram(gl, modelMatrix, this.vertices);
             // Initialize framebuffer object (FBO)
             var fbo = new FrameBuffer(gl);
             if (!fbo.framebuffer) {
@@ -155,6 +168,12 @@ var Glyffin;
             }
             gl.activeTexture(gl.TEXTURE0); // Set a texture object to the texture unit
             gl.bindTexture(gl.TEXTURE_2D, fbo.texture);
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            gl.enable(gl.DEPTH_TEST);
+            gl.enable(gl.CULL_FACE);
+            gl.cullFace(gl.BACK);
+            gl.frontFace(gl.CW);
+            this.beginGestures();
         }
         GlAudience.prototype.beginGestures = function () {
             var _this = this;
@@ -195,7 +214,12 @@ var Glyffin;
             this.editCount++;
             requestAnimationFrame(function () {
                 _this.vertices.clearFreePatches();
+                _this.gl.useProgram(_this.shadowProgram.program);
+                _this.shadowProgram.enableVertexAttributes();
+                _this.gl.clear(_this.gl.COLOR_BUFFER_BIT | _this.gl.DEPTH_BUFFER_BIT);
+                _this.gl.drawArrays(_this.gl.TRIANGLES, 0, _this.vertices.getActiveVertexCount());
                 _this.gl.useProgram(_this.lightProgram.program);
+                _this.lightProgram.enableVertexAttributes();
                 _this.gl.clear(_this.gl.COLOR_BUFFER_BIT | _this.gl.DEPTH_BUFFER_BIT);
                 _this.gl.drawArrays(_this.gl.TRIANGLES, 0, _this.vertices.getActiveVertexCount());
                 _this.drawCount = _this.editCount;
@@ -242,13 +266,17 @@ var Glyffin;
             var vertices = new Float32Array(maxPatchCount * FLOATS_PER_PATCH);
             gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
         }
-        VerticesAndColor.prototype.enableInProgram = function (program) {
-            var a_Position = this.gl.getAttribLocation(program, 'a_Position');
-            this.gl.vertexAttribPointer(a_Position, FLOATS_PER_POSITION, this.gl.FLOAT, false, BYTES_PER_VERTEX, 0);
-            this.gl.enableVertexAttribArray(a_Position);
+        VerticesAndColor.prototype.enableColorAttributes = function (program) {
+            // TODO Take a_Color as parameter.
             var a_Color = this.gl.getAttribLocation(program, 'a_Color');
             this.gl.vertexAttribPointer(a_Color, FLOATS_PER_COLOR, this.gl.FLOAT, false, BYTES_PER_VERTEX, BYTES_BEFORE_COLOR);
             this.gl.enableVertexAttribArray(a_Color);
+        };
+        VerticesAndColor.prototype.enablePositionAttributes = function (program) {
+            // TODO Take a_Position as a parameter.
+            var a_Position = this.gl.getAttribLocation(program, 'a_Position');
+            this.gl.vertexAttribPointer(a_Position, FLOATS_PER_POSITION, this.gl.FLOAT, false, BYTES_PER_VERTEX, 0);
+            this.gl.enableVertexAttribArray(a_Position);
         };
         VerticesAndColor.prototype.getActiveVertexCount = function () {
             return this.nextPatchIndex * VERTICES_PER_PATCH;
