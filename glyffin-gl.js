@@ -3,6 +3,7 @@
  */
 /// <reference path="webglbook.d.ts" />
 /// <reference path="glyffin.ts" />
+/// <reference path="glyffin-html.ts" />
 var Glyffin;
 (function (Glyffin) {
     var MAX_PATCH_COUNT = 10000;
@@ -35,99 +36,6 @@ var Glyffin;
             return hitInteractives;
         };
         return Interactive;
-    })();
-    var SpotObservable = (function () {
-        function SpotObservable(canvas) {
-            this.canvas = canvas;
-        }
-        SpotObservable.prototype.addTouchListeners = function (onMove, onCancel, onEnd) {
-            this.canvas.addEventListener("touchmove", this.ontouchmove = onMove, false);
-            this.canvas.addEventListener("touchcancel", this.ontouchcancel = onCancel, false);
-            this.canvas.addEventListener("touchend", this.ontouchcancel = onEnd, false);
-        };
-        SpotObservable.prototype.removeTouchListeners = function () {
-            this.canvas.removeEventListener("touchmove", this.ontouchmove, false);
-            this.canvas.removeEventListener("touchcancel", this.ontouchcancel, false);
-            this.canvas.removeEventListener("touchend", this.ontouchend, false);
-            this.ontouchcancel = this.ontouchmove = this.ontouchend = null;
-        };
-        SpotObservable.prototype.subscribe = function (spotObserver) {
-            var _this = this;
-            var started;
-            var stop = function () {
-                _this.removeTouchListeners();
-                _this.canvas.onmouseout = _this.canvas.onmousemove = _this.canvas.onmouseup = null;
-                started = false;
-            };
-            var ontouchstart;
-            this.canvas.addEventListener("touchstart", ontouchstart = function (ev) {
-                var touches = ev.touches;
-                if (touches.length > 1) {
-                    if (started) {
-                        stop();
-                        spotObserver.onCancel();
-                    }
-                    return;
-                }
-                if (!spotObserver.onStart(_this.getTouchSpot(touches))) {
-                    return;
-                }
-                started = true;
-                _this.addTouchListeners(function (ev) {
-                    var carryOn = spotObserver.onMove(_this.getTouchSpot(ev.touches));
-                    if (!carryOn) {
-                        stop();
-                    }
-                }, function () {
-                    stop();
-                    spotObserver.onCancel();
-                }, function () {
-                    stop();
-                    spotObserver.onEnd();
-                });
-                ev.stopPropagation();
-                ev.preventDefault();
-            }, false);
-            this.canvas.onmousedown = function (ev) {
-                if (!spotObserver.onStart(_this.getMouseSpot(ev))) {
-                    return;
-                }
-                started = true;
-                _this.canvas.onmousemove = function (ev) {
-                    var carryOn = spotObserver.onMove(_this.getMouseSpot(ev));
-                    if (!carryOn) {
-                        stop();
-                    }
-                };
-                _this.canvas.onmouseout = function () {
-                    stop();
-                    spotObserver.onCancel();
-                };
-                _this.canvas.onmouseup = function () {
-                    stop();
-                    spotObserver.onEnd();
-                };
-                ev.stopPropagation();
-                ev.preventDefault();
-            };
-            return function () {
-                if (started) {
-                    stop();
-                }
-                _this.canvas.removeEventListener("touchstart", ontouchstart, false);
-                _this.canvas.onmousedown = null;
-            };
-        };
-        SpotObservable.prototype.getMouseSpot = function (ev) {
-            return new Glyffin.Spot(ev.pageX - this.canvas.offsetLeft, ev.pageY - this.canvas.offsetTop);
-        };
-        SpotObservable.prototype.getTouchSpot = function (touches) {
-            var jsTouch = touches.item(0);
-            var canvasX = jsTouch.pageX - this.canvas.offsetLeft;
-            var canvasY = jsTouch.pageY - this.canvas.offsetTop;
-            return new Glyffin.Spot(canvasX, canvasY);
-        };
-        return SpotObservable;
     })();
     var GlAudience = (function () {
         function GlAudience() {
@@ -181,7 +89,7 @@ var Glyffin;
                 this.unsubscribeSpots();
             }
             var touch;
-            this.unsubscribeSpots = new SpotObservable(this.canvas).subscribe({
+            this.unsubscribeSpots = new Glyffin.SpotObservable(this.canvas).subscribe({
                 onStart: function (spot) {
                     var hits = Interactive.findHits(_this.interactives, spot.x, spot.y);
                     if (hits.length < 1) {

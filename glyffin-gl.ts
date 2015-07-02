@@ -4,6 +4,7 @@
 
 /// <reference path="webglbook.d.ts" />
 /// <reference path="glyffin.ts" />
+/// <reference path="glyffin-html.ts" />
 
 module Glyffin {
 
@@ -56,20 +57,6 @@ module Glyffin {
     var BYTES_PER_PATCH = FLOATS_PER_PATCH * BYTES_PER_FLOAT;
 
 
-    interface JsTouch {
-        clientX: number;
-        clientY: number;
-        pageX: number;
-        pageY: number;
-    }
-    interface JsTouchList {
-        length: number;
-        item(index : number):JsTouch;
-    }
-    interface JsTouchEvent extends UIEvent {
-        touches:JsTouchList;
-    }
-
     class Interactive {
         constructor(public bounds : Perimeter, public touchProvider : Gesturable) {
         }
@@ -89,117 +76,6 @@ module Glyffin {
                 }
             });
             return hitInteractives;
-        }
-    }
-
-    interface SpotObserver {
-        onStart(spot : Spot):boolean;
-        onMove(spot : Spot):boolean;
-        onEnd();
-        onCancel();
-    }
-
-    class SpotObservable {
-
-        ontouchmove : (ev : Event)=>void;
-        ontouchcancel : (ev : Event)=>void;
-        ontouchend : (ev : Event)=>void;
-
-        constructor(private canvas : HTMLCanvasElement) {
-        }
-
-        private addTouchListeners(onMove : (ev : Event)=>void, onCancel : (ev : Event)=>void,
-                                  onEnd : (ev : Event)=>void) {
-            this.canvas.addEventListener("touchmove", this.ontouchmove = onMove, false);
-            this.canvas.addEventListener("touchcancel", this.ontouchcancel = onCancel, false);
-            this.canvas.addEventListener("touchend", this.ontouchcancel = onEnd, false);
-        }
-
-        private removeTouchListeners() {
-            this.canvas.removeEventListener("touchmove", this.ontouchmove, false);
-            this.canvas.removeEventListener("touchcancel", this.ontouchcancel, false);
-            this.canvas.removeEventListener("touchend", this.ontouchend, false);
-            this.ontouchcancel = this.ontouchmove = this.ontouchend = null;
-        }
-
-        subscribe(spotObserver : SpotObserver) : ()=>void {
-            var started : boolean;
-            var stop = ()=> {
-                this.removeTouchListeners();
-                this.canvas.onmouseout = this.canvas.onmousemove = this.canvas.onmouseup = null;
-                started = false;
-            };
-            var ontouchstart : (ev : Event)=>void;
-            this.canvas.addEventListener("touchstart", ontouchstart = (ev : Event) => {
-                var touches = (<JsTouchEvent>ev).touches;
-                if (touches.length > 1) {
-                    if (started) {
-                        stop();
-                        spotObserver.onCancel();
-                    }
-                    return;
-                }
-                if (!spotObserver.onStart(this.getTouchSpot(touches))) {
-                    return;
-                }
-                started = true;
-                this.addTouchListeners((ev : Event) => {
-                    var carryOn = spotObserver.onMove(this.getTouchSpot((<JsTouchEvent>ev).touches));
-                    if (!carryOn) {
-                        stop();
-                    }
-                }, ()=> {
-                    stop();
-                    spotObserver.onCancel();
-                }, ()=> {
-                    stop();
-                    spotObserver.onEnd();
-                });
-                ev.stopPropagation();
-                ev.preventDefault();
-            }, false);
-            this.canvas.onmousedown = (ev : MouseEvent)=> {
-                if (!spotObserver.onStart(this.getMouseSpot(ev))) {
-                    return;
-                }
-                started = true;
-                this.canvas.onmousemove = (ev : MouseEvent)=> {
-                    var carryOn = spotObserver.onMove(this.getMouseSpot(ev));
-                    if (!carryOn) {
-                        stop();
-                    }
-                };
-                this.canvas.onmouseout = ()=> {
-                    stop();
-                    spotObserver.onCancel();
-                };
-                this.canvas.onmouseup = ()=> {
-                    stop();
-                    spotObserver.onEnd();
-                };
-                ev.stopPropagation();
-                ev.preventDefault();
-            };
-            return () => {
-                if (started) {
-                    stop();
-                }
-                this.canvas.removeEventListener("touchstart", ontouchstart, false);
-                this.canvas.onmousedown = null;
-            }
-        }
-
-        private
-        getMouseSpot(ev : MouseEvent) : Spot {
-            return new Spot(ev.pageX - this.canvas.offsetLeft, ev.pageY - this.canvas.offsetTop);
-        }
-
-        private
-        getTouchSpot(touches : JsTouchList) : Spot {
-            var jsTouch = touches.item(0);
-            var canvasX = jsTouch.pageX - this.canvas.offsetLeft;
-            var canvasY = jsTouch.pageY - this.canvas.offsetTop;
-            return new Spot(canvasX, canvasY);
         }
     }
 
