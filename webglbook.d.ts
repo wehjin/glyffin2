@@ -10,6 +10,8 @@ declare function getWebGLContext(canvas : HTMLCanvasElement, debug? : boolean) :
 
 declare function initShaders(gl : WebGLBookContext, vshader : string, fshader : string);
 
+declare function createProgram(gl : WebGLRenderingContext, vshader : string, fshader : string);
+
 declare class Matrix4 {
     elements : Float32Array;
 

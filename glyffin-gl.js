@@ -54,34 +54,32 @@ var Glyffin;
             gl.enable(gl.CULL_FACE);
             gl.cullFace(gl.BACK);
             gl.frontFace(gl.CW);
-            this.vertices = new VerticesAndColor(MAX_PATCH_COUNT, gl);
             this.gl = gl;
-            var u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_ModelMatrix');
-            var u_MvpMatrix = gl.getUniformLocation(gl.program, 'u_MvpMatrix');
-            var u_LightColor = gl.getUniformLocation(gl.program, 'u_LightColor');
-            var u_LightPosition = gl.getUniformLocation(gl.program, 'u_LightPosition');
-            var u_AmbientLight = gl.getUniformLocation(gl.program, 'u_AmbientLight');
-            if (!u_MvpMatrix || !u_LightColor || !u_LightPosition || !u_AmbientLight) {
-                console.log('Failed to get uniform storage location');
-                return;
-            }
-            // White light.
-            gl.uniform3f(u_LightColor, 1.0, 1.0, 1.0);
-            // Overhead light in world coordinates
-            gl.uniform3f(u_LightPosition, 0.0, 0.5, 0.0);
-            // Ambient light
-            gl.uniform3f(u_AmbientLight, 0.2, 0.2, 0.2);
-            // Model
             var modelMatrix = new Matrix4();
             modelMatrix.setTranslate(-1, 1, -1);
             modelMatrix.scale(2 / canvas.width, -2 / canvas.height, 1 / Math.min(canvas.height, canvas.width));
-            gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
-            // Mvp
             var mvpMatrix = new Matrix4(); // Model view projection matrix
             mvpMatrix.setPerspective(90, 1, .1, 10);
             mvpMatrix.lookAt(0, 0, 0, 0, 0, -1, 0, 1, 0);
             mvpMatrix.multiply(modelMatrix);
+            this.vertices = new VerticesAndColor(MAX_PATCH_COUNT, gl);
+            var lightProgram = createProgram(gl, VSHADER_SOURCE, FSHADER_SOURCE);
+            var u_ModelMatrix = gl.getUniformLocation(lightProgram, 'u_ModelMatrix');
+            var u_MvpMatrix = gl.getUniformLocation(lightProgram, 'u_MvpMatrix');
+            var u_LightColor = gl.getUniformLocation(lightProgram, 'u_LightColor');
+            var u_LightPosition = gl.getUniformLocation(lightProgram, 'u_LightPosition');
+            var u_AmbientLight = gl.getUniformLocation(lightProgram, 'u_AmbientLight');
+            if (!u_MvpMatrix || !u_LightColor || !u_LightPosition || !u_AmbientLight) {
+                console.log('Failed to get uniform storage location');
+                return;
+            }
+            gl.useProgram(lightProgram);
+            gl.uniform3f(u_LightColor, 1.0, 1.0, 1.0);
+            gl.uniform3f(u_LightPosition, 0.0, 0.5, 0.0);
+            gl.uniform3f(u_AmbientLight, 0.2, 0.2, 0.2);
+            gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
             gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
+            this.vertices.enableInProgram(gl.program);
         }
         GlAudience.prototype.beginGestures = function () {
             var _this = this;
@@ -167,13 +165,15 @@ var Glyffin;
             gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
             var vertices = new Float32Array(maxPatchCount * FLOATS_PER_PATCH);
             gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-            var a_Position = gl.getAttribLocation(gl.program, 'a_Position');
-            gl.vertexAttribPointer(a_Position, FLOATS_PER_POSITION, gl.FLOAT, false, BYTES_PER_VERTEX, 0);
-            gl.enableVertexAttribArray(a_Position);
-            var a_Color = gl.getAttribLocation(gl.program, 'a_Color');
-            gl.vertexAttribPointer(a_Color, FLOATS_PER_COLOR, gl.FLOAT, false, BYTES_PER_VERTEX, BYTES_BEFORE_COLOR);
-            gl.enableVertexAttribArray(a_Color);
         }
+        VerticesAndColor.prototype.enableInProgram = function (program) {
+            var a_Position = this.gl.getAttribLocation(program, 'a_Position');
+            this.gl.vertexAttribPointer(a_Position, FLOATS_PER_POSITION, this.gl.FLOAT, false, BYTES_PER_VERTEX, 0);
+            this.gl.enableVertexAttribArray(a_Position);
+            var a_Color = this.gl.getAttribLocation(program, 'a_Color');
+            this.gl.vertexAttribPointer(a_Color, FLOATS_PER_COLOR, this.gl.FLOAT, false, BYTES_PER_VERTEX, BYTES_BEFORE_COLOR);
+            this.gl.enableVertexAttribArray(a_Color);
+        };
         VerticesAndColor.prototype.getActiveVertexCount = function () {
             return this.nextPatchIndex * VERTICES_PER_PATCH;
         };
