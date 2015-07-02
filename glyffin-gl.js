@@ -56,6 +56,7 @@ var Glyffin;
             var started;
             var stop = function () {
                 _this.removeTouchListeners();
+                _this.canvas.onmouseout = _this.canvas.onmousemove = _this.canvas.onmouseup = null;
                 started = false;
             };
             var ontouchstart;
@@ -87,12 +88,38 @@ var Glyffin;
                 ev.stopPropagation();
                 ev.preventDefault();
             }, false);
+            this.canvas.onmousedown = function (ev) {
+                if (!spotObserver.onStart(_this.getMouseSpot(ev))) {
+                    return;
+                }
+                started = true;
+                _this.canvas.onmousemove = function (ev) {
+                    var carryOn = spotObserver.onMove(_this.getMouseSpot(ev));
+                    if (!carryOn) {
+                        stop();
+                    }
+                };
+                _this.canvas.onmouseout = function () {
+                    stop();
+                    spotObserver.onCancel();
+                };
+                _this.canvas.onmouseup = function () {
+                    stop();
+                    spotObserver.onEnd();
+                };
+                ev.stopPropagation();
+                ev.preventDefault();
+            };
             return function () {
                 if (started) {
                     stop();
                 }
                 _this.canvas.removeEventListener("touchstart", ontouchstart, false);
+                _this.canvas.onmousedown = null;
             };
+        };
+        SpotObservable.prototype.getMouseSpot = function (ev) {
+            return new Glyffin.Spot(ev.pageX - this.canvas.offsetLeft, ev.pageY - this.canvas.offsetTop);
         };
         SpotObservable.prototype.getTouchSpot = function (touches) {
             var jsTouch = touches.item(0);
@@ -104,7 +131,6 @@ var Glyffin;
     })();
     var GlAudience = (function () {
         function GlAudience() {
-            var _this = this;
             this.interactives = [];
             this.drawCount = 0;
             this.editCount = 0;
@@ -113,30 +139,6 @@ var Glyffin;
             canvas.height = canvas.clientHeight;
             this.canvas = canvas;
             this.beginGestures();
-            canvas.onmousedown = function (ev) {
-                var canvasY = ev.pageY - canvas.offsetTop;
-                var hits = Interactive.findHits(_this.interactives, ev.pageX, canvasY);
-                if (hits.length > 0) {
-                    var interactive = hits[0];
-                    var touch = interactive.touchProvider.init(new Glyffin.Spot(ev.pageX, canvasY));
-                    canvas.onmouseup = function () {
-                        touch.release();
-                        canvas.onmouseout = canvas.onmousemove = canvas.onmouseup = null;
-                    };
-                    canvas.onmousemove = function (ev) {
-                        var canvasY = ev.pageY - canvas.offsetTop;
-                        touch.move(new Glyffin.Spot(ev.pageX, canvasY), function () {
-                            canvas.onmouseout = canvas.onmousemove = canvas.onmouseup = null;
-                        });
-                    };
-                    canvas.onmouseout = function () {
-                        touch.cancel();
-                        canvas.onmouseout = canvas.onmousemove = canvas.onmouseup = null;
-                    };
-                }
-                ev.stopPropagation();
-                ev.preventDefault();
-            };
             var gl = getWebGLContext(canvas, false);
             initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
             gl.clearColor(0.0, 0.0, 0.0, 1.0);

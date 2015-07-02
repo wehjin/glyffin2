@@ -126,6 +126,7 @@ module Glyffin {
             var started : boolean;
             var stop = ()=> {
                 this.removeTouchListeners();
+                this.canvas.onmouseout = this.canvas.onmousemove = this.canvas.onmouseup = null;
                 started = false;
             };
             var ontouchstart : (ev : Event)=>void;
@@ -157,15 +158,44 @@ module Glyffin {
                 ev.stopPropagation();
                 ev.preventDefault();
             }, false);
-            return ()=> {
+            this.canvas.onmousedown = (ev : MouseEvent)=> {
+                if (!spotObserver.onStart(this.getMouseSpot(ev))) {
+                    return;
+                }
+                started = true;
+                this.canvas.onmousemove = (ev : MouseEvent)=> {
+                    var carryOn = spotObserver.onMove(this.getMouseSpot(ev));
+                    if (!carryOn) {
+                        stop();
+                    }
+                };
+                this.canvas.onmouseout = ()=> {
+                    stop();
+                    spotObserver.onCancel();
+                };
+                this.canvas.onmouseup = ()=> {
+                    stop();
+                    spotObserver.onEnd();
+                };
+                ev.stopPropagation();
+                ev.preventDefault();
+            };
+            return () => {
                 if (started) {
                     stop();
                 }
                 this.canvas.removeEventListener("touchstart", ontouchstart, false);
+                this.canvas.onmousedown = null;
             }
         }
 
-        private getTouchSpot(touches : JsTouchList) : Spot {
+        private
+        getMouseSpot(ev : MouseEvent) : Spot {
+            return new Spot(ev.pageX - this.canvas.offsetLeft, ev.pageY - this.canvas.offsetTop);
+        }
+
+        private
+        getTouchSpot(touches : JsTouchList) : Spot {
             var jsTouch = touches.item(0);
             var canvasX = jsTouch.pageX - this.canvas.offsetLeft;
             var canvasY = jsTouch.pageY - this.canvas.offsetTop;
@@ -220,31 +250,6 @@ module Glyffin {
             this.canvas = canvas;
 
             this.beginGestures();
-
-            canvas.onmousedown = (ev : MouseEvent)=> {
-                var canvasY = ev.pageY - canvas.offsetTop;
-                var hits = Interactive.findHits(this.interactives, ev.pageX, canvasY);
-                if (hits.length > 0) {
-                    var interactive = hits[0];
-                    var touch = interactive.touchProvider.init(new Spot(ev.pageX, canvasY));
-                    canvas.onmouseup = ()=> {
-                        touch.release();
-                        canvas.onmouseout = canvas.onmousemove = canvas.onmouseup = null;
-                    };
-                    canvas.onmousemove = (ev : MouseEvent)=> {
-                        var canvasY = ev.pageY - canvas.offsetTop;
-                        touch.move(new Spot(ev.pageX, canvasY), ()=> {
-                            canvas.onmouseout = canvas.onmousemove = canvas.onmouseup = null;
-                        });
-                    };
-                    canvas.onmouseout = ()=> {
-                        touch.cancel();
-                        canvas.onmouseout = canvas.onmousemove = canvas.onmouseup = null;
-                    };
-                }
-                ev.stopPropagation();
-                ev.preventDefault();
-            };
 
             var gl = getWebGLContext(canvas, false);
             initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
