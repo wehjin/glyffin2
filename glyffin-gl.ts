@@ -7,6 +7,83 @@
 /// <reference path="glyffin-html.ts" />
 /// <reference path="glyffin-touch.ts" />
 
+var lightX : number = 0.0;
+var lightY : number = 0.5;
+var lightZ : number = 0.0;
+var OFFSCREEN_WIDTH = 2048, OFFSCREEN_HEIGHT = 2048;
+
+class FrameBuffer {
+
+    public framebuffer;
+    public texture;
+
+    constructor(gl : WebGLRenderingContext) {
+        var framebuffer : WebGLFramebuffer;
+        var texture : WebGLTexture;
+        var depthBuffer : WebGLRenderbuffer;
+
+        // Define the error handling function
+        function deleteObjects() {
+            if (framebuffer) gl.deleteFramebuffer(framebuffer);
+            if (texture) gl.deleteTexture(texture);
+            if (depthBuffer) gl.deleteRenderbuffer(depthBuffer);
+        }
+
+        // Create a texture object and set its size and parameters
+        texture = gl.createTexture(); // Create a texture object
+        if (!texture) {
+            console.log('Failed to create texture object');
+            deleteObjects();
+            return;
+        }
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, OFFSCREEN_WIDTH, OFFSCREEN_HEIGHT, 0, gl.RGBA,
+            gl.UNSIGNED_BYTE, null);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+
+        // Create a renderbuffer object and set its size and parameters
+        depthBuffer = gl.createRenderbuffer(); // Create a renderbuffer object
+        if (!depthBuffer) {
+            console.log('Failed to create renderbuffer object');
+            deleteObjects();
+            return;
+        }
+        gl.bindRenderbuffer(gl.RENDERBUFFER, depthBuffer);
+        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, OFFSCREEN_WIDTH,
+            OFFSCREEN_HEIGHT);
+
+        // Create a framebuffer object (FBO)
+        framebuffer = gl.createFramebuffer();
+        if (!framebuffer) {
+            console.log('Failed to create frame buffer object');
+            deleteObjects();
+            return;
+        }
+        // Attach the texture and the renderbuffer object to the FBO
+        gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture,
+            0);
+        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER,
+            depthBuffer);
+
+        // Check if FBO is configured correctly
+        var e = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+        if (gl.FRAMEBUFFER_COMPLETE !== e) {
+            console.log('Frame buffer object is incomplete: ' + e.toString());
+            deleteObjects();
+            return;
+        }
+
+        // Unbind the buffer object
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.bindTexture(gl.TEXTURE_2D, null);
+        gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+
+        this.texture = texture;
+        this.framebuffer = framebuffer;
+    }
+}
+
 module Glyffin {
 
     var MAX_PATCH_COUNT = 10000;
@@ -19,6 +96,40 @@ module Glyffin {
     var BYTES_BEFORE_COLOR = FLOATS_PER_POSITION * BYTES_PER_FLOAT;
     var BYTES_PER_VERTEX = FLOATS_PER_VERTEX * BYTES_PER_FLOAT;
     var BYTES_PER_PATCH = FLOATS_PER_PATCH * BYTES_PER_FLOAT;
+
+    class ShadowProgram {
+        private VSHADER_SOURCE : string =
+            'attribute vec4 a_Position;\n' +
+            'uniform mat4 u_MvpMatrix;\n' +
+            'void main() {\n' +
+            '  gl_Position = u_MvpMatrix * a_Position;\n' +
+            '}\n';
+
+        private FSHADER_SOURCE : string =
+            '#ifdef GL_ES\n' +
+            'precision mediump float;\n' +
+            '#endif\n' +
+            'void main() {\n' +
+            '  gl_FragColor = vec4(gl_FragCoord.z, 0.0, 0.0, 0.0);\n' +
+            '}\n';
+
+        public program;
+        private a_Position;
+        private u_MvpMatrix;
+
+
+        constructor(gl : WebGLRenderingContext) {
+            var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
+            this.program = program;
+
+            this.a_Position = gl.getAttribLocation(program, 'a_Position');
+            this.u_MvpMatrix = gl.getUniformLocation(program, 'u_MvpMatrix');
+            if (this.a_Position < 0 || !this.u_MvpMatrix) {
+                console.log('Failed to get the storage location of attribute or uniform variable from shadowProgram');
+                return;
+            }
+        }
+    }
 
     class LightProgram {
         private VSHADER_SOURCE : string =
@@ -70,9 +181,9 @@ module Glyffin {
             this.program = program;
             this.u_ModelMatrix = gl.getUniformLocation(program, 'u_ModelMatrix');
             this.u_MvpMatrix = gl.getUniformLocation(program, 'u_MvpMatrix');
+            this.u_AmbientLight = gl.getUniformLocation(program, 'u_AmbientLight');
             this.u_LightColor = gl.getUniformLocation(program, 'u_LightColor');
             this.u_LightPosition = gl.getUniformLocation(program, 'u_LightPosition');
-            this.u_AmbientLight = gl.getUniformLocation(program, 'u_AmbientLight');
             if (!this.u_MvpMatrix || !this.u_LightColor || !this.u_LightPosition ||
                 !this.u_AmbientLight) {
                 console.log('Failed to get uniform storage location');
@@ -84,9 +195,9 @@ module Glyffin {
             mvpMatrix.multiply(modelMatrix);
 
             gl.useProgram(program);
-            gl.uniform3f(this.u_LightColor, 1.0, 1.0, 1.0);
-            gl.uniform3f(this.u_LightPosition, 0.0, 0.5, 0.0);
             gl.uniform3f(this.u_AmbientLight, 0.2, 0.2, 0.2);
+            gl.uniform3f(this.u_LightColor, 1.0, 1.0, 1.0);
+            gl.uniform3f(this.u_LightPosition, lightX, lightY, lightZ);
             gl.uniformMatrix4fv(this.u_ModelMatrix, false, modelMatrix.elements);
             gl.uniformMatrix4fv(this.u_MvpMatrix, false, mvpMatrix.elements);
             vertices.enableInProgram(program);
@@ -159,6 +270,16 @@ module Glyffin {
 
             this.vertices = new VerticesAndColor(MAX_PATCH_COUNT, gl);
             this.lightProgram = new LightProgram(gl, modelMatrix, this.vertices);
+            var shadowProgram = new ShadowProgram(gl);
+
+            // Initialize framebuffer object (FBO)
+            var fbo = new FrameBuffer(gl);
+            if (!fbo.framebuffer) {
+                console.log('Failed to initialize frame buffer object');
+                return;
+            }
+            gl.activeTexture(gl.TEXTURE0); // Set a texture object to the texture unit
+            gl.bindTexture(gl.TEXTURE_2D, fbo.texture);
         }
 
         scheduleRedraw() {
@@ -204,6 +325,7 @@ module Glyffin {
                 }
             };
         }
+
 
     }
 
