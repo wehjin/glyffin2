@@ -119,9 +119,9 @@ module Glyffin {
             '  gl_FragColor = vec4(gl_FragCoord.z, 0.0, 0.0, 0.0);\n' +
             '}\n';
 
-        public program;
-        private a_Position;
-        private u_MvpMatrix;
+        public program : WebGLProgram;
+        private u_MvpMatrix : WebGLUniformLocation;
+        private a_Position : number;
 
 
         constructor(gl : WebGLRenderingContext, modelMatrix : Matrix4,
@@ -129,8 +129,8 @@ module Glyffin {
             var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
             this.program = program;
 
-            this.a_Position = gl.getAttribLocation(program, 'a_Position');
             this.u_MvpMatrix = gl.getUniformLocation(program, 'u_MvpMatrix');
+            this.a_Position = gl.getAttribLocation(program, 'a_Position');
             if (this.a_Position < 0 || !this.u_MvpMatrix) {
                 console.log('Failed to get the storage location of attribute or uniform variable from shadowProgram');
                 return;
@@ -187,12 +187,12 @@ module Glyffin {
             '  gl_FragColor = vec4(diffuse + ambient, v_Color.a);\n' +
             '}\n';
 
-        public program;
-        private u_ModelMatrix;
-        private u_MvpMatrix;
-        private u_LightColor;
-        private u_LightPosition;
-        private u_AmbientLight;
+        public program : WebGLProgram;
+        private u_ModelMatrix : WebGLUniformLocation;
+        private u_MvpMatrix : WebGLUniformLocation;
+        private u_LightColor : WebGLUniformLocation;
+        private u_LightPosition : WebGLUniformLocation;
+        private u_AmbientLight : WebGLUniformLocation;
 
         constructor(gl : WebGLRenderingContext, modelMatrix : Matrix4,
                     private vertices : VerticesAndColor) {
@@ -233,11 +233,11 @@ module Glyffin {
         private gl : WebGLRenderingContext;
         private vertices : VerticesAndColor;
         private interactives : Interactive[] = [];
-        private drawCount = 0;
-        private editCount = 0;
-        private unsubscribeSpots;
-        private lightProgram;
-        private shadowProgram;
+        private drawCount : number = 0;
+        private editCount : number = 0;
+        private unsubscribeSpots : ()=>void;
+        private lightProgram : LightProgram;
+        private shadowProgram : ShadowProgram;
 
         beginGestures() {
             if (this.unsubscribeSpots) {

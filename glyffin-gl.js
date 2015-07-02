@@ -94,8 +94,8 @@ var Glyffin;
             this.FSHADER_SOURCE = '#ifdef GL_ES\n' + 'precision mediump float;\n' + '#endif\n' + 'void main() {\n' + '  gl_FragColor = vec4(gl_FragCoord.z, 0.0, 0.0, 0.0);\n' + '}\n';
             var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
             this.program = program;
-            this.a_Position = gl.getAttribLocation(program, 'a_Position');
             this.u_MvpMatrix = gl.getUniformLocation(program, 'u_MvpMatrix');
+            this.a_Position = gl.getAttribLocation(program, 'a_Position');
             if (this.a_Position < 0 || !this.u_MvpMatrix) {
                 console.log('Failed to get the storage location of attribute or uniform variable from shadowProgram');
                 return;
