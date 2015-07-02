@@ -4,11 +4,10 @@
 /// <reference path="webglbook.d.ts" />
 /// <reference path="glyffin.ts" />
 /// <reference path="glyffin-html.ts" />
+/// <reference path="glyffin-touch.ts" />
 var Glyffin;
 (function (Glyffin) {
     var MAX_PATCH_COUNT = 10000;
-    var VSHADER_SOURCE = 'const vec3 c_Normal = vec3( 0.0, 0.0, 1.0 );\n' + 'uniform mat4 u_MvpMatrix;\n' + 'uniform mat4 u_ModelMatrix;\n' + 'attribute vec4 a_Position;\n' + 'attribute vec4 a_Color;\n' + 'varying vec4 v_Color;\n' + 'varying vec3 v_Normal;\n' + 'varying vec3 v_Position;\n' + 'void main(){\n' + '  gl_Position = u_MvpMatrix * a_Position;\n' + '  v_Position = vec3(u_ModelMatrix * a_Position);\n' + '  v_Normal = c_Normal;\n' + '  v_Color = a_Color;\n' + '}\n';
-    var FSHADER_SOURCE = '#ifdef GL_ES\n' + 'precision mediump float;\n' + '#endif\n' + 'uniform vec3 u_LightColor;\n' + 'uniform vec3 u_LightPosition;\n' + 'uniform vec3 u_AmbientLight;\n' + 'varying vec3 v_Position;\n' + 'varying vec3 v_Normal;\n' + 'varying vec4 v_Color;\n' + 'void main(){\n' + '  vec3 normal = normalize(v_Normal);\n' + '  vec3 lightDirection = normalize(u_LightPosition - v_Position);\n' + '  float lightIntensity = max(dot(lightDirection, normal), 0.0);\n' + '  vec3 diffuse = u_LightColor * v_Color.rgb * lightIntensity;\n' + '  vec3 ambient = u_AmbientLight * v_Color.rgb;\n' + '  gl_FragColor = vec4(diffuse + ambient, v_Color.a);\n' + '}\n';
     var VERTICES_PER_PATCH = 6;
     var FLOATS_PER_POSITION = 3;
     var FLOATS_PER_COLOR = 4;
@@ -18,24 +17,33 @@ var Glyffin;
     var BYTES_BEFORE_COLOR = FLOATS_PER_POSITION * BYTES_PER_FLOAT;
     var BYTES_PER_VERTEX = FLOATS_PER_VERTEX * BYTES_PER_FLOAT;
     var BYTES_PER_PATCH = FLOATS_PER_PATCH * BYTES_PER_FLOAT;
-    var Interactive = (function () {
-        function Interactive(bounds, touchProvider) {
-            this.bounds = bounds;
-            this.touchProvider = touchProvider;
+    var LightProgram = (function () {
+        function LightProgram(gl, modelMatrix, vertices) {
+            this.VSHADER_SOURCE = 'const vec3 c_Normal = vec3( 0.0, 0.0, 1.0 );\n' + 'uniform mat4 u_MvpMatrix;\n' + 'uniform mat4 u_ModelMatrix;\n' + 'attribute vec4 a_Position;\n' + 'attribute vec4 a_Color;\n' + 'varying vec4 v_Color;\n' + 'varying vec3 v_Normal;\n' + 'varying vec3 v_Position;\n' + 'void main(){\n' + '  gl_Position = u_MvpMatrix * a_Position;\n' + '  v_Position = vec3(u_ModelMatrix * a_Position);\n' + '  v_Normal = c_Normal;\n' + '  v_Color = a_Color;\n' + '}\n';
+            this.FSHADER_SOURCE = '#ifdef GL_ES\n' + 'precision mediump float;\n' + '#endif\n' + 'uniform vec3 u_LightColor;\n' + 'uniform vec3 u_LightPosition;\n' + 'uniform vec3 u_AmbientLight;\n' + 'varying vec3 v_Position;\n' + 'varying vec3 v_Normal;\n' + 'varying vec4 v_Color;\n' + 'void main(){\n' + '  vec3 normal = normalize(v_Normal);\n' + '  vec3 lightDirection = normalize(u_LightPosition - v_Position);\n' + '  float lightIntensity = max(dot(lightDirection, normal), 0.0);\n' + '  vec3 diffuse = u_LightColor * v_Color.rgb * lightIntensity;\n' + '  vec3 ambient = u_AmbientLight * v_Color.rgb;\n' + '  gl_FragColor = vec4(diffuse + ambient, v_Color.a);\n' + '}\n';
+            var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
+            this.program = program;
+            this.u_ModelMatrix = gl.getUniformLocation(program, 'u_ModelMatrix');
+            this.u_MvpMatrix = gl.getUniformLocation(program, 'u_MvpMatrix');
+            this.u_LightColor = gl.getUniformLocation(program, 'u_LightColor');
+            this.u_LightPosition = gl.getUniformLocation(program, 'u_LightPosition');
+            this.u_AmbientLight = gl.getUniformLocation(program, 'u_AmbientLight');
+            if (!this.u_MvpMatrix || !this.u_LightColor || !this.u_LightPosition || !this.u_AmbientLight) {
+                console.log('Failed to get uniform storage location');
+            }
+            var mvpMatrix = new Matrix4();
+            mvpMatrix.setPerspective(90, 1, .1, 10);
+            mvpMatrix.lookAt(0, 0, 0, 0, 0, -1, 0, 1, 0);
+            mvpMatrix.multiply(modelMatrix);
+            gl.useProgram(program);
+            gl.uniform3f(this.u_LightColor, 1.0, 1.0, 1.0);
+            gl.uniform3f(this.u_LightPosition, 0.0, 0.5, 0.0);
+            gl.uniform3f(this.u_AmbientLight, 0.2, 0.2, 0.2);
+            gl.uniformMatrix4fv(this.u_ModelMatrix, false, modelMatrix.elements);
+            gl.uniformMatrix4fv(this.u_MvpMatrix, false, mvpMatrix.elements);
+            vertices.enableInProgram(program);
         }
-        Interactive.prototype.isHit = function (touchX, touchY) {
-            return this.bounds.left <= touchX && this.bounds.right >= touchX && this.bounds.top <= touchY && this.bounds.bottom >= touchY;
-        };
-        Interactive.findHits = function (all, x, y) {
-            var hitInteractives = [];
-            all.forEach(function (interactive) {
-                if (interactive.isHit(x, y)) {
-                    hitInteractives.push(interactive);
-                }
-            });
-            return hitInteractives;
-        };
-        return Interactive;
+        return LightProgram;
     })();
     var GlAudience = (function () {
         function GlAudience() {
@@ -48,7 +56,6 @@ var Glyffin;
             this.canvas = canvas;
             this.beginGestures();
             var gl = getWebGLContext(canvas, false);
-            initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
             gl.enable(gl.DEPTH_TEST);
             gl.enable(gl.CULL_FACE);
@@ -58,28 +65,8 @@ var Glyffin;
             var modelMatrix = new Matrix4();
             modelMatrix.setTranslate(-1, 1, -1);
             modelMatrix.scale(2 / canvas.width, -2 / canvas.height, 1 / Math.min(canvas.height, canvas.width));
-            var mvpMatrix = new Matrix4(); // Model view projection matrix
-            mvpMatrix.setPerspective(90, 1, .1, 10);
-            mvpMatrix.lookAt(0, 0, 0, 0, 0, -1, 0, 1, 0);
-            mvpMatrix.multiply(modelMatrix);
             this.vertices = new VerticesAndColor(MAX_PATCH_COUNT, gl);
-            var lightProgram = createProgram(gl, VSHADER_SOURCE, FSHADER_SOURCE);
-            var u_ModelMatrix = gl.getUniformLocation(lightProgram, 'u_ModelMatrix');
-            var u_MvpMatrix = gl.getUniformLocation(lightProgram, 'u_MvpMatrix');
-            var u_LightColor = gl.getUniformLocation(lightProgram, 'u_LightColor');
-            var u_LightPosition = gl.getUniformLocation(lightProgram, 'u_LightPosition');
-            var u_AmbientLight = gl.getUniformLocation(lightProgram, 'u_AmbientLight');
-            if (!u_MvpMatrix || !u_LightColor || !u_LightPosition || !u_AmbientLight) {
-                console.log('Failed to get uniform storage location');
-                return;
-            }
-            gl.useProgram(lightProgram);
-            gl.uniform3f(u_LightColor, 1.0, 1.0, 1.0);
-            gl.uniform3f(u_LightPosition, 0.0, 0.5, 0.0);
-            gl.uniform3f(u_AmbientLight, 0.2, 0.2, 0.2);
-            gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
-            gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
-            this.vertices.enableInProgram(gl.program);
+            this.lightProgram = new LightProgram(gl, modelMatrix, this.vertices);
         }
         GlAudience.prototype.beginGestures = function () {
             var _this = this;
@@ -89,7 +76,7 @@ var Glyffin;
             var touch;
             this.unsubscribeSpots = new Glyffin.SpotObservable(this.canvas).subscribe({
                 onStart: function (spot) {
-                    var hits = Interactive.findHits(_this.interactives, spot.x, spot.y);
+                    var hits = Glyffin.Interactive.findHits(_this.interactives, spot.x, spot.y);
                     if (hits.length < 1) {
                         return false;
                     }
@@ -112,6 +99,21 @@ var Glyffin;
                 }
             });
         };
+        GlAudience.prototype.scheduleRedraw = function () {
+            var _this = this;
+            if (this.editCount > this.drawCount) {
+                return;
+            }
+            this.editCount++;
+            requestAnimationFrame(function () {
+                _this.vertices.clearFreePatches();
+                _this.gl.useProgram(_this.lightProgram.program);
+                _this.gl.clear(_this.gl.COLOR_BUFFER_BIT | _this.gl.DEPTH_BUFFER_BIT);
+                _this.gl.drawArrays(_this.gl.TRIANGLES, 0, _this.vertices.getActiveVertexCount());
+                _this.drawCount = _this.editCount;
+                console.log("Active %i, Free %i, TotalFreed %", _this.vertices.getActiveVertexCount(), _this.vertices.getFreeVertexCount(), _this.vertices.getTotalFreedVertices());
+            });
+        };
         GlAudience.prototype.addPatch = function (bounds, color) {
             var _this = this;
             if (bounds.left >= bounds.right || bounds.top >= bounds.bottom || color.alpha == 0) {
@@ -126,7 +128,7 @@ var Glyffin;
             };
         };
         GlAudience.prototype.addZone = function (bounds, touchProvider) {
-            var interactive = new Interactive(bounds, touchProvider);
+            var interactive = new Glyffin.Interactive(bounds, touchProvider);
             this.interactives.push(interactive);
             var interactives = this.interactives;
             return {
@@ -134,20 +136,6 @@ var Glyffin;
                     interactives.splice(interactives.indexOf(interactive), 1);
                 }
             };
-        };
-        GlAudience.prototype.scheduleRedraw = function () {
-            var _this = this;
-            if (this.editCount > this.drawCount) {
-                return;
-            }
-            this.editCount++;
-            requestAnimationFrame(function () {
-                _this.vertices.clearFreePatches();
-                _this.gl.clear(_this.gl.COLOR_BUFFER_BIT | _this.gl.DEPTH_BUFFER_BIT);
-                _this.gl.drawArrays(_this.gl.TRIANGLES, 0, _this.vertices.getActiveVertexCount());
-                _this.drawCount = _this.editCount;
-                console.log("Active %i, Free %i, TotalFreed %", _this.vertices.getActiveVertexCount(), _this.vertices.getFreeVertexCount(), _this.vertices.getTotalFreedVertices());
-            });
         };
         return GlAudience;
     })();

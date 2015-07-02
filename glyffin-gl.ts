@@ -5,47 +5,11 @@
 /// <reference path="webglbook.d.ts" />
 /// <reference path="glyffin.ts" />
 /// <reference path="glyffin-html.ts" />
+/// <reference path="glyffin-touch.ts" />
 
 module Glyffin {
 
     var MAX_PATCH_COUNT = 10000;
-
-    var VSHADER_SOURCE : string =
-        'const vec3 c_Normal = vec3( 0.0, 0.0, 1.0 );\n' +
-        'uniform mat4 u_MvpMatrix;\n' +
-        'uniform mat4 u_ModelMatrix;\n' +
-        'attribute vec4 a_Position;\n' +
-        'attribute vec4 a_Color;\n' +
-        'varying vec4 v_Color;\n' +
-        'varying vec3 v_Normal;\n' +
-        'varying vec3 v_Position;\n' +
-        'void main(){\n' +
-        '  gl_Position = u_MvpMatrix * a_Position;\n' +
-        '  v_Position = vec3(u_ModelMatrix * a_Position);\n' +
-        '  v_Normal = c_Normal;\n' +
-        '  v_Color = a_Color;\n' +
-        '}\n';
-
-    var FSHADER_SOURCE : string =
-        '#ifdef GL_ES\n' +
-        'precision mediump float;\n' +
-        '#endif\n' +
-        'uniform vec3 u_LightColor;\n' +
-        'uniform vec3 u_LightPosition;\n' +
-        'uniform vec3 u_AmbientLight;\n' +
-        'varying vec3 v_Position;\n' +
-        'varying vec3 v_Normal;\n' +
-        'varying vec4 v_Color;\n' +
-        'void main(){\n' +
-            // Normalize the normal because it is interpolated and not 1.0 in length any more
-        '  vec3 normal = normalize(v_Normal);\n' +
-        '  vec3 lightDirection = normalize(u_LightPosition - v_Position);\n' +
-        '  float lightIntensity = max(dot(lightDirection, normal), 0.0);\n' +
-        '  vec3 diffuse = u_LightColor * v_Color.rgb * lightIntensity;\n' +
-        '  vec3 ambient = u_AmbientLight * v_Color.rgb;\n' +
-        '  gl_FragColor = vec4(diffuse + ambient, v_Color.a);\n' +
-        '}\n';
-
     var VERTICES_PER_PATCH = 6;
     var FLOATS_PER_POSITION = 3;
     var FLOATS_PER_COLOR = 4;
@@ -56,26 +20,76 @@ module Glyffin {
     var BYTES_PER_VERTEX = FLOATS_PER_VERTEX * BYTES_PER_FLOAT;
     var BYTES_PER_PATCH = FLOATS_PER_PATCH * BYTES_PER_FLOAT;
 
+    class LightProgram {
+        private VSHADER_SOURCE : string =
+            'const vec3 c_Normal = vec3( 0.0, 0.0, 1.0 );\n' +
+            'uniform mat4 u_MvpMatrix;\n' +
+            'uniform mat4 u_ModelMatrix;\n' +
+            'attribute vec4 a_Position;\n' +
+            'attribute vec4 a_Color;\n' +
+            'varying vec4 v_Color;\n' +
+            'varying vec3 v_Normal;\n' +
+            'varying vec3 v_Position;\n' +
+            'void main(){\n' +
+            '  gl_Position = u_MvpMatrix * a_Position;\n' +
+            '  v_Position = vec3(u_ModelMatrix * a_Position);\n' +
+            '  v_Normal = c_Normal;\n' +
+            '  v_Color = a_Color;\n' +
+            '}\n';
 
-    class Interactive {
-        constructor(public bounds : Perimeter, public touchProvider : Gesturable) {
-        }
+        private FSHADER_SOURCE : string =
+            '#ifdef GL_ES\n' +
+            'precision mediump float;\n' +
+            '#endif\n' +
+            'uniform vec3 u_LightColor;\n' +
+            'uniform vec3 u_LightPosition;\n' +
+            'uniform vec3 u_AmbientLight;\n' +
+            'varying vec3 v_Position;\n' +
+            'varying vec3 v_Normal;\n' +
+            'varying vec4 v_Color;\n' +
+            'void main(){\n' +
+                // Normalize the normal because it is interpolated and not 1.0 in length any more
+            '  vec3 normal = normalize(v_Normal);\n' +
+            '  vec3 lightDirection = normalize(u_LightPosition - v_Position);\n' +
+            '  float lightIntensity = max(dot(lightDirection, normal), 0.0);\n' +
+            '  vec3 diffuse = u_LightColor * v_Color.rgb * lightIntensity;\n' +
+            '  vec3 ambient = u_AmbientLight * v_Color.rgb;\n' +
+            '  gl_FragColor = vec4(diffuse + ambient, v_Color.a);\n' +
+            '}\n';
 
-        isHit(touchX : number, touchY : number) : boolean {
-            return this.bounds.left <= touchX &&
-                this.bounds.right >= touchX &&
-                this.bounds.top <= touchY &&
-                this.bounds.bottom >= touchY;
-        }
+        public program;
+        private u_ModelMatrix;
+        private u_MvpMatrix;
+        private u_LightColor;
+        private u_LightPosition;
+        private u_AmbientLight;
 
-        static findHits(all : Interactive[], x : number, y : number) : Interactive[] {
-            var hitInteractives : Interactive[] = [];
-            all.forEach((interactive : Interactive)=> {
-                if (interactive.isHit(x, y)) {
-                    hitInteractives.push(interactive);
-                }
-            });
-            return hitInteractives;
+        constructor(gl : WebGLRenderingContext, modelMatrix : Matrix4,
+                    vertices : VerticesAndColor) {
+            var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
+            this.program = program;
+            this.u_ModelMatrix = gl.getUniformLocation(program, 'u_ModelMatrix');
+            this.u_MvpMatrix = gl.getUniformLocation(program, 'u_MvpMatrix');
+            this.u_LightColor = gl.getUniformLocation(program, 'u_LightColor');
+            this.u_LightPosition = gl.getUniformLocation(program, 'u_LightPosition');
+            this.u_AmbientLight = gl.getUniformLocation(program, 'u_AmbientLight');
+            if (!this.u_MvpMatrix || !this.u_LightColor || !this.u_LightPosition ||
+                !this.u_AmbientLight) {
+                console.log('Failed to get uniform storage location');
+            }
+
+            var mvpMatrix = new Matrix4();
+            mvpMatrix.setPerspective(90, 1, .1, 10);
+            mvpMatrix.lookAt(0, 0, 0, 0, 0, -1, 0, 1, 0);
+            mvpMatrix.multiply(modelMatrix);
+
+            gl.useProgram(program);
+            gl.uniform3f(this.u_LightColor, 1.0, 1.0, 1.0);
+            gl.uniform3f(this.u_LightPosition, 0.0, 0.5, 0.0);
+            gl.uniform3f(this.u_AmbientLight, 0.2, 0.2, 0.2);
+            gl.uniformMatrix4fv(this.u_ModelMatrix, false, modelMatrix.elements);
+            gl.uniformMatrix4fv(this.u_MvpMatrix, false, mvpMatrix.elements);
+            vertices.enableInProgram(program);
         }
     }
 
@@ -87,6 +101,7 @@ module Glyffin {
         private drawCount = 0;
         private editCount = 0;
         private unsubscribeSpots;
+        private lightProgram;
 
         beginGestures() {
             if (this.unsubscribeSpots) {
@@ -128,7 +143,6 @@ module Glyffin {
             this.beginGestures();
 
             var gl = getWebGLContext(canvas, false);
-            initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
 
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
             gl.enable(gl.DEPTH_TEST);
@@ -143,32 +157,25 @@ module Glyffin {
             modelMatrix.scale(2 / canvas.width, -2 / canvas.height,
                 1 / Math.min(canvas.height, canvas.width));
 
-            var mvpMatrix = new Matrix4();    // Model view projection matrix
-            mvpMatrix.setPerspective(90, 1, .1, 10);
-            mvpMatrix.lookAt(0, 0, 0, 0, 0, -1, 0, 1, 0);
-            mvpMatrix.multiply(modelMatrix);
-
             this.vertices = new VerticesAndColor(MAX_PATCH_COUNT, gl);
+            this.lightProgram = new LightProgram(gl, modelMatrix, this.vertices);
+        }
 
-            var lightProgram = createProgram(gl, VSHADER_SOURCE, FSHADER_SOURCE);
-
-            var u_ModelMatrix = gl.getUniformLocation(lightProgram, 'u_ModelMatrix');
-            var u_MvpMatrix = gl.getUniformLocation(lightProgram, 'u_MvpMatrix');
-            var u_LightColor = gl.getUniformLocation(lightProgram, 'u_LightColor');
-            var u_LightPosition = gl.getUniformLocation(lightProgram, 'u_LightPosition');
-            var u_AmbientLight = gl.getUniformLocation(lightProgram, 'u_AmbientLight');
-            if (!u_MvpMatrix || !u_LightColor || !u_LightPosition || !u_AmbientLight) {
-                console.log('Failed to get uniform storage location');
+        scheduleRedraw() {
+            if (this.editCount > this.drawCount) {
                 return;
             }
-
-            gl.useProgram(lightProgram);
-            gl.uniform3f(u_LightColor, 1.0, 1.0, 1.0);
-            gl.uniform3f(u_LightPosition, 0.0, 0.5, 0.0);
-            gl.uniform3f(u_AmbientLight, 0.2, 0.2, 0.2);
-            gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
-            gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
-            this.vertices.enableInProgram(gl.program);
+            this.editCount++;
+            requestAnimationFrame(()=> {
+                this.vertices.clearFreePatches();
+                this.gl.useProgram(this.lightProgram.program);
+                this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+                this.gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
+                this.drawCount = this.editCount;
+                console.log("Active %i, Free %i, TotalFreed %",
+                    this.vertices.getActiveVertexCount(),
+                    this.vertices.getFreeVertexCount(), this.vertices.getTotalFreedVertices());
+            });
         }
 
         addPatch(bounds : Perimeter, color : Color) : Patch {
@@ -196,22 +203,6 @@ module Glyffin {
                     interactives.splice(interactives.indexOf(interactive), 1);
                 }
             };
-        }
-
-        scheduleRedraw() {
-            if (this.editCount > this.drawCount) {
-                return;
-            }
-            this.editCount++;
-            requestAnimationFrame(()=> {
-                this.vertices.clearFreePatches();
-                this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-                this.gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
-                this.drawCount = this.editCount;
-                console.log("Active %i, Free %i, TotalFreed %",
-                    this.vertices.getActiveVertexCount(),
-                    this.vertices.getFreeVertexCount(), this.vertices.getTotalFreedVertices());
-            });
         }
 
     }
