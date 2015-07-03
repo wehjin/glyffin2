@@ -12,8 +12,22 @@ declare function initShaders(gl : WebGLBookContext, vshader : string, fshader : 
 
 declare function createProgram(gl : WebGLRenderingContext, vshader : string, fshader : string);
 
+declare class Vector4 {
+    elements : Float32Array;
+
+    constructor(array? : number[]);
+}
+
+declare class Vector3 {
+    elements : Float32Array;
+
+    constructor(array? : number[]);
+}
+
 declare class Matrix4 {
     elements : Float32Array;
+
+    constructor(matrix? : Matrix4);
 
     setTranslate(x : number, y : number, z : number) : Matrix4;
 
@@ -37,4 +51,8 @@ declare class Matrix4 {
 
     setOrtho(left : number, right : number, bottom : number, top : number, near : number,
              far : number);
+
+    multiplyVector4(vector : Vector4) : Vector4;
+
+    multiplyVector3(vector : Vector3) : Vector3;
 }
