@@ -336,7 +336,7 @@ module Glyffin {
             mvpLightMatrix.setPerspective(90.0, OFFSCREEN_WIDTH / OFFSCREEN_HEIGHT, 0.01, 3);
             mvpLightMatrix.setLookAt(
 //                0, -.0001, .3,
-                0, -.3, 1,
+                0, -.45, 1,
                 0, 0, -1,
                 UP_X, UP_Y, UP_X);
             mvpLightMatrix.multiply(mvpMatrix);
