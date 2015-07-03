@@ -7,9 +7,9 @@
 /// <reference path="glyffin-html.ts" />
 /// <reference path="glyffin-touch.ts" />
 
-var LIGHT_X = 0.0;
-var LIGHT_Y = 0.5;
-var LIGHT_Z = 0.0;
+var LIGHT_X = 0;
+var LIGHT_Y = .5;
+var LIGHT_Z = .2;
 var AUDIENCE_X = 0;
 var AUDIENCE_Y = 0;
 var AUDIENCE_Z = -1;
@@ -120,9 +120,9 @@ module Glyffin {
             '}\n';
 
         public program : WebGLProgram;
+        public mvpMatrix : Matrix4;
         private u_MvpMatrix : WebGLUniformLocation;
         private a_Position : number;
-
 
         constructor(gl : WebGLRenderingContext, modelMatrix : Matrix4,
                     private vertices : VerticesAndColor) {
@@ -137,12 +137,14 @@ module Glyffin {
             }
 
             var mvpMatrix = new Matrix4(); // Prepare a view projection matrix for generating a shadow map
-            mvpMatrix.setPerspective(70.0, OFFSCREEN_WIDTH / OFFSCREEN_HEIGHT, .1, 10.0);
+            mvpMatrix.setPerspective(90.0, OFFSCREEN_WIDTH / OFFSCREEN_HEIGHT, .01, 100.0);
             mvpMatrix.lookAt(LIGHT_X, LIGHT_Y, LIGHT_Z, AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z, UP_X,
                 UP_Y, UP_Z);
             mvpMatrix.multiply(modelMatrix);
+            this.mvpMatrix = mvpMatrix;
 
             gl.useProgram(program);
+            gl.uniformMatrix4fv(this.u_MvpMatrix, false, mvpMatrix.elements);
         }
 
         public enableVertexAttributes() {
@@ -153,16 +155,19 @@ module Glyffin {
     class LightProgram {
         private VSHADER_SOURCE : string =
             'const vec3 c_Normal = vec3( 0.0, 0.0, 1.0 );\n' +
-            'uniform mat4 u_MvpMatrix;\n' +
             'uniform mat4 u_ModelMatrix;\n' +
+            'uniform mat4 u_MvpMatrix;\n' +
+            'uniform mat4 u_MvpMatrixFromLight;\n' +
             'attribute vec4 a_Position;\n' +
             'attribute vec4 a_Color;\n' +
             'varying vec4 v_Color;\n' +
             'varying vec3 v_Normal;\n' +
             'varying vec3 v_Position;\n' +
+            'varying vec4 v_PositionFromLight;\n' +
             'void main(){\n' +
             '  gl_Position = u_MvpMatrix * a_Position;\n' +
             '  v_Position = vec3(u_ModelMatrix * a_Position);\n' +
+            '  v_PositionFromLight = u_MvpMatrixFromLight * a_Position;\n' +
             '  v_Normal = c_Normal;\n' +
             '  v_Color = a_Color;\n' +
             '}\n';
@@ -174,9 +179,11 @@ module Glyffin {
             'uniform vec3 u_LightColor;\n' +
             'uniform vec3 u_LightPosition;\n' +
             'uniform vec3 u_AmbientLight;\n' +
+            'uniform sampler2D u_ShadowMap;\n' +
             'varying vec3 v_Position;\n' +
             'varying vec3 v_Normal;\n' +
             'varying vec4 v_Color;\n' +
+            'varying vec4 v_PositionFromLight;\n' +
             'void main(){\n' +
                 // Normalize the normal because it is interpolated and not 1.0 in length any more
             '  vec3 normal = normalize(v_Normal);\n' +
@@ -184,7 +191,12 @@ module Glyffin {
             '  float lightIntensity = max(dot(lightDirection, normal), 0.0);\n' +
             '  vec3 diffuse = u_LightColor * v_Color.rgb * lightIntensity;\n' +
             '  vec3 ambient = u_AmbientLight * v_Color.rgb;\n' +
-            '  gl_FragColor = vec4(diffuse + ambient, v_Color.a);\n' +
+            '  vec4 color = vec4(diffuse + ambient, v_Color.a);\n' +
+            '  vec3 shadowCoord = (v_PositionFromLight.xyz/v_PositionFromLight.w)/2.0 + 0.5;\n' +
+            '  vec4 rgbaDepth = texture2D(u_ShadowMap, shadowCoord.xy);\n' +
+            '  float depth = rgbaDepth.r;\n' +
+            '  float visibility = (shadowCoord.z > depth + 0.005) ? 0.3 : 1.0;\n' +
+            '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n' +
             '}\n';
 
         public program : WebGLProgram;
@@ -193,6 +205,8 @@ module Glyffin {
         private u_LightColor : WebGLUniformLocation;
         private u_LightPosition : WebGLUniformLocation;
         private u_AmbientLight : WebGLUniformLocation;
+        public u_MvpMatrixFromLight : WebGLUniformLocation;
+        public u_ShadowMap : WebGLUniformLocation;
 
         constructor(gl : WebGLRenderingContext, modelMatrix : Matrix4,
                     private vertices : VerticesAndColor) {
@@ -204,8 +218,12 @@ module Glyffin {
             this.u_AmbientLight = gl.getUniformLocation(program, 'u_AmbientLight');
             this.u_LightColor = gl.getUniformLocation(program, 'u_LightColor');
             this.u_LightPosition = gl.getUniformLocation(program, 'u_LightPosition');
-            if (!this.u_MvpMatrix || !this.u_LightColor || !this.u_LightPosition ||
-                !this.u_AmbientLight) {
+            this.u_MvpMatrixFromLight = gl.getUniformLocation(program, 'u_MvpMatrixFromLight');
+            this.u_ShadowMap = gl.getUniformLocation(program, 'u_ShadowMap');
+
+            if (!this.u_ModelMatrix || !this.u_MvpMatrix || !this.u_AmbientLight ||
+                !this.u_LightColor || !this.u_LightPosition || !this.u_MvpMatrixFromLight ||
+                !this.u_ShadowMap) {
                 console.log('Failed to get uniform storage location');
             }
 
@@ -296,9 +314,9 @@ module Glyffin {
                 return;
             }
             this.frameBuffer = fbo;
-
             gl.activeTexture(gl.TEXTURE0); // Set a texture object to the texture unit
             gl.bindTexture(gl.TEXTURE_2D, fbo.texture);
+
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
             gl.enable(gl.DEPTH_TEST);
             gl.enable(gl.CULL_FACE);
@@ -328,9 +346,12 @@ module Glyffin {
                 gl.bindFramebuffer(gl.FRAMEBUFFER, null);
                 gl.viewport(0, 0, this.canvas.width, this.canvas.height);
                 gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-                this.gl.useProgram(this.lightProgram.program);
+                gl.useProgram(this.lightProgram.program);
+                gl.uniform1i(this.lightProgram.u_ShadowMap, 0);
+                gl.uniformMatrix4fv(this.lightProgram.u_MvpMatrixFromLight, false,
+                    this.shadowProgram.mvpMatrix.elements);
                 this.lightProgram.enableVertexAttributes();
-                this.gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
+                gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
 
                 this.drawCount = this.editCount;
                 console.log("Active %i, Free %i, TotalFreed %",

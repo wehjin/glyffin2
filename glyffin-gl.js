@@ -5,9 +5,9 @@
 /// <reference path="glyffin.ts" />
 /// <reference path="glyffin-html.ts" />
 /// <reference path="glyffin-touch.ts" />
-var LIGHT_X = 0.0;
-var LIGHT_Y = 0.5;
-var LIGHT_Z = 0.0;
+var LIGHT_X = 0;
+var LIGHT_Y = .5;
+var LIGHT_Z = .2;
 var AUDIENCE_X = 0;
 var AUDIENCE_Y = 0;
 var AUDIENCE_Z = -1;
@@ -101,10 +101,12 @@ var Glyffin;
                 return;
             }
             var mvpMatrix = new Matrix4(); // Prepare a view projection matrix for generating a shadow map
-            mvpMatrix.setPerspective(70.0, OFFSCREEN_WIDTH / OFFSCREEN_HEIGHT, .1, 10.0);
+            mvpMatrix.setPerspective(90.0, OFFSCREEN_WIDTH / OFFSCREEN_HEIGHT, .01, 100.0);
             mvpMatrix.lookAt(LIGHT_X, LIGHT_Y, LIGHT_Z, AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z, UP_X, UP_Y, UP_Z);
             mvpMatrix.multiply(modelMatrix);
+            this.mvpMatrix = mvpMatrix;
             gl.useProgram(program);
+            gl.uniformMatrix4fv(this.u_MvpMatrix, false, mvpMatrix.elements);
         }
         ShadowProgram.prototype.enableVertexAttributes = function () {
             this.vertices.enablePositionAttributes(this.program);
@@ -114,8 +116,8 @@ var Glyffin;
     var LightProgram = (function () {
         function LightProgram(gl, modelMatrix, vertices) {
             this.vertices = vertices;
-            this.VSHADER_SOURCE = 'const vec3 c_Normal = vec3( 0.0, 0.0, 1.0 );\n' + 'uniform mat4 u_MvpMatrix;\n' + 'uniform mat4 u_ModelMatrix;\n' + 'attribute vec4 a_Position;\n' + 'attribute vec4 a_Color;\n' + 'varying vec4 v_Color;\n' + 'varying vec3 v_Normal;\n' + 'varying vec3 v_Position;\n' + 'void main(){\n' + '  gl_Position = u_MvpMatrix * a_Position;\n' + '  v_Position = vec3(u_ModelMatrix * a_Position);\n' + '  v_Normal = c_Normal;\n' + '  v_Color = a_Color;\n' + '}\n';
-            this.FSHADER_SOURCE = '#ifdef GL_ES\n' + 'precision mediump float;\n' + '#endif\n' + 'uniform vec3 u_LightColor;\n' + 'uniform vec3 u_LightPosition;\n' + 'uniform vec3 u_AmbientLight;\n' + 'varying vec3 v_Position;\n' + 'varying vec3 v_Normal;\n' + 'varying vec4 v_Color;\n' + 'void main(){\n' + '  vec3 normal = normalize(v_Normal);\n' + '  vec3 lightDirection = normalize(u_LightPosition - v_Position);\n' + '  float lightIntensity = max(dot(lightDirection, normal), 0.0);\n' + '  vec3 diffuse = u_LightColor * v_Color.rgb * lightIntensity;\n' + '  vec3 ambient = u_AmbientLight * v_Color.rgb;\n' + '  gl_FragColor = vec4(diffuse + ambient, v_Color.a);\n' + '}\n';
+            this.VSHADER_SOURCE = 'const vec3 c_Normal = vec3( 0.0, 0.0, 1.0 );\n' + 'uniform mat4 u_ModelMatrix;\n' + 'uniform mat4 u_MvpMatrix;\n' + 'uniform mat4 u_MvpMatrixFromLight;\n' + 'attribute vec4 a_Position;\n' + 'attribute vec4 a_Color;\n' + 'varying vec4 v_Color;\n' + 'varying vec3 v_Normal;\n' + 'varying vec3 v_Position;\n' + 'varying vec4 v_PositionFromLight;\n' + 'void main(){\n' + '  gl_Position = u_MvpMatrix * a_Position;\n' + '  v_Position = vec3(u_ModelMatrix * a_Position);\n' + '  v_PositionFromLight = u_MvpMatrixFromLight * a_Position;\n' + '  v_Normal = c_Normal;\n' + '  v_Color = a_Color;\n' + '}\n';
+            this.FSHADER_SOURCE = '#ifdef GL_ES\n' + 'precision mediump float;\n' + '#endif\n' + 'uniform vec3 u_LightColor;\n' + 'uniform vec3 u_LightPosition;\n' + 'uniform vec3 u_AmbientLight;\n' + 'uniform sampler2D u_ShadowMap;\n' + 'varying vec3 v_Position;\n' + 'varying vec3 v_Normal;\n' + 'varying vec4 v_Color;\n' + 'varying vec4 v_PositionFromLight;\n' + 'void main(){\n' + '  vec3 normal = normalize(v_Normal);\n' + '  vec3 lightDirection = normalize(u_LightPosition - v_Position);\n' + '  float lightIntensity = max(dot(lightDirection, normal), 0.0);\n' + '  vec3 diffuse = u_LightColor * v_Color.rgb * lightIntensity;\n' + '  vec3 ambient = u_AmbientLight * v_Color.rgb;\n' + '  vec4 color = vec4(diffuse + ambient, v_Color.a);\n' + '  vec3 shadowCoord = (v_PositionFromLight.xyz/v_PositionFromLight.w)/2.0 + 0.5;\n' + '  vec4 rgbaDepth = texture2D(u_ShadowMap, shadowCoord.xy);\n' + '  float depth = rgbaDepth.r;\n' + '  float visibility = (shadowCoord.z > depth + 0.005) ? 0.3 : 1.0;\n' + '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n' + '}\n';
             var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
             this.program = program;
             this.u_ModelMatrix = gl.getUniformLocation(program, 'u_ModelMatrix');
@@ -123,7 +125,9 @@ var Glyffin;
             this.u_AmbientLight = gl.getUniformLocation(program, 'u_AmbientLight');
             this.u_LightColor = gl.getUniformLocation(program, 'u_LightColor');
             this.u_LightPosition = gl.getUniformLocation(program, 'u_LightPosition');
-            if (!this.u_MvpMatrix || !this.u_LightColor || !this.u_LightPosition || !this.u_AmbientLight) {
+            this.u_MvpMatrixFromLight = gl.getUniformLocation(program, 'u_MvpMatrixFromLight');
+            this.u_ShadowMap = gl.getUniformLocation(program, 'u_ShadowMap');
+            if (!this.u_ModelMatrix || !this.u_MvpMatrix || !this.u_AmbientLight || !this.u_LightColor || !this.u_LightPosition || !this.u_MvpMatrixFromLight || !this.u_ShadowMap) {
                 console.log('Failed to get uniform storage location');
             }
             var mvpMatrix = new Matrix4();
@@ -225,9 +229,11 @@ var Glyffin;
                 gl.bindFramebuffer(gl.FRAMEBUFFER, null);
                 gl.viewport(0, 0, _this.canvas.width, _this.canvas.height);
                 gl.clear(_this.gl.COLOR_BUFFER_BIT | _this.gl.DEPTH_BUFFER_BIT);
-                _this.gl.useProgram(_this.lightProgram.program);
+                gl.useProgram(_this.lightProgram.program);
+                gl.uniform1i(_this.lightProgram.u_ShadowMap, 0);
+                gl.uniformMatrix4fv(_this.lightProgram.u_MvpMatrixFromLight, false, _this.shadowProgram.mvpMatrix.elements);
                 _this.lightProgram.enableVertexAttributes();
-                _this.gl.drawArrays(_this.gl.TRIANGLES, 0, _this.vertices.getActiveVertexCount());
+                gl.drawArrays(_this.gl.TRIANGLES, 0, _this.vertices.getActiveVertexCount());
                 _this.drawCount = _this.editCount;
                 console.log("Active %i, Free %i, TotalFreed %", _this.vertices.getActiveVertexCount(), _this.vertices.getFreeVertexCount(), _this.vertices.getTotalFreedVertices());
             });
