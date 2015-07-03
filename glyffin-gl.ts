@@ -9,7 +9,7 @@
 
 var LIGHT_X = 0;
 var LIGHT_Y = .5;
-var LIGHT_Z = .2;
+var LIGHT_Z = -.5;
 var AUDIENCE_X = 0;
 var AUDIENCE_Y = 0;
 var AUDIENCE_Z = -1;
@@ -115,8 +115,15 @@ module Glyffin {
             '#ifdef GL_ES\n' +
             'precision mediump float;\n' +
             '#endif\n' +
+            'vec4 pack (float depth) {\n' +
+            '  const vec4 bitSh = vec4(256 * 256 * 256, 256 * 256, 256, 1.0);\n' +
+            '  const vec4 bitMsk = vec4(0, 1.0 / 256.0, 1.0 / 256.0, 1.0 / 256.0);\n' +
+            '  vec4 comp = fract(depth * bitSh);\n' +
+            '  comp -= comp.xxyz * bitMsk;\n' +
+            '  return comp;\n' +
+            '}\n' +
             'void main() {\n' +
-            '  gl_FragColor = vec4(gl_FragCoord.z, 0.0, 0.0, 0.0);\n' +
+            '  gl_FragColor = pack(gl_FragCoord.z);\n' +
             '}\n';
 
         public program : WebGLProgram;
@@ -137,7 +144,7 @@ module Glyffin {
             }
 
             var mvpMatrix = new Matrix4(); // Prepare a view projection matrix for generating a shadow map
-            mvpMatrix.setPerspective(90.0, OFFSCREEN_WIDTH / OFFSCREEN_HEIGHT, .01, 100.0);
+            mvpMatrix.setPerspective(100.0, OFFSCREEN_WIDTH / OFFSCREEN_HEIGHT, .01, 100.0);
             mvpMatrix.lookAt(LIGHT_X, LIGHT_Y, LIGHT_Z, AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z, UP_X,
                 UP_Y, UP_Z);
             mvpMatrix.multiply(modelMatrix);
@@ -184,6 +191,10 @@ module Glyffin {
             'varying vec3 v_Normal;\n' +
             'varying vec4 v_Color;\n' +
             'varying vec4 v_PositionFromLight;\n' +
+            'float unpack (vec4 colour) {\n' +
+            '  const vec4 bitShifts = vec4(1.0 / (256.0 * 256.0 * 256.0), 1.0 / (256.0 * 256.0), 1.0 / 256.0, 1);\n' +
+            '  return dot(colour , bitShifts);\n' +
+            '}\n' +
             'void main(){\n' +
                 // Normalize the normal because it is interpolated and not 1.0 in length any more
             '  vec3 normal = normalize(v_Normal);\n' +
@@ -194,9 +205,10 @@ module Glyffin {
             '  vec4 color = vec4(diffuse + ambient, v_Color.a);\n' +
             '  vec3 shadowCoord = (v_PositionFromLight.xyz/v_PositionFromLight.w)/2.0 + 0.5;\n' +
             '  vec4 rgbaDepth = texture2D(u_ShadowMap, shadowCoord.xy);\n' +
-            '  float depth = rgbaDepth.r;\n' +
-            '  float visibility = (shadowCoord.z > depth + 0.005) ? 0.3 : 1.0;\n' +
+            '  float depth = unpack(rgbaDepth);\n' +
+            '  float visibility = (shadowCoord.z > depth + 0.0015) ? 0.0 : 1.0;\n' +
             '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n' +
+                //'  gl_FragColor = rgbaDepth;\n' +
             '}\n';
 
         public program : WebGLProgram;
@@ -335,8 +347,10 @@ module Glyffin {
                 this.vertices.clearFreePatches();
 
                 var gl = this.gl;
+
                 gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer.framebuffer);
                 gl.viewport(0, 0, OFFSCREEN_WIDTH, OFFSCREEN_HEIGHT);
+
                 gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
                 gl.useProgram(this.shadowProgram.program);
@@ -346,12 +360,14 @@ module Glyffin {
                 gl.bindFramebuffer(gl.FRAMEBUFFER, null);
                 gl.viewport(0, 0, this.canvas.width, this.canvas.height);
                 gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+
                 gl.useProgram(this.lightProgram.program);
                 gl.uniform1i(this.lightProgram.u_ShadowMap, 0);
                 gl.uniformMatrix4fv(this.lightProgram.u_MvpMatrixFromLight, false,
                     this.shadowProgram.mvpMatrix.elements);
                 this.lightProgram.enableVertexAttributes();
                 gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
+
 
                 this.drawCount = this.editCount;
                 console.log("Active %i, Free %i, TotalFreed %",

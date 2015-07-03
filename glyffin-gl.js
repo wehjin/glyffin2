@@ -7,7 +7,7 @@
 /// <reference path="glyffin-touch.ts" />
 var LIGHT_X = 0;
 var LIGHT_Y = .5;
-var LIGHT_Z = .2;
+var LIGHT_Z = -.5;
 var AUDIENCE_X = 0;
 var AUDIENCE_Y = 0;
 var AUDIENCE_Z = -1;
@@ -91,7 +91,7 @@ var Glyffin;
         function ShadowProgram(gl, modelMatrix, vertices) {
             this.vertices = vertices;
             this.VSHADER_SOURCE = 'attribute vec4 a_Position;\n' + 'uniform mat4 u_MvpMatrix;\n' + 'void main() {\n' + '  gl_Position = u_MvpMatrix * a_Position;\n' + '}\n';
-            this.FSHADER_SOURCE = '#ifdef GL_ES\n' + 'precision mediump float;\n' + '#endif\n' + 'void main() {\n' + '  gl_FragColor = vec4(gl_FragCoord.z, 0.0, 0.0, 0.0);\n' + '}\n';
+            this.FSHADER_SOURCE = '#ifdef GL_ES\n' + 'precision mediump float;\n' + '#endif\n' + 'vec4 pack (float depth) {\n' + '  const vec4 bitSh = vec4(256 * 256 * 256, 256 * 256, 256, 1.0);\n' + '  const vec4 bitMsk = vec4(0, 1.0 / 256.0, 1.0 / 256.0, 1.0 / 256.0);\n' + '  vec4 comp = fract(depth * bitSh);\n' + '  comp -= comp.xxyz * bitMsk;\n' + '  return comp;\n' + '}\n' + 'void main() {\n' + '  gl_FragColor = pack(gl_FragCoord.z);\n' + '}\n';
             var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
             this.program = program;
             this.u_MvpMatrix = gl.getUniformLocation(program, 'u_MvpMatrix');
@@ -101,7 +101,7 @@ var Glyffin;
                 return;
             }
             var mvpMatrix = new Matrix4(); // Prepare a view projection matrix for generating a shadow map
-            mvpMatrix.setPerspective(90.0, OFFSCREEN_WIDTH / OFFSCREEN_HEIGHT, .01, 100.0);
+            mvpMatrix.setPerspective(100.0, OFFSCREEN_WIDTH / OFFSCREEN_HEIGHT, .01, 100.0);
             mvpMatrix.lookAt(LIGHT_X, LIGHT_Y, LIGHT_Z, AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z, UP_X, UP_Y, UP_Z);
             mvpMatrix.multiply(modelMatrix);
             this.mvpMatrix = mvpMatrix;
@@ -117,7 +117,7 @@ var Glyffin;
         function LightProgram(gl, modelMatrix, vertices) {
             this.vertices = vertices;
             this.VSHADER_SOURCE = 'const vec3 c_Normal = vec3( 0.0, 0.0, 1.0 );\n' + 'uniform mat4 u_ModelMatrix;\n' + 'uniform mat4 u_MvpMatrix;\n' + 'uniform mat4 u_MvpMatrixFromLight;\n' + 'attribute vec4 a_Position;\n' + 'attribute vec4 a_Color;\n' + 'varying vec4 v_Color;\n' + 'varying vec3 v_Normal;\n' + 'varying vec3 v_Position;\n' + 'varying vec4 v_PositionFromLight;\n' + 'void main(){\n' + '  gl_Position = u_MvpMatrix * a_Position;\n' + '  v_Position = vec3(u_ModelMatrix * a_Position);\n' + '  v_PositionFromLight = u_MvpMatrixFromLight * a_Position;\n' + '  v_Normal = c_Normal;\n' + '  v_Color = a_Color;\n' + '}\n';
-            this.FSHADER_SOURCE = '#ifdef GL_ES\n' + 'precision mediump float;\n' + '#endif\n' + 'uniform vec3 u_LightColor;\n' + 'uniform vec3 u_LightPosition;\n' + 'uniform vec3 u_AmbientLight;\n' + 'uniform sampler2D u_ShadowMap;\n' + 'varying vec3 v_Position;\n' + 'varying vec3 v_Normal;\n' + 'varying vec4 v_Color;\n' + 'varying vec4 v_PositionFromLight;\n' + 'void main(){\n' + '  vec3 normal = normalize(v_Normal);\n' + '  vec3 lightDirection = normalize(u_LightPosition - v_Position);\n' + '  float lightIntensity = max(dot(lightDirection, normal), 0.0);\n' + '  vec3 diffuse = u_LightColor * v_Color.rgb * lightIntensity;\n' + '  vec3 ambient = u_AmbientLight * v_Color.rgb;\n' + '  vec4 color = vec4(diffuse + ambient, v_Color.a);\n' + '  vec3 shadowCoord = (v_PositionFromLight.xyz/v_PositionFromLight.w)/2.0 + 0.5;\n' + '  vec4 rgbaDepth = texture2D(u_ShadowMap, shadowCoord.xy);\n' + '  float depth = rgbaDepth.r;\n' + '  float visibility = (shadowCoord.z > depth + 0.005) ? 0.3 : 1.0;\n' + '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n' + '}\n';
+            this.FSHADER_SOURCE = '#ifdef GL_ES\n' + 'precision mediump float;\n' + '#endif\n' + 'uniform vec3 u_LightColor;\n' + 'uniform vec3 u_LightPosition;\n' + 'uniform vec3 u_AmbientLight;\n' + 'uniform sampler2D u_ShadowMap;\n' + 'varying vec3 v_Position;\n' + 'varying vec3 v_Normal;\n' + 'varying vec4 v_Color;\n' + 'varying vec4 v_PositionFromLight;\n' + 'float unpack (vec4 colour) {\n' + '  const vec4 bitShifts = vec4(1.0 / (256.0 * 256.0 * 256.0), 1.0 / (256.0 * 256.0), 1.0 / 256.0, 1);\n' + '  return dot(colour , bitShifts);\n' + '}\n' + 'void main(){\n' + '  vec3 normal = normalize(v_Normal);\n' + '  vec3 lightDirection = normalize(u_LightPosition - v_Position);\n' + '  float lightIntensity = max(dot(lightDirection, normal), 0.0);\n' + '  vec3 diffuse = u_LightColor * v_Color.rgb * lightIntensity;\n' + '  vec3 ambient = u_AmbientLight * v_Color.rgb;\n' + '  vec4 color = vec4(diffuse + ambient, v_Color.a);\n' + '  vec3 shadowCoord = (v_PositionFromLight.xyz/v_PositionFromLight.w)/2.0 + 0.5;\n' + '  vec4 rgbaDepth = texture2D(u_ShadowMap, shadowCoord.xy);\n' + '  float depth = unpack(rgbaDepth);\n' + '  float visibility = (shadowCoord.z > depth + 0.0015) ? 0.0 : 1.0;\n' + '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n' + '}\n';
             var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
             this.program = program;
             this.u_ModelMatrix = gl.getUniformLocation(program, 'u_ModelMatrix');
