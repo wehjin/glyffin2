@@ -61,7 +61,7 @@ function main() {
                 function addLabel(label) {
                     return function (background) {
                         var buttonText = Glyffin.asciiMultiLine(1, label).pad(readSize, 0).limitHeight(readSize * 1.75, .5);
-                        return background.addNearMajor(2, buttonText);
+                        return background.addNearMajor(0.5, buttonText);
                     };
                 }
                 var buttonBackgroundUnpressed = Glyffin.colorPath(midgroundColorPath, .3, backgroundColorPath);
