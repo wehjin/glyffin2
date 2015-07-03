@@ -313,7 +313,7 @@ module Glyffin {
             modelMatrix.translate(-canvas.width / 2, -canvas.height / 2, -maxDimension);
 
             var mvpMatrix = new Matrix4();
-            mvpMatrix.setPerspective(54, 1, 200, STAGE_SIZE * 1.5);
+            mvpMatrix.setPerspective(53, 1, 200, STAGE_SIZE * 1.5);
             mvpMatrix.lookAt(0, 0, 0, AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z, UP_X, UP_Y, UP_Z);
             mvpMatrix.multiply(modelMatrix);
 
