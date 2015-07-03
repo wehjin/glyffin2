@@ -8,8 +8,8 @@
 /// <reference path="glyffin-touch.ts" />
 
 var LIGHT_X = 0;
-var LIGHT_Y = .5;
-var LIGHT_Z = -.5;
+var LIGHT_Y = 1;
+var LIGHT_Z = 0;
 var AUDIENCE_X = 0;
 var AUDIENCE_Y = 0;
 var AUDIENCE_Z = -1;
