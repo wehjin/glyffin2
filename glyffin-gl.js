@@ -13,7 +13,7 @@ var LIGHT_Z = 0;
 var AUDIENCE_X = 0;
 var AUDIENCE_Y = 0;
 var AUDIENCE_Z = -STAGE_SIZE;
-var OFFSCREEN_WIDTH = 1024, OFFSCREEN_HEIGHT = 1024;
+var OFFSCREEN_WIDTH = 512, OFFSCREEN_HEIGHT = 512;
 var UP_X = 0;
 var UP_Y = 1;
 var UP_Z = 0;
@@ -115,7 +115,7 @@ var Glyffin;
         function LightProgram(gl, modelMatrix, mvpMatrix, vertices) {
             this.vertices = vertices;
             this.VSHADER_SOURCE = 'const vec3 c_Normal = vec3( 0.0, 0.0, 1.0 );\n' + 'uniform mat4 u_ModelMatrix;\n' + 'uniform mat4 u_MvpMatrix;\n' + 'uniform mat4 u_MvpMatrixFromLight;\n' + 'attribute vec4 a_Position;\n' + 'attribute vec4 a_Color;\n' + 'varying vec4 v_Color;\n' + 'varying vec3 v_Normal;\n' + 'varying vec3 v_Position;\n' + 'varying vec4 v_PositionFromLight;\n' + 'void main(){\n' + '  gl_Position = u_MvpMatrix * a_Position;\n' + '  v_Position = vec3(u_ModelMatrix * a_Position);\n' + '  v_PositionFromLight = u_MvpMatrixFromLight * a_Position;\n' + '  v_Normal = c_Normal;\n' + '  v_Color = a_Color;\n' + '}\n';
-            this.FSHADER_SOURCE = '#ifdef GL_ES\n' + 'precision mediump float;\n' + '#endif\n' + 'uniform vec3 u_LightColor;\n' + 'uniform vec3 u_LightPosition;\n' + 'uniform vec3 u_AmbientLight;\n' + 'uniform sampler2D u_ShadowMap;\n' + 'varying vec3 v_Position;\n' + 'varying vec3 v_Normal;\n' + 'varying vec4 v_Color;\n' + 'varying vec4 v_PositionFromLight;\n' + 'float unpack(const in vec4 rgbaDepth) {\n' + '  const vec4 bitShift = vec4(1.0, 1.0/256.0, 1.0/(256.0*256.0), 1.0/(256.0*256.0*256.0));\n' + '  float depth = dot(rgbaDepth, bitShift);\n' + '  return depth;\n' + '}\n' + 'void main(){\n' + '  vec3 normal = normalize(v_Normal);\n' + '  vec3 lightDirection = normalize(u_LightPosition - v_Position);\n' + '  float lightIntensity = max(dot(lightDirection, normal), 0.0);\n' + '  vec3 diffuse = u_LightColor * v_Color.rgb * lightIntensity;\n' + '  vec3 ambient = u_AmbientLight * v_Color.rgb;\n' + '  vec4 color = vec4(diffuse + ambient, v_Color.a);\n' + '  vec3 shadowCoord = (v_PositionFromLight.xyz/v_PositionFromLight.w)/2.0 + 0.5;\n' + '  vec4 rgbaDepth = texture2D(u_ShadowMap, shadowCoord.xy);\n' + '  float depth = unpack(rgbaDepth);\n' + '  float visibility = (shadowCoord.z > depth + 0.0025) ? .3 : 1.0;\n' + '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n' + '}\n';
+            this.FSHADER_SOURCE = '#ifdef GL_ES\n' + 'precision mediump float;\n' + '#endif\n' + 'uniform vec3 u_LightColor;\n' + 'uniform vec3 u_LightPosition;\n' + 'uniform vec3 u_AmbientLight;\n' + 'uniform sampler2D u_ShadowMap;\n' + 'varying vec3 v_Position;\n' + 'varying vec3 v_Normal;\n' + 'varying vec4 v_Color;\n' + 'varying vec4 v_PositionFromLight;\n' + 'float unpack(const in vec4 rgbaDepth) {\n' + '  const vec4 bitShift = vec4(1.0, 1.0/256.0, 1.0/(256.0*256.0), 1.0/(256.0*256.0*256.0));\n' + '  float depth = dot(rgbaDepth, bitShift);\n' + '  return depth;\n' + '}\n' + 'void main(){\n' + '  vec3 normal = normalize(v_Normal);\n' + '  vec3 lightDirection = normalize(u_LightPosition - v_Position);\n' + '  float lightIntensity = max(dot(lightDirection, normal), 0.0);\n' + '  vec3 diffuse = u_LightColor * v_Color.rgb * lightIntensity;\n' + '  vec3 ambient = u_AmbientLight * v_Color.rgb;\n' + '  vec4 color = vec4(diffuse + ambient, v_Color.a);\n' + '  vec3 shadowCoord = (v_PositionFromLight.xyz/v_PositionFromLight.w)/2.0 + 0.5;\n' + '  vec4 rgbaDepth = texture2D(u_ShadowMap, shadowCoord.xy);\n' + '  float depth = unpack(rgbaDepth);\n' + '  float visibility = (shadowCoord.z > depth + 0.0025) ? .3 : 1.0;\n' + '  gl_FragColor = (shadowCoord.z > depth + 0.0025) ? vec4(1.0,0.0,0.0,1.0) : color;\n' + '}\n';
             var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
             this.program = program;
             this.u_ModelMatrix = gl.getUniformLocation(program, 'u_ModelMatrix');
@@ -158,14 +158,31 @@ var Glyffin;
             var modelMatrix = new Matrix4();
             modelMatrix.setScale(STAGE_SIZE / canvas.width, -STAGE_SIZE / canvas.height, STAGE_SIZE / maxDimension);
             modelMatrix.translate(-canvas.width / 2, -canvas.height / 2, -maxDimension);
-            var mvpMatrix = new Matrix4();
-            mvpMatrix.setPerspective(53, 1, 200, STAGE_SIZE * 1.25);
-            mvpMatrix.lookAt(0, 0, 0, AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z, UP_X, UP_Y, UP_Z);
+            var vpMatrix = new Matrix4();
+            vpMatrix.setPerspective(53, 1, 200, STAGE_SIZE * 1.25);
+            vpMatrix.lookAt(0, 0, 0, AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z, UP_X, UP_Y, UP_Z);
+            var mvpMatrix = new Matrix4(vpMatrix);
             mvpMatrix.multiply(modelMatrix);
+            var light = new Vector4([LIGHT_X, LIGHT_Y, LIGHT_Z, 1.0]);
+            var postLight = vpMatrix.multiplyVector4(light);
+            var postLightX = postLight.elements[0] / postLight.elements[3];
+            var postLightY = postLight.elements[1] / postLight.elements[3];
+            var postLightZ = postLight.elements[2] / postLight.elements[3];
+            //            var audience = new Vector4([AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z, 1.0]);
+            //            var postAudience = vpMatrix.multiplyVector4(audience);
+            var testIn = new Vector4([canvas.width, canvas.height, 0, 1.0]);
+            var test = mvpMatrix.multiplyVector4(testIn);
             var mvpLightMatrix = new Matrix4();
-            mvpLightMatrix.setPerspective(70.0, OFFSCREEN_WIDTH / OFFSCREEN_HEIGHT, 220, STAGE_SIZE * 1.2);
-            mvpLightMatrix.lookAt(LIGHT_X, LIGHT_Y, LIGHT_Z, AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z, UP_X, UP_Y, UP_Z);
-            mvpLightMatrix.multiply(modelMatrix);
+            mvpLightMatrix.setPerspective(90.0, OFFSCREEN_WIDTH / OFFSCREEN_HEIGHT, 0.01, 3);
+            mvpLightMatrix.setLookAt(0, -.5, 1, 0, 0, -1, UP_X, UP_Y, UP_X);
+            mvpLightMatrix.multiply(mvpMatrix);
+            /*
+             mvpLightMatrix.setPerspective(70.0, OFFSCREEN_WIDTH / OFFSCREEN_HEIGHT, 220,
+             STAGE_SIZE * 1.2);
+             mvpLightMatrix.lookAt(LIGHT_X, LIGHT_Y, LIGHT_Z, AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z,
+             UP_X, UP_Y, UP_Z);
+             mvpLightMatrix.multiply(modelMatrix);
+             */
             this.vertices = new VerticesAndColor(MAX_PATCH_COUNT, gl);
             this.lightProgram = new LightProgram(gl, modelMatrix, mvpMatrix, this.vertices);
             this.shadowProgram = new ShadowProgram(gl, modelMatrix, mvpLightMatrix, this.vertices);
