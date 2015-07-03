@@ -205,7 +205,7 @@ module Glyffin {
             '  vec3 shadowCoord = (v_PositionFromLight.xyz/v_PositionFromLight.w)/2.0 + 0.5;\n' +
             '  vec4 rgbaDepth = texture2D(u_ShadowMap, shadowCoord.xy);\n' +
             '  float depth = unpack(rgbaDepth);\n' +
-            '  float visibility = (shadowCoord.z > depth + 0.0025) ? .45 : 1.0;\n' +
+            '  float visibility = (shadowCoord.z > depth + 0.0025) ? .3 : 1.0;\n' +
             '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n' +
                 //'  gl_FragColor = vec4(depth,0.0,0.0,1.0);\n' +
             '}\n';
