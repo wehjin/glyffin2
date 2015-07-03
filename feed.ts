@@ -64,7 +64,7 @@ function main() {
             var link = item['link'];
 
             function addTitle<T>(background : Glyffin.Glyff<T>) : Glyffin.Glyff<T> {
-                return background.addNearMajor(1,
+                return background.addNearMajor(0.5,
                     Glyffin.asciiMultiLine(2, title)
                         .splitHeightYield(-textSize, Glyffin.ClearGlyff)
                         .splitHeightYield(-textSize, Glyffin.asciiEntireWord(link))
