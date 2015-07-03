@@ -7,12 +7,14 @@
 /// <reference path="glyffin-html.ts" />
 /// <reference path="glyffin-touch.ts" />
 
+var STAGE_SIZE = 256;
 var LIGHT_X = 0;
-var LIGHT_Y = 1;
+var LIGHT_Y = STAGE_SIZE / 4;
+//var LIGHT_Y = 0;
 var LIGHT_Z = 0;
 var AUDIENCE_X = 0;
 var AUDIENCE_Y = 0;
-var AUDIENCE_Z = -1;
+var AUDIENCE_Z = -STAGE_SIZE;
 var OFFSCREEN_WIDTH = 2048, OFFSCREEN_HEIGHT = 2048;
 var UP_X = 0;
 var UP_Y = 1;
@@ -116,14 +118,15 @@ module Glyffin {
             'precision mediump float;\n' +
             '#endif\n' +
             'vec4 pack (float depth) {\n' +
-            '  const vec4 bitSh = vec4(256 * 256 * 256, 256 * 256, 256, 1.0);\n' +
-            '  const vec4 bitMsk = vec4(0, 1.0 / 256.0, 1.0 / 256.0, 1.0 / 256.0);\n' +
-            '  vec4 comp = fract(depth * bitSh);\n' +
-            '  comp -= comp.xxyz * bitMsk;\n' +
-            '  return comp;\n' +
+            '  const vec4 bitShift = vec4(1.0, 256.0, 256.0 * 256.0, 256.0 * 256.0 * 256.0);\n' +
+            '  const vec4 bitMask = vec4(1.0/256.0, 1.0/256.0, 1.0/256.0, 0.0);\n' +
+            '  vec4 rgbaDepth = fract(gl_FragCoord.z * bitShift);\n' + // Calculate the value stored into each byte
+            '  rgbaDepth -= rgbaDepth.gbaa * bitMask;\n' + // Cut off the value which do not fit in 8 bits
+            '  return rgbaDepth;\n' +
             '}\n' +
             'void main() {\n' +
             '  gl_FragColor = pack(gl_FragCoord.z);\n' +
+                //'  gl_FragColor = vec4(gl_FragCoord.z ,0.0,0.0,1.0);\n' +
             '}\n';
 
         public program : WebGLProgram;
@@ -131,7 +134,7 @@ module Glyffin {
         private u_MvpMatrix : WebGLUniformLocation;
         private a_Position : number;
 
-        constructor(gl : WebGLRenderingContext, modelMatrix : Matrix4,
+        constructor(gl : WebGLRenderingContext, modelMatrix : Matrix4, mvpMatrix : Matrix4,
                     private vertices : VerticesAndColor) {
             var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
             this.program = program;
@@ -143,11 +146,6 @@ module Glyffin {
                 return;
             }
 
-            var mvpMatrix = new Matrix4(); // Prepare a view projection matrix for generating a shadow map
-            mvpMatrix.setPerspective(100.0, OFFSCREEN_WIDTH / OFFSCREEN_HEIGHT, .01, 100.0);
-            mvpMatrix.lookAt(LIGHT_X, LIGHT_Y, LIGHT_Z, AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z, UP_X,
-                UP_Y, UP_Z);
-            mvpMatrix.multiply(modelMatrix);
             this.mvpMatrix = mvpMatrix;
 
             gl.useProgram(program);
@@ -191,9 +189,10 @@ module Glyffin {
             'varying vec3 v_Normal;\n' +
             'varying vec4 v_Color;\n' +
             'varying vec4 v_PositionFromLight;\n' +
-            'float unpack (vec4 colour) {\n' +
-            '  const vec4 bitShifts = vec4(1.0 / (256.0 * 256.0 * 256.0), 1.0 / (256.0 * 256.0), 1.0 / 256.0, 1);\n' +
-            '  return dot(colour , bitShifts);\n' +
+            'float unpack(const in vec4 rgbaDepth) {\n' +
+            '  const vec4 bitShift = vec4(1.0, 1.0/256.0, 1.0/(256.0*256.0), 1.0/(256.0*256.0*256.0));\n' +
+            '  float depth = dot(rgbaDepth, bitShift);\n' + // Use dot() since the calculations is same
+            '  return depth;\n' +
             '}\n' +
             'void main(){\n' +
                 // Normalize the normal because it is interpolated and not 1.0 in length any more
@@ -206,9 +205,9 @@ module Glyffin {
             '  vec3 shadowCoord = (v_PositionFromLight.xyz/v_PositionFromLight.w)/2.0 + 0.5;\n' +
             '  vec4 rgbaDepth = texture2D(u_ShadowMap, shadowCoord.xy);\n' +
             '  float depth = unpack(rgbaDepth);\n' +
-            '  float visibility = (shadowCoord.z > depth + 0.0015) ? 0.0 : 1.0;\n' +
+            '  float visibility = (shadowCoord.z > depth + 0.0025) ? .45 : 1.0;\n' +
             '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n' +
-                //'  gl_FragColor = rgbaDepth;\n' +
+                //'  gl_FragColor = vec4(depth,0.0,0.0,1.0);\n' +
             '}\n';
 
         public program : WebGLProgram;
@@ -220,7 +219,7 @@ module Glyffin {
         public u_MvpMatrixFromLight : WebGLUniformLocation;
         public u_ShadowMap : WebGLUniformLocation;
 
-        constructor(gl : WebGLRenderingContext, modelMatrix : Matrix4,
+        constructor(gl : WebGLRenderingContext, modelMatrix : Matrix4, mvpMatrix : Matrix4,
                     private vertices : VerticesAndColor) {
             var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
             this.program = program;
@@ -238,11 +237,6 @@ module Glyffin {
                 !this.u_ShadowMap) {
                 console.log('Failed to get uniform storage location');
             }
-
-            var mvpMatrix = new Matrix4();
-            mvpMatrix.setPerspective(90, 1, .1, 10);
-            mvpMatrix.lookAt(0, 0, 0, AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z, UP_X, UP_Y, UP_Z);
-            mvpMatrix.multiply(modelMatrix);
 
             gl.useProgram(program);
             gl.uniform3f(this.u_AmbientLight, 0.2, 0.2, 0.2);
@@ -306,18 +300,33 @@ module Glyffin {
             canvas.width = canvas.clientWidth;
             canvas.height = canvas.clientHeight;
             this.canvas = canvas;
+            var maxDimension = Math.max(canvas.width, canvas.height);
+            var minDimension = Math.max(canvas.width, canvas.height);
+            var aspect = canvas.width / canvas.height;
 
             var gl = getWebGLContext(canvas, false);
             this.gl = gl;
 
             var modelMatrix = new Matrix4();
-            modelMatrix.setTranslate(-1, 1, -1);
-            modelMatrix.scale(2 / canvas.width, -2 / canvas.height,
-                1 / Math.min(canvas.height, canvas.width));
+            modelMatrix.setScale(STAGE_SIZE / canvas.width, -STAGE_SIZE / canvas.height,
+                STAGE_SIZE / maxDimension);
+            modelMatrix.translate(-canvas.width / 2, -canvas.height / 2, -maxDimension);
+
+            var mvpMatrix = new Matrix4();
+            mvpMatrix.setPerspective(54, 1, 200, STAGE_SIZE * 1.5);
+            mvpMatrix.lookAt(0, 0, 0, AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z, UP_X, UP_Y, UP_Z);
+            mvpMatrix.multiply(modelMatrix);
+
+            var mvpLightMatrix = new Matrix4();
+            mvpLightMatrix.setPerspective(70.0, OFFSCREEN_WIDTH / OFFSCREEN_HEIGHT, 220,
+                STAGE_SIZE * 1.2);
+            mvpLightMatrix.lookAt(LIGHT_X, LIGHT_Y, LIGHT_Z, AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z,
+                UP_X, UP_Y, UP_Z);
+            mvpLightMatrix.multiply(modelMatrix);
 
             this.vertices = new VerticesAndColor(MAX_PATCH_COUNT, gl);
-            this.lightProgram = new LightProgram(gl, modelMatrix, this.vertices);
-            this.shadowProgram = new ShadowProgram(gl, modelMatrix, this.vertices);
+            this.lightProgram = new LightProgram(gl, modelMatrix, mvpMatrix, this.vertices);
+            this.shadowProgram = new ShadowProgram(gl, modelMatrix, mvpLightMatrix, this.vertices);
 
             // Initialize framebuffer object (FBO)
             var fbo = new FrameBuffer(gl);
@@ -347,27 +356,29 @@ module Glyffin {
                 this.vertices.clearFreePatches();
 
                 var gl = this.gl;
-
-                gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer.framebuffer);
-                gl.viewport(0, 0, OFFSCREEN_WIDTH, OFFSCREEN_HEIGHT);
-
+                var showShadow = false;
+                if (!showShadow) {
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer.framebuffer);
+                    gl.viewport(0, 0, OFFSCREEN_WIDTH, OFFSCREEN_HEIGHT);
+                }
                 gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
                 gl.useProgram(this.shadowProgram.program);
                 this.shadowProgram.enableVertexAttributes();
                 gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
 
-                gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-                gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-                gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+                if (!showShadow) {
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+                    gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+                    gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
-                gl.useProgram(this.lightProgram.program);
-                gl.uniform1i(this.lightProgram.u_ShadowMap, 0);
-                gl.uniformMatrix4fv(this.lightProgram.u_MvpMatrixFromLight, false,
-                    this.shadowProgram.mvpMatrix.elements);
-                this.lightProgram.enableVertexAttributes();
-                gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
-
+                    gl.useProgram(this.lightProgram.program);
+                    gl.uniform1i(this.lightProgram.u_ShadowMap, 0);
+                    gl.uniformMatrix4fv(this.lightProgram.u_MvpMatrixFromLight, false,
+                        this.shadowProgram.mvpMatrix.elements);
+                    this.lightProgram.enableVertexAttributes();
+                    gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
+                }
 
                 this.drawCount = this.editCount;
                 console.log("Active %i, Free %i, TotalFreed %",
