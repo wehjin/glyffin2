@@ -34,4 +34,7 @@ declare class Matrix4 {
     multiply(matrix : Matrix4) : Matrix4;
 
     setPerspective(fov : number, aspectRatio : number, near : number, far : number);
+
+    setOrtho(left : number, right : number, bottom : number, top : number, near : number,
+             far : number);
 }
