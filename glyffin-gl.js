@@ -166,6 +166,7 @@ var Glyffin;
                 console.log('Failed to initialize frame buffer object');
                 return;
             }
+            this.frameBuffer = fbo;
             gl.activeTexture(gl.TEXTURE0); // Set a texture object to the texture unit
             gl.bindTexture(gl.TEXTURE_2D, fbo.texture);
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -214,13 +215,18 @@ var Glyffin;
             this.editCount++;
             requestAnimationFrame(function () {
                 _this.vertices.clearFreePatches();
-                _this.gl.useProgram(_this.shadowProgram.program);
+                var gl = _this.gl;
+                gl.bindFramebuffer(gl.FRAMEBUFFER, _this.frameBuffer.framebuffer);
+                gl.viewport(0, 0, OFFSCREEN_WIDTH, OFFSCREEN_HEIGHT);
+                gl.clear(_this.gl.COLOR_BUFFER_BIT | _this.gl.DEPTH_BUFFER_BIT);
+                gl.useProgram(_this.shadowProgram.program);
                 _this.shadowProgram.enableVertexAttributes();
-                _this.gl.clear(_this.gl.COLOR_BUFFER_BIT | _this.gl.DEPTH_BUFFER_BIT);
-                _this.gl.drawArrays(_this.gl.TRIANGLES, 0, _this.vertices.getActiveVertexCount());
+                gl.drawArrays(_this.gl.TRIANGLES, 0, _this.vertices.getActiveVertexCount());
+                gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+                gl.viewport(0, 0, _this.canvas.width, _this.canvas.height);
+                gl.clear(_this.gl.COLOR_BUFFER_BIT | _this.gl.DEPTH_BUFFER_BIT);
                 _this.gl.useProgram(_this.lightProgram.program);
                 _this.lightProgram.enableVertexAttributes();
-                _this.gl.clear(_this.gl.COLOR_BUFFER_BIT | _this.gl.DEPTH_BUFFER_BIT);
                 _this.gl.drawArrays(_this.gl.TRIANGLES, 0, _this.vertices.getActiveVertexCount());
                 _this.drawCount = _this.editCount;
                 console.log("Active %i, Free %i, TotalFreed %", _this.vertices.getActiveVertexCount(), _this.vertices.getFreeVertexCount(), _this.vertices.getTotalFreedVertices());

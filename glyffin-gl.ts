@@ -238,6 +238,7 @@ module Glyffin {
         private unsubscribeSpots : ()=>void;
         private lightProgram : LightProgram;
         private shadowProgram : ShadowProgram;
+        private frameBuffer : FrameBuffer;
 
         beginGestures() {
             if (this.unsubscribeSpots) {
@@ -294,6 +295,8 @@ module Glyffin {
                 console.log('Failed to initialize frame buffer object');
                 return;
             }
+            this.frameBuffer = fbo;
+
             gl.activeTexture(gl.TEXTURE0); // Set a texture object to the texture unit
             gl.bindTexture(gl.TEXTURE_2D, fbo.texture);
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -313,14 +316,20 @@ module Glyffin {
             requestAnimationFrame(()=> {
                 this.vertices.clearFreePatches();
 
-                this.gl.useProgram(this.shadowProgram.program);
-                this.shadowProgram.enableVertexAttributes();
-                this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-                this.gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
+                var gl = this.gl;
+                gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer.framebuffer);
+                gl.viewport(0, 0, OFFSCREEN_WIDTH, OFFSCREEN_HEIGHT);
+                gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
+                gl.useProgram(this.shadowProgram.program);
+                this.shadowProgram.enableVertexAttributes();
+                gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
+
+                gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+                gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+                gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
                 this.gl.useProgram(this.lightProgram.program);
                 this.lightProgram.enableVertexAttributes();
-                this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
                 this.gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
 
                 this.drawCount = this.editCount;
