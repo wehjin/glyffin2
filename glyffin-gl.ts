@@ -15,7 +15,7 @@ var LIGHT_Z = 0;
 var AUDIENCE_X = 0;
 var AUDIENCE_Y = 0;
 var AUDIENCE_Z = -STAGE_SIZE;
-var OFFSCREEN_WIDTH = 2048, OFFSCREEN_HEIGHT = 2048;
+var OFFSCREEN_WIDTH = 4096, OFFSCREEN_HEIGHT = 4096;
 var UP_X = 0;
 var UP_Y = 1;
 var UP_Z = 0;
@@ -313,7 +313,7 @@ module Glyffin {
             modelMatrix.translate(-canvas.width / 2, -canvas.height / 2, -maxDimension);
 
             var mvpMatrix = new Matrix4();
-            mvpMatrix.setPerspective(53, 1, 200, STAGE_SIZE * 1.5);
+            mvpMatrix.setPerspective(53, 1, 200, STAGE_SIZE * 1.25);
             mvpMatrix.lookAt(0, 0, 0, AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z, UP_X, UP_Y, UP_Z);
             mvpMatrix.multiply(modelMatrix);
 
