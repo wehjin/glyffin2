@@ -175,7 +175,7 @@ var Glyffin;
             var test = mvpMatrix.multiplyVector4(testIn);
             var mvpLightMatrix = new Matrix4();
             mvpLightMatrix.setPerspective(90.0, OFFSCREEN_WIDTH / OFFSCREEN_HEIGHT, 0.01, 3);
-            mvpLightMatrix.setLookAt(0, -.5, 1, 0, 0, -1, UP_X, UP_Y, UP_X);
+            mvpLightMatrix.setLookAt(0, -.3, 1, 0, 0, -1, UP_X, UP_Y, UP_X);
             mvpLightMatrix.multiply(mvpMatrix);
             /*
              mvpLightMatrix.setPerspective(70.0, OFFSCREEN_WIDTH / OFFSCREEN_HEIGHT, 220,
