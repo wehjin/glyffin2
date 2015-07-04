@@ -221,7 +221,7 @@ module Glyffin {
             '    float depth = unpack(rgbaDepth);\n' +
             '    depthAcc += depth;\n' +
             '  }\n' +
-            '  float visibility = (shadowCoord.z > depthAcc/4.0 + bias) ? 0.4 : 1.0;\n' +
+            '  float visibility = (shadowCoord.z > depthAcc/4.0 + bias) ? 0.9 : 1.0;\n' +
             (redShadow ? '  gl_FragColor = (visibility < 1.0) ? vec4(1.0,0.0,0.0,1.0) : color;\n' :
                 '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n') +
             '}\n';
