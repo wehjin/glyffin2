@@ -20,7 +20,7 @@ var UP_X = 0;
 var UP_Y = 1;
 var UP_Z = 0;
 var showShadow = false;
-var redShadow = true;
+var redShadow = false;
 var FrameBuffer = (function () {
     function FrameBuffer(gl) {
         var framebuffer;
