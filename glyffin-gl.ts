@@ -15,11 +15,13 @@ var LIGHT_Z = 0;
 var AUDIENCE_X = 0;
 var AUDIENCE_Y = 0;
 var AUDIENCE_Z = -STAGE_SIZE;
-var OFFSCREEN_WIDTH = 1024, OFFSCREEN_HEIGHT = 1024;
+var SHADOWMAP_RES = 2048;
+var OFFSCREEN_WIDTH = SHADOWMAP_RES, OFFSCREEN_HEIGHT = SHADOWMAP_RES;
 var UP_X = 0;
 var UP_Y = 1;
 var UP_Z = 0;
 var showShadow = false;
+var redShadow = false;
 
 class FrameBuffer {
 
@@ -220,8 +222,8 @@ module Glyffin {
             '    depthAcc += depth;\n' +
             '  }\n' +
             '  float visibility = (shadowCoord.z > depthAcc/4.0 + bias) ? 0.9 : 1.0;\n' +
-            '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n' +
-                //'  gl_FragColor = (visibility < 1.0) ? vec4(1.0,0.0,0.0,1.0) : color;\n' +
+            (redShadow ? '  gl_FragColor = (visibility < 1.0) ? vec4(1.0,0.0,0.0,1.0) : color;\n' :
+                '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n') +
             '}\n';
 
         public program : WebGLProgram;
