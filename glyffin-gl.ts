@@ -10,16 +10,19 @@
 var STAGE_SIZE = 256;
 var LIGHT_X = 0;
 var LIGHT_Y = STAGE_SIZE / 4;
-//var LIGHT_Y = 0;
-var LIGHT_Z = 0;
+var LIGHT_Z = -1;
+var LIGHT = [LIGHT_X, LIGHT_Y, LIGHT_Z, 1.0];
 var AUDIENCE_X = 0;
 var AUDIENCE_Y = 0;
 var AUDIENCE_Z = -STAGE_SIZE;
-var SHADOW_SIZE = 1024;
+var AUDIENCE = [AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z, 1.0];
+var SHADOW_SIZE = 512;
 var OFFSCREEN_WIDTH = SHADOW_SIZE, OFFSCREEN_HEIGHT = SHADOW_SIZE;
 var UP_X = 0;
 var UP_Y = 1;
 var UP_Z = 0;
+var showShadow = false;
+var redShadow = false;
 
 class FrameBuffer {
 
@@ -126,8 +129,8 @@ module Glyffin {
             '  return rgbaDepth;\n' +
             '}\n' +
             'void main() {\n' +
-            '  gl_FragColor = pack(gl_FragCoord.z);\n' +
-                //'  gl_FragColor = vec4(gl_FragCoord.z ,0.0,0.0,1.0);\n' +
+            (showShadow ? '  gl_FragColor = vec4(gl_FragCoord.z * 10.0 ,0.0,0.0,1.0);\n' :
+                '  gl_FragColor = pack(gl_FragCoord.z);\n') +
             '}\n';
 
         public program : WebGLProgram;
@@ -206,9 +209,9 @@ module Glyffin {
             '  vec3 shadowCoord = (v_PositionFromLight.xyz/v_PositionFromLight.w)/2.0 + 0.5;\n' +
             '  vec4 rgbaDepth = texture2D(u_ShadowMap, shadowCoord.xy);\n' +
             '  float depth = unpack(rgbaDepth);\n' +
-            '  float visibility = (shadowCoord.z > depth + 0.0025) ? .4 : 1.0;\n' +
-            '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n' +
-                //'  gl_FragColor = (shadowCoord.z > depth + 0.0025) ? vec4(1.0,0.0,0.0,1.0) : color;\n' +
+            '  float visibility = (shadowCoord.z > depth + 0.0025) ? .8 : 1.0;\n' +
+            (redShadow ? '  gl_FragColor = (shadowCoord.z > depth + 0.0025) ? vec4(1.0,0.0,0.0,1.0) : color;\n'
+                : '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n') +
                 //'  gl_FragColor = vec4(depth,0.0,0.0,1.0);\n' +
             '}\n';
 
@@ -321,13 +324,37 @@ module Glyffin {
             var mvpMatrix = new Matrix4(vpMatrix);
             mvpMatrix.multiply(modelMatrix);
 
+            // The earlier setPerspective puts vpMatrix into a left-hand NDC system.  We'll
+            // need to recover the right-hand system by scaling.  This also reverses the cycle
+            // direction so we'll need to switch the front face when drawing with this matrix.
+            var vpMatrixS = new Matrix4();
+            vpMatrixS.setScale(-1, -1, 1);
+            vpMatrixS.multiply(vpMatrix);
+
+            var postLight = vpMatrixS.multiplyVector4(new Vector4(LIGHT));
+            var postAudience = vpMatrixS.multiplyVector4(new Vector4(AUDIENCE));
+            var postRange = vpMatrixS.multiplyVector4(new Vector4([STAGE_SIZE / 2, STAGE_SIZE /
+            2, STAGE_SIZE, 1.0]));
+            var postRange2 = vpMatrixS.multiplyVector4(new Vector4([-STAGE_SIZE / 2, STAGE_SIZE /
+            2, STAGE_SIZE, 1.0]));
+            var postOrigin = vpMatrixS.multiplyVector4(new Vector4([0, 0, 0, 1.0]));
+
+            var postAudienceZ = postAudience.elements[2] / postAudience.elements[3];
+            var postLightY = postLight.elements[1] / postLight.elements[3];
+            var postLightZ = postLight.elements[2] / postLight.elements[3];
+
+            var distanceZ = postLightZ;
+            var distance = Math.sqrt(postLightY * postLightY + distanceZ * distanceZ);
+
             var mvpLightMatrix = new Matrix4();
-            // TODO Why do these settings work???!!!
-            mvpLightMatrix.setLookAt(
-                0, -.45, 1,
-                0, 0, -1,
+            var spread = Math.abs(postAudienceZ) * 2;
+            mvpLightMatrix.setPerspective(.15, 1, distance - spread, distance + spread);
+            mvpLightMatrix.lookAt(
+                0, postLightY, postLightZ,
+                0, 0, postAudienceZ,
                 UP_X, UP_Y, UP_Z);
-            mvpLightMatrix.multiply(mvpMatrix);
+            mvpLightMatrix.multiply(vpMatrixS);
+            mvpLightMatrix.multiply(modelMatrix);
 
             this.vertices = new VerticesAndColor(MAX_PATCH_COUNT, gl);
             this.lightProgram = new LightProgram(gl, modelMatrix, mvpMatrix, this.vertices);
@@ -347,7 +374,6 @@ module Glyffin {
             gl.enable(gl.DEPTH_TEST);
             gl.enable(gl.CULL_FACE);
             gl.cullFace(gl.BACK);
-            gl.frontFace(gl.CW);
 
             this.beginGestures();
         }
@@ -361,7 +387,6 @@ module Glyffin {
                 this.vertices.clearFreePatches();
 
                 var gl = this.gl;
-                var showShadow = false;
                 if (!showShadow) {
                     gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer.framebuffer);
                     gl.viewport(0, 0, OFFSCREEN_WIDTH, OFFSCREEN_HEIGHT);
@@ -370,6 +395,7 @@ module Glyffin {
 
                 gl.useProgram(this.shadowProgram.program);
                 this.shadowProgram.enableVertexAttributes();
+                gl.frontFace(gl.CCW);
                 gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
 
                 if (!showShadow) {
@@ -382,6 +408,7 @@ module Glyffin {
                     gl.uniformMatrix4fv(this.lightProgram.u_MvpMatrixFromLight, false,
                         this.shadowProgram.mvpMatrix.elements);
                     this.lightProgram.enableVertexAttributes();
+                    gl.frontFace(gl.CW);
                     gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
                 }
 
