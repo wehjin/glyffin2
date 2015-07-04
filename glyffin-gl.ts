@@ -19,6 +19,7 @@ var OFFSCREEN_WIDTH = 1024, OFFSCREEN_HEIGHT = 1024;
 var UP_X = 0;
 var UP_Y = 1;
 var UP_Z = 0;
+var showShadow = false;
 
 class FrameBuffer {
 
@@ -48,6 +49,9 @@ class FrameBuffer {
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, OFFSCREEN_WIDTH, OFFSCREEN_HEIGHT, 0, gl.RGBA,
             gl.UNSIGNED_BYTE, null);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
         // Create a renderbuffer object and set its size and parameters
         depthBuffer = gl.createRenderbuffer(); // Create a renderbuffer object
@@ -203,11 +207,22 @@ module Glyffin {
             '  vec3 ambient = u_AmbientLight * v_Color.rgb;\n' +
             '  vec4 color = vec4(diffuse + ambient, v_Color.a);\n' +
             '  vec3 shadowCoord = (v_PositionFromLight.xyz/v_PositionFromLight.w)/2.0 + 0.5;\n' +
-            '  vec4 rgbaDepth = texture2D(u_ShadowMap, shadowCoord.xy);\n' +
-            '  float depth = unpack(rgbaDepth);\n' +
-            '  float visibility = (shadowCoord.z > depth + 0.0025) ? .3 : 1.0;\n' +
+            '  float poissonVisibility = 0.0;\n' +
+            '  const float bias = 0.0025;\n' +
+            '  float depthAcc = 0.0;\n' +
+            '  vec2 poissonDisk[4];\n' +
+            '  poissonDisk[0] = vec2( -0.94201624, -0.39906216 );\n' +
+            '  poissonDisk[1] = vec2( 0.94558609, -0.76890725 );\n' +
+            '  poissonDisk[2] = vec2( -0.094184101, -0.92938870 );\n' +
+            '  poissonDisk[3] = vec2( 0.34495938, 0.29387760 );\n' +
+            '  for (int i=0;i<4;i++) {\n' +
+            '    vec4 rgbaDepth = texture2D(u_ShadowMap, shadowCoord.xy + poissonDisk[i]/700.0);\n' +
+            '    float depth = unpack(rgbaDepth);\n' +
+            '    depthAcc += depth;\n' +
+            '  }\n' +
+            '  float visibility = (shadowCoord.z > depthAcc/4.0 + bias) ? 0.9 : 1.0;\n' +
             '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n' +
-                //'  gl_FragColor = vec4(depth,0.0,0.0,1.0);\n' +
+                //'  gl_FragColor = (visibility < 1.0) ? vec4(1.0,0.0,0.0,1.0) : color;\n' +
             '}\n';
 
         public program : WebGLProgram;
@@ -318,9 +333,10 @@ module Glyffin {
             mvpMatrix.multiply(modelMatrix);
 
             var mvpLightMatrix = new Matrix4();
-            mvpLightMatrix.setPerspective(70.0, OFFSCREEN_WIDTH / OFFSCREEN_HEIGHT, 220,
+            mvpLightMatrix.setPerspective(58.0, OFFSCREEN_WIDTH / OFFSCREEN_HEIGHT, 220,
                 STAGE_SIZE * 1.2);
-            mvpLightMatrix.lookAt(LIGHT_X, LIGHT_Y, LIGHT_Z, AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z,
+            mvpLightMatrix.lookAt(LIGHT_X, LIGHT_Y, LIGHT_Z, AUDIENCE_X,
+                AUDIENCE_Y + STAGE_SIZE / 16, AUDIENCE_Z,
                 UP_X, UP_Y, UP_Z);
             mvpLightMatrix.multiply(modelMatrix);
 
@@ -338,7 +354,6 @@ module Glyffin {
             gl.activeTexture(gl.TEXTURE0); // Set a texture object to the texture unit
             gl.bindTexture(gl.TEXTURE_2D, fbo.texture);
 
-            gl.clearColor(0.0, 0.0, 0.0, 1.0);
             gl.enable(gl.DEPTH_TEST);
             gl.enable(gl.CULL_FACE);
             gl.cullFace(gl.BACK);
@@ -356,11 +371,11 @@ module Glyffin {
                 this.vertices.clearFreePatches();
 
                 var gl = this.gl;
-                var showShadow = false;
                 if (!showShadow) {
                     gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer.framebuffer);
                     gl.viewport(0, 0, OFFSCREEN_WIDTH, OFFSCREEN_HEIGHT);
                 }
+                gl.clearColor(1.0, 1.0, 1.0, 1.0);
                 gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
                 gl.useProgram(this.shadowProgram.program);
@@ -370,6 +385,7 @@ module Glyffin {
                 if (!showShadow) {
                     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
                     gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+                    gl.clearColor(0.0, 0.0, 0.0, 1.0);
                     gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
                     gl.useProgram(this.lightProgram.program);

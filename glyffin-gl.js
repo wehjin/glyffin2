@@ -17,6 +17,7 @@ var OFFSCREEN_WIDTH = 1024, OFFSCREEN_HEIGHT = 1024;
 var UP_X = 0;
 var UP_Y = 1;
 var UP_Z = 0;
+var showShadow = false;
 var FrameBuffer = (function () {
     function FrameBuffer(gl) {
         var framebuffer;
@@ -41,6 +42,9 @@ var FrameBuffer = (function () {
         gl.bindTexture(gl.TEXTURE_2D, texture);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, OFFSCREEN_WIDTH, OFFSCREEN_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         // Create a renderbuffer object and set its size and parameters
         depthBuffer = gl.createRenderbuffer(); // Create a renderbuffer object
         if (!depthBuffer) {
@@ -115,7 +119,7 @@ var Glyffin;
         function LightProgram(gl, modelMatrix, mvpMatrix, vertices) {
             this.vertices = vertices;
             this.VSHADER_SOURCE = 'const vec3 c_Normal = vec3( 0.0, 0.0, 1.0 );\n' + 'uniform mat4 u_ModelMatrix;\n' + 'uniform mat4 u_MvpMatrix;\n' + 'uniform mat4 u_MvpMatrixFromLight;\n' + 'attribute vec4 a_Position;\n' + 'attribute vec4 a_Color;\n' + 'varying vec4 v_Color;\n' + 'varying vec3 v_Normal;\n' + 'varying vec3 v_Position;\n' + 'varying vec4 v_PositionFromLight;\n' + 'void main(){\n' + '  gl_Position = u_MvpMatrix * a_Position;\n' + '  v_Position = vec3(u_ModelMatrix * a_Position);\n' + '  v_PositionFromLight = u_MvpMatrixFromLight * a_Position;\n' + '  v_Normal = c_Normal;\n' + '  v_Color = a_Color;\n' + '}\n';
-            this.FSHADER_SOURCE = '#ifdef GL_ES\n' + 'precision mediump float;\n' + '#endif\n' + 'uniform vec3 u_LightColor;\n' + 'uniform vec3 u_LightPosition;\n' + 'uniform vec3 u_AmbientLight;\n' + 'uniform sampler2D u_ShadowMap;\n' + 'varying vec3 v_Position;\n' + 'varying vec3 v_Normal;\n' + 'varying vec4 v_Color;\n' + 'varying vec4 v_PositionFromLight;\n' + 'float unpack(const in vec4 rgbaDepth) {\n' + '  const vec4 bitShift = vec4(1.0, 1.0/256.0, 1.0/(256.0*256.0), 1.0/(256.0*256.0*256.0));\n' + '  float depth = dot(rgbaDepth, bitShift);\n' + '  return depth;\n' + '}\n' + 'void main(){\n' + '  vec3 normal = normalize(v_Normal);\n' + '  vec3 lightDirection = normalize(u_LightPosition - v_Position);\n' + '  float lightIntensity = max(dot(lightDirection, normal), 0.0);\n' + '  vec3 diffuse = u_LightColor * v_Color.rgb * lightIntensity;\n' + '  vec3 ambient = u_AmbientLight * v_Color.rgb;\n' + '  vec4 color = vec4(diffuse + ambient, v_Color.a);\n' + '  vec3 shadowCoord = (v_PositionFromLight.xyz/v_PositionFromLight.w)/2.0 + 0.5;\n' + '  vec4 rgbaDepth = texture2D(u_ShadowMap, shadowCoord.xy);\n' + '  float depth = unpack(rgbaDepth);\n' + '  float visibility = (shadowCoord.z > depth + 0.0025) ? .3 : 1.0;\n' + '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n' + '}\n';
+            this.FSHADER_SOURCE = '#ifdef GL_ES\n' + 'precision mediump float;\n' + '#endif\n' + 'uniform vec3 u_LightColor;\n' + 'uniform vec3 u_LightPosition;\n' + 'uniform vec3 u_AmbientLight;\n' + 'uniform sampler2D u_ShadowMap;\n' + 'varying vec3 v_Position;\n' + 'varying vec3 v_Normal;\n' + 'varying vec4 v_Color;\n' + 'varying vec4 v_PositionFromLight;\n' + 'float unpack(const in vec4 rgbaDepth) {\n' + '  const vec4 bitShift = vec4(1.0, 1.0/256.0, 1.0/(256.0*256.0), 1.0/(256.0*256.0*256.0));\n' + '  float depth = dot(rgbaDepth, bitShift);\n' + '  return depth;\n' + '}\n' + 'void main(){\n' + '  vec3 normal = normalize(v_Normal);\n' + '  vec3 lightDirection = normalize(u_LightPosition - v_Position);\n' + '  float lightIntensity = max(dot(lightDirection, normal), 0.0);\n' + '  vec3 diffuse = u_LightColor * v_Color.rgb * lightIntensity;\n' + '  vec3 ambient = u_AmbientLight * v_Color.rgb;\n' + '  vec4 color = vec4(diffuse + ambient, v_Color.a);\n' + '  vec3 shadowCoord = (v_PositionFromLight.xyz/v_PositionFromLight.w)/2.0 + 0.5;\n' + '  float poissonVisibility = 0.0;\n' + '  const float bias = 0.0025;\n' + '  float depthAcc = 0.0;\n' + '  vec2 poissonDisk[4];\n' + '  poissonDisk[0] = vec2( -0.94201624, -0.39906216 );\n' + '  poissonDisk[1] = vec2( 0.94558609, -0.76890725 );\n' + '  poissonDisk[2] = vec2( -0.094184101, -0.92938870 );\n' + '  poissonDisk[3] = vec2( 0.34495938, 0.29387760 );\n' + '  for (int i=0;i<4;i++) {\n' + '    vec4 rgbaDepth = texture2D(u_ShadowMap, shadowCoord.xy + poissonDisk[i]/700.0);\n' + '    float depth = unpack(rgbaDepth);\n' + '    depthAcc += depth;\n' + '  }\n' + '  float visibility = (shadowCoord.z > depthAcc/4.0 + bias) ? 0.9 : 1.0;\n' + '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n' + '}\n';
             var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
             this.program = program;
             this.u_ModelMatrix = gl.getUniformLocation(program, 'u_ModelMatrix');
@@ -163,8 +167,8 @@ var Glyffin;
             mvpMatrix.lookAt(0, 0, 0, AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z, UP_X, UP_Y, UP_Z);
             mvpMatrix.multiply(modelMatrix);
             var mvpLightMatrix = new Matrix4();
-            mvpLightMatrix.setPerspective(70.0, OFFSCREEN_WIDTH / OFFSCREEN_HEIGHT, 220, STAGE_SIZE * 1.2);
-            mvpLightMatrix.lookAt(LIGHT_X, LIGHT_Y, LIGHT_Z, AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z, UP_X, UP_Y, UP_Z);
+            mvpLightMatrix.setPerspective(58.0, OFFSCREEN_WIDTH / OFFSCREEN_HEIGHT, 220, STAGE_SIZE * 1.2);
+            mvpLightMatrix.lookAt(LIGHT_X, LIGHT_Y, LIGHT_Z, AUDIENCE_X, AUDIENCE_Y + STAGE_SIZE / 16, AUDIENCE_Z, UP_X, UP_Y, UP_Z);
             mvpLightMatrix.multiply(modelMatrix);
             this.vertices = new VerticesAndColor(MAX_PATCH_COUNT, gl);
             this.lightProgram = new LightProgram(gl, modelMatrix, mvpMatrix, this.vertices);
@@ -178,7 +182,6 @@ var Glyffin;
             this.frameBuffer = fbo;
             gl.activeTexture(gl.TEXTURE0); // Set a texture object to the texture unit
             gl.bindTexture(gl.TEXTURE_2D, fbo.texture);
-            gl.clearColor(0.0, 0.0, 0.0, 1.0);
             gl.enable(gl.DEPTH_TEST);
             gl.enable(gl.CULL_FACE);
             gl.cullFace(gl.BACK);
@@ -225,11 +228,11 @@ var Glyffin;
             requestAnimationFrame(function () {
                 _this.vertices.clearFreePatches();
                 var gl = _this.gl;
-                var showShadow = false;
                 if (!showShadow) {
                     gl.bindFramebuffer(gl.FRAMEBUFFER, _this.frameBuffer.framebuffer);
                     gl.viewport(0, 0, OFFSCREEN_WIDTH, OFFSCREEN_HEIGHT);
                 }
+                gl.clearColor(1.0, 1.0, 1.0, 1.0);
                 gl.clear(_this.gl.COLOR_BUFFER_BIT | _this.gl.DEPTH_BUFFER_BIT);
                 gl.useProgram(_this.shadowProgram.program);
                 _this.shadowProgram.enableVertexAttributes();
@@ -237,6 +240,7 @@ var Glyffin;
                 if (!showShadow) {
                     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
                     gl.viewport(0, 0, _this.canvas.width, _this.canvas.height);
+                    gl.clearColor(0.0, 0.0, 0.0, 1.0);
                     gl.clear(_this.gl.COLOR_BUFFER_BIT | _this.gl.DEPTH_BUFFER_BIT);
                     gl.useProgram(_this.lightProgram.program);
                     gl.uniform1i(_this.lightProgram.u_ShadowMap, 0);
