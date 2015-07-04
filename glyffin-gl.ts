@@ -21,8 +21,8 @@ var OFFSCREEN_WIDTH = SHADOWMAP_RES, OFFSCREEN_HEIGHT = SHADOWMAP_RES;
 var UP_X = 0;
 var UP_Y = 1;
 var UP_Z = 0;
-var showShadow = false;
-var redShadow = true;
+var showShadow = true;
+var redShadow = false;
 
 class FrameBuffer {
 
