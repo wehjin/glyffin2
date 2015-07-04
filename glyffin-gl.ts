@@ -9,7 +9,7 @@
 
 var STAGE_SIZE = 256;
 var LIGHT_X = 0;
-var LIGHT_Y = STAGE_SIZE / 4;
+var LIGHT_Y = STAGE_SIZE / 2;
 var LIGHT_Z = -1;
 var LIGHT = [LIGHT_X, LIGHT_Y, LIGHT_Z, 1.0];
 var AUDIENCE_X = 0;
@@ -353,7 +353,7 @@ module Glyffin {
             var distance = Math.sqrt(postLightY * postLightY + distanceZ * distanceZ);
 
             var mvpLightMatrix = new Matrix4();
-            var spread = Math.abs(postAudienceZ) * 2;
+            var spread = Math.abs(postAudienceZ) * 2.5;
             mvpLightMatrix.setPerspective(.15, 1, distance - spread, distance + spread);
             mvpLightMatrix.lookAt(0, postLightY, postLightZ, 0, 0, postAudienceZ, UP_X, UP_Y, UP_Z);
             mvpLightMatrix.multiply(vpMatrixS);
