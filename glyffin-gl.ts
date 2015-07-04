@@ -322,6 +322,7 @@ module Glyffin {
             mvpMatrix.multiply(modelMatrix);
 
             var mvpLightMatrix = new Matrix4();
+            // TODO Why do these settings work???!!!
             mvpLightMatrix.setLookAt(
                 0, -.45, 1,
                 0, 0, -1,

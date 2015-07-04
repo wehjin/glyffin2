@@ -165,6 +165,7 @@ var Glyffin;
             var mvpMatrix = new Matrix4(vpMatrix);
             mvpMatrix.multiply(modelMatrix);
             var mvpLightMatrix = new Matrix4();
+            // TODO Why do these settings work???!!!
             mvpLightMatrix.setLookAt(0, -.45, 1, 0, 0, -1, UP_X, UP_Y, UP_Z);
             mvpLightMatrix.multiply(mvpMatrix);
             this.vertices = new VerticesAndColor(MAX_PATCH_COUNT, gl);
