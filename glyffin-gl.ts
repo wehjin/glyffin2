@@ -209,7 +209,7 @@ module Glyffin {
             '  vec4 color = vec4(diffuse + ambient, v_Color.a);\n' +
             '  vec3 shadowCoord = (v_PositionFromLight.xyz/v_PositionFromLight.w)/2.0 + 0.5;\n' +
             '  float poissonVisibility = 0.0;\n' +
-            '  const float bias = 0.0025;\n' +
+            '  const float bias = 0.003;\n' +
             '  float depthAcc = 0.0;\n' +
             '  vec2 poissonDisk[4];\n' +
             '  poissonDisk[0] = vec2( -0.94201624, -0.39906216 );\n' +
@@ -221,7 +221,7 @@ module Glyffin {
             '    float depth = unpack(rgbaDepth);\n' +
             '    depthAcc += depth;\n' +
             '  }\n' +
-            '  float visibility = (shadowCoord.z > depthAcc/4.0 + bias) ? 0.8 : 1.0;\n' +
+            '  float visibility = (shadowCoord.z > depthAcc/4.0 + bias) ? 0.4 : 1.0;\n' +
             (redShadow ? '  gl_FragColor = (visibility < 1.0) ? vec4(1.0,0.0,0.0,1.0) : color;\n' :
                 '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n') +
             '}\n';
