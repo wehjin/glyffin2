@@ -129,8 +129,7 @@ module Glyffin {
             '  return rgbaDepth;\n' +
             '}\n' +
             'void main() {\n' +
-            '  gl_FragColor = pack(gl_FragCoord.z);\n' +
-                //'  gl_FragColor = vec4(gl_FragCoord.z ,0.0,0.0,1.0);\n' +
+            (showShadow ? '  gl_FragColor = vec4(gl_FragCoord.z ,0.0,0.0,1.0);\n' : '  gl_FragColor = pack(gl_FragCoord.z);\n') +
             '}\n';
 
         public program : WebGLProgram;
