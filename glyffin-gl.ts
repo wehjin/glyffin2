@@ -219,7 +219,7 @@ module Glyffin {
             '  poissonDisk[2] = vec2( -0.094184101, -0.92938870 );\n' +
             '  poissonDisk[3] = vec2( 0.34495938, 0.29387760 );\n' +
             '  for (int i=0;i<4;i++) {\n' +
-            '    vec4 rgbaDepth = texture2D(u_ShadowMap, shadowCoord.xy + poissonDisk[i]/700.0);\n' +
+            '    vec4 rgbaDepth = texture2D(u_ShadowMap, shadowCoord.xy + poissonDisk[i]/700.0*0.0);\n' +
             '    float depth = unpack(rgbaDepth);\n' +
             '    depthAcc += depth;\n' +
             '  }\n' +
@@ -374,7 +374,7 @@ module Glyffin {
             gl.bindTexture(gl.TEXTURE_2D, fbo.texture);
 
             gl.enable(gl.DEPTH_TEST);
-            //gl.enable(gl.CULL_FACE);
+            gl.enable(gl.CULL_FACE);
             gl.cullFace(gl.BACK);
 
             this.beginGestures();
