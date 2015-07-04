@@ -321,32 +321,12 @@ module Glyffin {
             var mvpMatrix = new Matrix4(vpMatrix);
             mvpMatrix.multiply(modelMatrix);
 
-            var light = new Vector4([LIGHT_X, LIGHT_Y, LIGHT_Z, 1.0]);
-            var postLight = vpMatrix.multiplyVector4(light);
-            var postLightX = postLight.elements[0] / postLight.elements[3];
-            var postLightY = postLight.elements[1] / postLight.elements[3];
-            var postLightZ = postLight.elements[2] / postLight.elements[3];
-//            var audience = new Vector4([AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z, 1.0]);
-//            var postAudience = vpMatrix.multiplyVector4(audience);
-
-            var testIn = new Vector4([canvas.width, canvas.height, 0, 1.0]);
-            var test = mvpMatrix.multiplyVector4(testIn);
-
             var mvpLightMatrix = new Matrix4();
-            mvpLightMatrix.setPerspective(90.0, OFFSCREEN_WIDTH / OFFSCREEN_HEIGHT, 0.01, 3);
             mvpLightMatrix.setLookAt(
-//                0, -.0001, .3,
                 0, -.45, 1,
                 0, 0, -1,
-                UP_X, UP_Y, UP_X);
+                UP_X, UP_Y, UP_Z);
             mvpLightMatrix.multiply(mvpMatrix);
-            /*
-             mvpLightMatrix.setPerspective(70.0, OFFSCREEN_WIDTH / OFFSCREEN_HEIGHT, 220,
-             STAGE_SIZE * 1.2);
-             mvpLightMatrix.lookAt(LIGHT_X, LIGHT_Y, LIGHT_Z, AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z,
-             UP_X, UP_Y, UP_Z);
-             mvpLightMatrix.multiply(modelMatrix);
-             */
 
             this.vertices = new VerticesAndColor(MAX_PATCH_COUNT, gl);
             this.lightProgram = new LightProgram(gl, modelMatrix, mvpMatrix, this.vertices);
