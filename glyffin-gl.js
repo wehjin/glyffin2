@@ -19,7 +19,7 @@ var OFFSCREEN_WIDTH = SHADOWMAP_RES, OFFSCREEN_HEIGHT = SHADOWMAP_RES;
 var UP_X = 0;
 var UP_Y = 1;
 var UP_Z = 0;
-var showShadow = true;
+var showShadow = false;
 var redShadow = false;
 var FrameBuffer = (function () {
     function FrameBuffer(gl) {
@@ -200,7 +200,7 @@ var Glyffin;
             gl.activeTexture(gl.TEXTURE0); // Set a texture object to the texture unit
             gl.bindTexture(gl.TEXTURE_2D, fbo.texture);
             gl.enable(gl.DEPTH_TEST);
-            gl.enable(gl.CULL_FACE);
+            //gl.enable(gl.CULL_FACE);
             gl.cullFace(gl.BACK);
             this.beginGestures();
         }
