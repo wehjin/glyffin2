@@ -16,12 +16,12 @@ var AUDIENCE_X = 0;
 var AUDIENCE_Y = 0;
 var AUDIENCE_Z = -STAGE_SIZE;
 var AUDIENCE = [AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z, 1.0];
-var SHADOWMAP_RES = 1024;
+var SHADOWMAP_RES = 2048;
 var OFFSCREEN_WIDTH = SHADOWMAP_RES, OFFSCREEN_HEIGHT = SHADOWMAP_RES;
 var UP_X = 0;
 var UP_Y = 1;
 var UP_Z = 0;
-var showShadow = false;
+var showShadow = true;
 var redShadow = true;
 
 class FrameBuffer {
@@ -132,7 +132,7 @@ module Glyffin {
             '  return rgbaDepth;\n' +
             '}\n' +
             'void main() {\n' +
-            (showShadow ? '  gl_FragColor = vec4(gl_FragCoord.z * 10.0 ,0.0,0.0,1.0);\n' :
+            (showShadow ? '  gl_FragColor = vec4(gl_FragCoord.z,0.0,0.0,1.0);\n' :
                 '  gl_FragColor = pack(gl_FragCoord.z);\n') +
             '}\n';
 
