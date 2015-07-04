@@ -16,13 +16,13 @@ var AUDIENCE_X = 0;
 var AUDIENCE_Y = 0;
 var AUDIENCE_Z = -STAGE_SIZE;
 var AUDIENCE = [AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z, 1.0];
-var SHADOWMAP_RES = 512;
+var SHADOWMAP_RES = 1024;
 var OFFSCREEN_WIDTH = SHADOWMAP_RES, OFFSCREEN_HEIGHT = SHADOWMAP_RES;
 var UP_X = 0;
 var UP_Y = 1;
 var UP_Z = 0;
 var showShadow = false;
-var redShadow = false;
+var redShadow = true;
 
 class FrameBuffer {
 
@@ -211,7 +211,7 @@ module Glyffin {
             '  vec4 color = vec4(diffuse + ambient, v_Color.a);\n' +
             '  vec3 shadowCoord = (v_PositionFromLight.xyz/v_PositionFromLight.w)/2.0 + 0.5;\n' +
             '  float poissonVisibility = 0.0;\n' +
-            '  const float bias = 0.003;\n' +
+            '  const float bias = 0.0025;\n' +
             '  float depthAcc = 0.0;\n' +
             '  vec2 poissonDisk[4];\n' +
             '  poissonDisk[0] = vec2( -0.94201624, -0.39906216 );\n' +
