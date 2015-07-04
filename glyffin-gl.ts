@@ -217,7 +217,7 @@ module Glyffin {
             '  poissonDisk[2] = vec2( -0.094184101, -0.92938870 );\n' +
             '  poissonDisk[3] = vec2( 0.34495938, 0.29387760 );\n' +
             '  for (int i=0;i<4;i++) {\n' +
-            '    vec4 rgbaDepth = texture2D(u_ShadowMap, shadowCoord.xy + poissonDisk[i]/700.0);\n' +
+            '    vec4 rgbaDepth = texture2D(u_ShadowMap, shadowCoord.xy + poissonDisk[i]/700.0*0.0);\n' +
             '    float depth = unpack(rgbaDepth);\n' +
             '    depthAcc += depth;\n' +
             '  }\n' +
@@ -334,7 +334,7 @@ module Glyffin {
             mvpMatrix.multiply(modelMatrix);
 
             var mvpLightMatrix = new Matrix4();
-            mvpLightMatrix.setPerspective(58.0, OFFSCREEN_WIDTH / OFFSCREEN_HEIGHT, 220,
+            mvpLightMatrix.setPerspective(58.0, OFFSCREEN_WIDTH / OFFSCREEN_HEIGHT, 240,
                 STAGE_SIZE * 1.2);
             mvpLightMatrix.lookAt(LIGHT_X, LIGHT_Y, LIGHT_Z, AUDIENCE_X,
                 AUDIENCE_Y + STAGE_SIZE / 16, AUDIENCE_Z,
