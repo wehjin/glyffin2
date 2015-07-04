@@ -52,7 +52,7 @@ function main() {
             var title = item['title'];
             var link = item['link'];
             function addTitle(background) {
-                return background.addNearMajor(1, Glyffin.asciiMultiLine(2, title).splitHeightYield(-textSize, Glyffin.ClearGlyff).splitHeightYield(-textSize, Glyffin.asciiEntireWord(link)).pad(readSize * 2, readSize * 2).limitHeight(readSize * 4 + textSize * 5, .4));
+                return background.addNearMajor(0.5, Glyffin.asciiMultiLine(2, title).splitHeightYield(-textSize, Glyffin.ClearGlyff).splitHeightYield(-textSize, Glyffin.asciiEntireWord(link)).pad(readSize * 2, readSize * 2).limitHeight(readSize * 4 + textSize * 5, .4));
             }
             var unpressedCell = Glyffin.colorPath(midgroundColorPath).rebuild(addTitle);
             var pressedCell = Glyffin.colorPath(midgroundColorPath, .5, backgroundColorPath).rebuild(addTitle);

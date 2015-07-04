@@ -52,6 +52,9 @@ declare class Matrix4 {
     setOrtho(left : number, right : number, bottom : number, top : number, near : number,
              far : number);
 
+    setFrustum(left : number, right : number, bottom : number, top : number, near : number,
+               far : number);
+
     multiplyVector4(vector : Vector4) : Vector4;
 
     multiplyVector3(vector : Vector3) : Vector3;
