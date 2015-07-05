@@ -10,6 +10,9 @@
 var Void = Glyffin.Void;
 var Glyff = Glyffin.Glyff;
 var Color = Glyffin.Color;
+function getPreviousIndex(index, count) {
+    return index == 0 ? (count - 1) : (index - 1);
+}
 function main() {
     /*
      document.addEventListener('touchmove', function (e) {
@@ -41,6 +44,9 @@ function main() {
                 }
             });
         }
+        function getPreviousItemIndex(index) {
+            return getPreviousIndex(index, items.length);
+        }
         function refresh() {
             if (presentation) {
                 presentation.end();
@@ -48,15 +54,25 @@ function main() {
             var tapHeight = metrics.tapHeight;
             var readSize = metrics.readHeight;
             var textSize = readSize * 1.2;
-            var item = items[index % items.length];
-            var title = item['title'];
-            var link = item['link'];
-            function addTitle(background) {
-                return background.addNearMajor(0.5, Glyffin.asciiMultiLine(2, title).splitHeightYield(-textSize, Glyffin.ClearGlyff).splitHeightYield(-textSize, Glyffin.asciiEntireWord(link)).pad(readSize * 2, readSize * 2).limitHeight(readSize * 4 + textSize * 5, .4));
+            function getCell(background, text, subtext) {
+                function addTitle(background) {
+                    return background.addNearMajor(0.5, Glyffin.asciiMultiLine(2, text).splitHeightYield(-textSize, Glyffin.ClearGlyff).splitHeightYield(-textSize, Glyffin.asciiEntireWord(subtext)).pad(readSize * 2, readSize * 2).limitHeight(readSize * 4 + textSize * 5, .4));
+                }
+                return background.rebuild(addTitle);
             }
-            var unpressedCell = Glyffin.colorPath(midgroundColorPath).rebuild(addTitle);
-            var pressedCell = Glyffin.colorPath(midgroundColorPath, .5, backgroundColorPath).rebuild(addTitle);
-            var cell = unpressedCell.clicken("go", pressedCell);
+            var unpressedBackground = Glyffin.colorPath(midgroundColorPath);
+            var pressedBackground = Glyffin.colorPath(midgroundColorPath, .5, backgroundColorPath);
+            function getUnpressedCell(item) {
+                return getCell(unpressedBackground, item['title'], item['link']);
+            }
+            function getRightCell(item) {
+                return getCell(Glyffin.colorPath(midgroundColorPath, .1, backgroundColorPath), item['title'], item['link']);
+            }
+            var itemIndex = (index % items.length);
+            var item = items[itemIndex];
+            var nextItem = items[(itemIndex + 1) % items.length];
+            var prevItem = items[getPreviousItemIndex(itemIndex)];
+            var cell = getUnpressedCell(item).pagen(itemIndex, getRightCell(nextItem), getUnpressedCell(prevItem), getCell(pressedBackground, item['title'], item['link']));
             function button(label, symbol) {
                 function addLabel(label) {
                     return function (background) {
@@ -95,7 +111,7 @@ function main() {
                     refresh();
                 }
                 else if (symbol === "back") {
-                    index = index == 0 ? (items.length - 1) : (index - 1);
+                    index = getPreviousItemIndex(index);
                     refresh();
                 }
             });

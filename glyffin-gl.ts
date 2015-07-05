@@ -23,6 +23,7 @@ var UP_Y = 1;
 var UP_Z = 0;
 var showShadow = false;
 var redShadow = false;
+var useShadow = true;
 
 class FrameBuffer {
 
@@ -281,12 +282,14 @@ module Glyffin {
         private lightProgram : LightProgram;
         private shadowProgram : ShadowProgram;
         private frameBuffer : FrameBuffer;
+        private redrawTime;
 
         beginGestures() {
             if (this.unsubscribeSpots) {
                 this.unsubscribeSpots();
             }
             var touch;
+            var touchStartTime;
             this.unsubscribeSpots = new SpotObservable(this.canvas).subscribe({
                 onStart: (spot : Spot) : boolean => {
                     var hits = Interactive.findHits(this.interactives, spot.x, spot.y);
@@ -294,12 +297,20 @@ module Glyffin {
                         return false;
                     }
                     touch = hits[0].touchProvider.init(spot);
+                    if (!touch) {
+                        return false;
+                    }
+                    touchStartTime = Date.now();
                     return true;
                 },
                 onMove: (spot : Spot) : boolean=> {
+                    var preMoveTime = Date.now();
+                    var moveResponseTime = preMoveTime - touchStartTime;
                     touch.move(spot, ()=> {
                         this.beginGestures();
                     });
+                    var afterMove = Date.now();
+                    var moveRealizationTime = afterMove - preMoveTime;
                     return true;
                 },
                 onCancel: ()=> {
@@ -386,9 +397,16 @@ module Glyffin {
             }
             this.editCount++;
             requestAnimationFrame(()=> {
-                this.vertices.clearFreePatches();
+                this.redraw();
+            });
+        }
 
-                var gl = this.gl;
+        private redraw() {
+            this.vertices.clearFreePatches();
+
+            var gl = this.gl;
+
+            if (useShadow) {
                 if (!showShadow) {
                     gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer.framebuffer);
                     gl.viewport(0, 0, OFFSCREEN_WIDTH, OFFSCREEN_HEIGHT);
@@ -400,27 +418,29 @@ module Glyffin {
                 this.shadowProgram.enableVertexAttributes();
                 gl.frontFace(gl.CCW);
                 gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
+            }
 
-                if (!showShadow) {
-                    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-                    gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-                    gl.clearColor(0.0, 0.0, 0.0, 1.0);
-                    gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+            if (!useShadow || !showShadow) {
+                gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+                gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+                gl.clearColor(0.0, 0.0, 0.0, 1.0);
+                gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
-                    gl.useProgram(this.lightProgram.program);
-                    gl.uniform1i(this.lightProgram.u_ShadowMap, 0);
-                    gl.uniformMatrix4fv(this.lightProgram.u_MvpMatrixFromLight, false,
-                        this.shadowProgram.mvpMatrix.elements);
-                    this.lightProgram.enableVertexAttributes();
-                    gl.frontFace(gl.CW);
-                    gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
-                }
+                gl.useProgram(this.lightProgram.program);
+                gl.uniform1i(this.lightProgram.u_ShadowMap, 0);
+                gl.uniformMatrix4fv(this.lightProgram.u_MvpMatrixFromLight, false,
+                    this.shadowProgram.mvpMatrix.elements);
+                this.lightProgram.enableVertexAttributes();
+                gl.frontFace(gl.CW);
+                gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
+            }
 
-                this.drawCount = this.editCount;
-                console.log("Active %i, Free %i, TotalFreed %",
-                    this.vertices.getActiveVertexCount(),
-                    this.vertices.getFreeVertexCount(), this.vertices.getTotalFreedVertices());
-            });
+            this.drawCount = this.editCount;
+            console.log("Active %i, Free %i, TotalFreed %",
+                this.vertices.getActiveVertexCount(),
+                this.vertices.getFreeVertexCount(), this.vertices.getTotalFreedVertices());
+
+            this.redrawTime = Date.now();
         }
 
         addPatch(bounds : Perimeter, color : Color) : Patch {

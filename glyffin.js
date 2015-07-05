@@ -196,7 +196,7 @@ var Glyffin;
             this.onPresent(metrics, audience, presenter);
             return {
                 end: function () {
-                    while (presented.length > 0) {
+                    while (presented.length) {
                         presented.pop().end();
                     }
                 }
@@ -300,12 +300,13 @@ var Glyffin;
                 var perimeter = metrics.perimeter;
                 var rowHeight = perimeter.getHeight() / rows;
                 var colWidth = perimeter.getWidth() / columns;
-                spots.forEach(function (spot) {
+                for (var i = 0, count = spots.length; i < count; i++) {
+                    var spot = spots[i];
                     var left = perimeter.left + colWidth * spot[0];
                     var top = perimeter.top + rowHeight * spot[1];
                     var spotPerimeter = new Glyffin.Perimeter(left, top, left + colWidth, top + rowHeight, perimeter.age, perimeter.level);
                     presenter.addPresentation(upperGlyff.present(metrics.withPerimeter(spotPerimeter), audience, presenter));
-                });
+                }
             });
         };
         Glyff.prototype.pad = function (xPixels, yPixels) {
@@ -320,6 +321,13 @@ var Glyffin;
                 getUpperReaction: function (audience, presenter) {
                     return presenter;
                 }
+            });
+        };
+        Glyff.prototype.move = function (x) {
+            var _this = this;
+            return Glyff.create(function (metrics, audience, presenter) {
+                var perimeter = metrics.perimeter.translate(x);
+                presenter.addPresentation(_this.present(metrics.withPerimeter(perimeter), audience, presenter));
             });
         };
         Glyff.prototype.clicken = function (symbol, pressed) {
@@ -338,6 +346,120 @@ var Glyffin;
                 }, function () {
                     presenter.onResult(symbol);
                 }));
+                presenter.addPresentation({
+                    end: function () {
+                        zone.remove();
+                    }
+                });
+            });
+        };
+        Glyff.prototype.pagen = function (index, next, prev, pressed) {
+            var _this = this;
+            return Glyff.create(function (metrics, audience, presenter) {
+                var perimeter = metrics.perimeter;
+                var unpressed = _this;
+                var unpressedMetrics = metrics.withPerimeter(perimeter.withLevel(perimeter.level + 4));
+                if (next) {
+                    presenter.addPresentation(next.present(metrics, audience, new NoResultPresenter(presenter)));
+                }
+                var leftSlideRange = perimeter.right;
+                var leftTriggerAge = (metrics.tapHeight * 2.5) / leftSlideRange;
+                var age = 0.0;
+                var center;
+                function setAge(newAge) {
+                    if (newAge < 0) {
+                        return;
+                    }
+                    age = newAge;
+                    console.log("Age:%f", age);
+                    var slide = -(newAge * leftSlideRange);
+                    if (center) {
+                        center.remove();
+                    }
+                    center = presenter.addPresentation(unpressed.move(slide).present(unpressedMetrics, audience));
+                }
+                var stopAnimation;
+                function animateAge(newAge, onEnd) {
+                    if (stopAnimation) {
+                        stopAnimation();
+                    }
+                    var startAge = age;
+                    var ageRange = newAge - startAge;
+                    var startTime = Date.now();
+                    var duration = 150;
+                    var frame;
+                    stopAnimation = function () {
+                        if (frame) {
+                            window.cancelAnimationFrame(frame);
+                            frame = 0;
+                        }
+                        stopAnimation = null;
+                    };
+                    function animate() {
+                        if (age == newAge) {
+                            stopAnimation = null;
+                            setTimeout(function () {
+                                if (onEnd) {
+                                    onEnd();
+                                }
+                            }, 1);
+                            return;
+                        }
+                        frame = window.requestAnimationFrame(function () {
+                            frame = 0;
+                            var elapsed = (Date.now() - startTime);
+                            var progress = (elapsed / duration);
+                            setAge(elapsed >= duration ? newAge : startAge + ageRange * progress);
+                            animate();
+                        });
+                    }
+                    // Animate only after initializing stopAnimation so that animate can set
+                    // it to null if needed.
+                    animate();
+                }
+                setAge(0);
+                var zone = audience.addZone(perimeter, {
+                    init: function (startSpot) {
+                        if (stopAnimation) {
+                            return null;
+                        }
+                        var moveFrame;
+                        return {
+                            move: function (spot, onAbort) {
+                                var slide = spot.xDistance(startSpot);
+                                if (slide > 0) {
+                                    return;
+                                }
+                                var newAge = Math.abs(slide / leftSlideRange);
+                                if (moveFrame) {
+                                    return;
+                                }
+                                moveFrame = window.requestAnimationFrame(function () {
+                                    if (!moveFrame) {
+                                        return;
+                                    }
+                                    moveFrame = 0;
+                                    setAge(newAge);
+                                });
+                            },
+                            release: function () {
+                                moveFrame = 0;
+                                if (age < leftTriggerAge) {
+                                    animateAge(0, null);
+                                }
+                                else {
+                                    animateAge(1, function () {
+                                        presenter.onResult("next");
+                                    });
+                                }
+                            },
+                            cancel: function () {
+                                moveFrame = 0;
+                                setAge(0);
+                            }
+                        };
+                    }
+                });
                 presenter.addPresentation({
                     end: function () {
                         zone.remove();

@@ -21,6 +21,7 @@ var UP_Y = 1;
 var UP_Z = 0;
 var showShadow = false;
 var redShadow = false;
+var useShadow = true;
 var FrameBuffer = (function () {
     function FrameBuffer(gl) {
         var framebuffer;
@@ -210,6 +211,7 @@ var Glyffin;
                 this.unsubscribeSpots();
             }
             var touch;
+            var touchStartTime;
             this.unsubscribeSpots = new Glyffin.SpotObservable(this.canvas).subscribe({
                 onStart: function (spot) {
                     var hits = Glyffin.Interactive.findHits(_this.interactives, spot.x, spot.y);
@@ -217,12 +219,20 @@ var Glyffin;
                         return false;
                     }
                     touch = hits[0].touchProvider.init(spot);
+                    if (!touch) {
+                        return false;
+                    }
+                    touchStartTime = Date.now();
                     return true;
                 },
                 onMove: function (spot) {
+                    var preMoveTime = Date.now();
+                    var moveResponseTime = preMoveTime - touchStartTime;
                     touch.move(spot, function () {
                         _this.beginGestures();
                     });
+                    var afterMove = Date.now();
+                    var moveRealizationTime = afterMove - preMoveTime;
                     return true;
                 },
                 onCancel: function () {
@@ -242,33 +252,39 @@ var Glyffin;
             }
             this.editCount++;
             requestAnimationFrame(function () {
-                _this.vertices.clearFreePatches();
-                var gl = _this.gl;
+                _this.redraw();
+            });
+        };
+        GlAudience.prototype.redraw = function () {
+            this.vertices.clearFreePatches();
+            var gl = this.gl;
+            if (useShadow) {
                 if (!showShadow) {
-                    gl.bindFramebuffer(gl.FRAMEBUFFER, _this.frameBuffer.framebuffer);
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer.framebuffer);
                     gl.viewport(0, 0, OFFSCREEN_WIDTH, OFFSCREEN_HEIGHT);
                 }
                 gl.clearColor(1.0, 1.0, 1.0, 1.0);
-                gl.clear(_this.gl.COLOR_BUFFER_BIT | _this.gl.DEPTH_BUFFER_BIT);
-                gl.useProgram(_this.shadowProgram.program);
-                _this.shadowProgram.enableVertexAttributes();
+                gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+                gl.useProgram(this.shadowProgram.program);
+                this.shadowProgram.enableVertexAttributes();
                 gl.frontFace(gl.CCW);
-                gl.drawArrays(_this.gl.TRIANGLES, 0, _this.vertices.getActiveVertexCount());
-                if (!showShadow) {
-                    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-                    gl.viewport(0, 0, _this.canvas.width, _this.canvas.height);
-                    gl.clearColor(0.0, 0.0, 0.0, 1.0);
-                    gl.clear(_this.gl.COLOR_BUFFER_BIT | _this.gl.DEPTH_BUFFER_BIT);
-                    gl.useProgram(_this.lightProgram.program);
-                    gl.uniform1i(_this.lightProgram.u_ShadowMap, 0);
-                    gl.uniformMatrix4fv(_this.lightProgram.u_MvpMatrixFromLight, false, _this.shadowProgram.mvpMatrix.elements);
-                    _this.lightProgram.enableVertexAttributes();
-                    gl.frontFace(gl.CW);
-                    gl.drawArrays(_this.gl.TRIANGLES, 0, _this.vertices.getActiveVertexCount());
-                }
-                _this.drawCount = _this.editCount;
-                console.log("Active %i, Free %i, TotalFreed %", _this.vertices.getActiveVertexCount(), _this.vertices.getFreeVertexCount(), _this.vertices.getTotalFreedVertices());
-            });
+                gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
+            }
+            if (!useShadow || !showShadow) {
+                gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+                gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+                gl.clearColor(0.0, 0.0, 0.0, 1.0);
+                gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+                gl.useProgram(this.lightProgram.program);
+                gl.uniform1i(this.lightProgram.u_ShadowMap, 0);
+                gl.uniformMatrix4fv(this.lightProgram.u_MvpMatrixFromLight, false, this.shadowProgram.mvpMatrix.elements);
+                this.lightProgram.enableVertexAttributes();
+                gl.frontFace(gl.CW);
+                gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
+            }
+            this.drawCount = this.editCount;
+            console.log("Active %i, Free %i, TotalFreed %", this.vertices.getActiveVertexCount(), this.vertices.getFreeVertexCount(), this.vertices.getTotalFreedVertices());
+            this.redrawTime = Date.now();
         };
         GlAudience.prototype.addPatch = function (bounds, color) {
             var _this = this;

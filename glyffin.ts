@@ -227,7 +227,7 @@ module Glyffin {
             this.onPresent(metrics, audience, presenter);
             return <Presentation>{
                 end() {
-                    while (presented.length > 0) {
+                    while (presented.length) {
                         presented.pop().end();
                     }
                 }
@@ -358,14 +358,15 @@ module Glyffin {
                 var perimeter = metrics.perimeter;
                 var rowHeight = perimeter.getHeight() / rows;
                 var colWidth = perimeter.getWidth() / columns;
-                spots.forEach(spot=> {
+                for (var i = 0, count = spots.length; i < count; i++) {
+                    var spot = spots[i];
                     var left = perimeter.left + colWidth * spot[0];
                     var top = perimeter.top + rowHeight * spot[1];
                     var spotPerimeter = new Perimeter(left, top, left + colWidth, top + rowHeight,
                         perimeter.age, perimeter.level);
                     presenter.addPresentation(upperGlyff.present(
                         metrics.withPerimeter(spotPerimeter), audience, presenter));
-                });
+                }
             });
         }
 
@@ -382,6 +383,15 @@ module Glyffin {
                 getUpperReaction(audience : Audience, presenter : Presenter<T>) : Reaction<T> {
                     return presenter;
                 }
+            });
+        }
+
+        move(x : number) : Glyff<T> {
+            return Glyff.create<T>((metrics : Metrics, audience : Audience,
+                                    presenter : Presenter<Void>)=> {
+                var perimeter = metrics.perimeter.translate(x);
+                presenter.addPresentation(this.present(metrics.withPerimeter(perimeter), audience,
+                    presenter));
             });
         }
 
@@ -405,6 +415,136 @@ module Glyffin {
                     }, ()=> {
                         presenter.onResult(symbol);
                     }));
+                presenter.addPresentation(<Presentation>{
+                    end: ()=> {
+                        zone.remove();
+                    }
+                });
+            });
+        }
+
+        pagen<U>(index : number, next : Glyff<U>, prev : Glyff<U>,
+                 pressed : Glyff<U>) : Glyff<string> {
+            return Glyff.create<string>((metrics : Metrics, audience : Audience,
+                                         presenter : Presenter<Void>)=> {
+                var perimeter = metrics.perimeter;
+                var unpressed = this;
+                var unpressedMetrics = metrics.withPerimeter(perimeter.withLevel(perimeter.level +
+                    4));
+
+                if (next) {
+                    presenter.addPresentation(next.present(metrics, audience,
+                        new NoResultPresenter(presenter)));
+                }
+
+                var leftSlideRange = perimeter.right;
+                var leftTriggerAge = (metrics.tapHeight * 2.5) / leftSlideRange;
+                var age = 0.0;
+                var center;
+
+                function setAge(newAge : number) {
+                    if (newAge < 0) {
+                        return;
+                    }
+                    age = newAge;
+                    console.log("Age:%f", age);
+                    var slide = -(newAge * leftSlideRange);
+                    if (center) {
+                        center.remove();
+                    }
+                    center =
+                        presenter.addPresentation(unpressed.move(slide).present(unpressedMetrics,
+                            audience));
+                }
+
+                var stopAnimation;
+
+                function animateAge(newAge : number, onEnd : ()=>void) {
+                    if (stopAnimation) {
+                        stopAnimation();
+                    }
+                    var startAge = age;
+                    var ageRange = newAge - startAge;
+                    var startTime = Date.now();
+                    var duration = 150;
+
+                    var frame;
+
+                    stopAnimation = ()=> {
+                        if (frame) {
+                            window.cancelAnimationFrame(frame);
+                            frame = 0;
+                        }
+                        stopAnimation = null;
+                    };
+
+                    function animate() {
+                        if (age == newAge) {
+                            stopAnimation = null;
+                            setTimeout(()=> {
+                                if (onEnd) {
+                                    onEnd();
+                                }
+                            }, 1);
+                            return;
+                        }
+                        frame = window.requestAnimationFrame(()=> {
+                            frame = 0;
+                            var elapsed = (Date.now() - startTime);
+                            var progress = (elapsed / duration);
+                            setAge(elapsed >= duration ? newAge : startAge + ageRange * progress);
+                            animate();
+                        });
+                    }
+
+                    // Animate only after initializing stopAnimation so that animate can set
+                    // it to null if needed.
+                    animate();
+                }
+
+                setAge(0);
+                var zone = audience.addZone(perimeter, {
+                    init(startSpot : Spot) : Gesturing {
+                        if (stopAnimation) {
+                            return null;
+                        }
+
+                        var moveFrame;
+                        return {
+                            move(spot : Spot, onAbort : ()=>void) {
+                                var slide = spot.xDistance(startSpot);
+                                if (slide > 0) {
+                                    return;
+                                }
+                                var newAge = Math.abs(slide / leftSlideRange);
+                                if (moveFrame) {
+                                    return;
+                                }
+                                moveFrame = window.requestAnimationFrame(()=> {
+                                    if (!moveFrame) {
+                                        return;
+                                    }
+                                    moveFrame = 0;
+                                    setAge(newAge);
+                                });
+                            },
+                            release() {
+                                moveFrame = 0;
+                                if (age < leftTriggerAge) {
+                                    animateAge(0, null);
+                                } else {
+                                    animateAge(1, ()=> {
+                                        presenter.onResult("next");
+                                    });
+                                }
+                            },
+                            cancel() {
+                                moveFrame = 0;
+                                setAge(0);
+                            }
+                        };
+                    }
+                });
                 presenter.addPresentation(<Presentation>{
                     end: ()=> {
                         zone.remove();

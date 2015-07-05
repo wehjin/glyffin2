@@ -30,6 +30,11 @@ module Glyffin {
             return new Perimeter(this.left, this.top, this.right, this.bottom, this.age, level);
         }
 
+        translate(x : number) : Perimeter {
+            return new Perimeter(this.left + x, this.top, this.right + x, this.bottom, this.age,
+                this.level);
+        }
+
         inset(pixelsX : number, pixelsY : number) : Perimeter {
             return new Perimeter(this.left + pixelsX, this.top + pixelsY, this.right - pixelsX,
                 this.bottom - pixelsY, this.age, this.level);
@@ -89,6 +94,7 @@ module Glyffin {
             return (width <= maxWidth) ? this :
                 this.rightFromLeft((width - maxWidth) * align, maxWidth);
         }
+
     }
 
     export class Color {
@@ -153,6 +159,10 @@ module Glyffin {
 
         gridDistance(other : Spot) : number {
             return Math.max(Math.abs(other.x - this.x), Math.abs(other.y - this.y));
+        }
+
+        xDistance(origin : Spot) : number {
+            return this.x - origin.x;
         }
     }
 

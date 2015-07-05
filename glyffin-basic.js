@@ -31,6 +31,9 @@ var Glyffin;
         Perimeter.prototype.withLevel = function (level) {
             return new Perimeter(this.left, this.top, this.right, this.bottom, this.age, level);
         };
+        Perimeter.prototype.translate = function (x) {
+            return new Perimeter(this.left + x, this.top, this.right + x, this.bottom, this.age, this.level);
+        };
         Perimeter.prototype.inset = function (pixelsX, pixelsY) {
             return new Perimeter(this.left + pixelsX, this.top + pixelsY, this.right - pixelsX, this.bottom - pixelsY, this.age, this.level);
         };
@@ -127,6 +130,9 @@ var Glyffin;
         }
         Spot.prototype.gridDistance = function (other) {
             return Math.max(Math.abs(other.x - this.x), Math.abs(other.y - this.y));
+        };
+        Spot.prototype.xDistance = function (origin) {
+            return this.x - origin.x;
         };
         return Spot;
     })();

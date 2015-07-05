@@ -27,65 +27,128 @@ module Glyffin {
         onCancel();
     }
 
-    export class SpotObservable {
+    class TouchEvents {
 
-        ontouchmove : (ev : Event)=>void;
-        ontouchcancel : (ev : Event)=>void;
-        ontouchend : (ev : Event)=>void;
+        private ontouchstart;
+        private ontouchend;
+        private ontouchcancel;
+        private ontouchmove;
+        private startTime;
+
 
         constructor(private element : HTMLElement) {
         }
 
-        private addTouchListeners(onMove : (ev : Event)=>void, onCancel : (ev : Event)=>void,
-                                  onEnd : (ev : Event)=>void) {
-            this.element.addEventListener("touchmove", this.ontouchmove = onMove, false);
-            this.element.addEventListener("touchcancel", this.ontouchcancel = onCancel, false);
-            this.element.addEventListener("touchend", this.ontouchcancel = onEnd, false);
+        public enable(onStart : (spot : Spot)=>boolean, onCancel : ()=>void, onEnd : ()=>void,
+                      onMove : (spot : Spot)=>void) {
+            var started = false;
+            this.element.addEventListener("touchstart", this.ontouchstart = (ev : Event) => {
+                ev.stopPropagation();
+                ev.preventDefault();
+                var touches = (<JsTouchEvent>ev).touches;
+                if (touches.length > 1) {
+                    return;
+                }
+                if (!onStart(this.getTouchSpot(touches))) {
+                    return;
+                }
+                started = true;
+                this.startTime = Date.now();
+            }, false);
+            this.element.addEventListener("touchcancel", this.ontouchcancel = (ev : Event)=> {
+                ev.stopPropagation();
+                ev.preventDefault();
+                if (!started) {
+                    return;
+                }
+                started = false;
+                onCancel();
+            }, false);
+            this.element.addEventListener("touchmove", this.ontouchmove = (ev : Event)=> {
+                ev.stopPropagation();
+                ev.preventDefault();
+                if (!started) {
+                    return;
+                }
+                var elapsed = Date.now() - this.startTime;
+                var touches = (<JsTouchEvent>ev).touches;
+                onMove(this.getTouchSpot(touches));
+            }, false);
+            this.element.addEventListener("touchend", this.ontouchend = (ev : Event)=> {
+                ev.stopPropagation();
+                ev.preventDefault();
+                if (!started) {
+                    return;
+                }
+                started = false;
+                onEnd();
+            }, false);
         }
 
-        private removeTouchListeners() {
+        public disable() {
             this.element.removeEventListener("touchmove", this.ontouchmove, false);
             this.element.removeEventListener("touchcancel", this.ontouchcancel, false);
             this.element.removeEventListener("touchend", this.ontouchend, false);
             this.ontouchcancel = this.ontouchmove = this.ontouchend = null;
         }
 
+        private getTouchSpot(touches : JsTouchList) : Spot {
+            var jsTouch = touches.item(0);
+            var canvasX = jsTouch.pageX - this.element.offsetLeft;
+            var canvasY = jsTouch.pageY - this.element.offsetTop;
+            return new Spot(canvasX, canvasY);
+        }
+    }
+
+    export class SpotObservable {
+
+        constructor(private element : HTMLElement) {
+        }
+
         subscribe(spotObserver : SpotObserver) : ()=>void {
+            var touchEvents = new TouchEvents(this.element);
+
             var started : boolean;
             var stop = ()=> {
-                this.removeTouchListeners();
                 this.element.onmouseout = this.element.onmousemove = this.element.onmouseup = null;
                 started = false;
             };
-            var ontouchstart : (ev : Event)=>void;
-            this.element.addEventListener("touchstart", ontouchstart = (ev : Event) => {
-                var touches = (<JsTouchEvent>ev).touches;
-                if (touches.length > 1) {
-                    if (started) {
-                        stop();
-                        spotObserver.onCancel();
-                    }
+            var unsubscribe = () => {
+                if (started) {
+                    stop();
+                }
+                this.element.onmousedown = null;
+                touchEvents.disable();
+            };
+
+            touchEvents.enable((spot : Spot) : boolean => {
+                stop();
+                var isStart = spotObserver.onStart(spot);
+                if (isStart) {
+                    started = true;
+                }
+                return isStart;
+            }, ()=> {
+                if (!started) {
                     return;
                 }
-                if (!spotObserver.onStart(this.getTouchSpot(touches))) {
+                stop();
+                spotObserver.onCancel();
+            }, ()=> {
+                if (!started) {
                     return;
                 }
-                started = true;
-                this.addTouchListeners((ev : Event) => {
-                    var carryOn = spotObserver.onMove(this.getTouchSpot((<JsTouchEvent>ev).touches));
-                    if (!carryOn) {
-                        stop();
-                    }
-                }, ()=> {
+                stop();
+                spotObserver.onEnd();
+            }, (spot : Spot)=> {
+                if (!started) {
+                    return;
+                }
+                var carryOn = spotObserver.onMove(spot);
+                if (!carryOn) {
                     stop();
-                    spotObserver.onCancel();
-                }, ()=> {
-                    stop();
-                    spotObserver.onEnd();
-                });
-                ev.stopPropagation();
-                ev.preventDefault();
-            }, false);
+                }
+            });
             this.element.onmousedown = (ev : MouseEvent)=> {
                 if (!spotObserver.onStart(this.getMouseSpot(ev))) {
                     return;
@@ -108,13 +171,7 @@ module Glyffin {
                 ev.stopPropagation();
                 ev.preventDefault();
             };
-            return () => {
-                if (started) {
-                    stop();
-                }
-                this.element.removeEventListener("touchstart", ontouchstart, false);
-                this.element.onmousedown = null;
-            }
+            return unsubscribe;
         }
 
         private
@@ -122,12 +179,5 @@ module Glyffin {
             return new Spot(ev.pageX - this.element.offsetLeft, ev.pageY - this.element.offsetTop);
         }
 
-        private
-        getTouchSpot(touches : JsTouchList) : Spot {
-            var jsTouch = touches.item(0);
-            var canvasX = jsTouch.pageX - this.element.offsetLeft;
-            var canvasY = jsTouch.pageY - this.element.offsetTop;
-            return new Spot(canvasX, canvasY);
-        }
     }
 }
