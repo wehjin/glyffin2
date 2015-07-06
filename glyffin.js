@@ -435,13 +435,13 @@ var Glyffin;
                                 if (moveFrame) {
                                     return;
                                 }
-                                moveFrame = window.requestAnimationFrame(function () {
+                                moveFrame = setTimeout(function () {
                                     if (!moveFrame) {
                                         return;
                                     }
                                     moveFrame = 0;
                                     setAge(targetAge);
-                                });
+                                }, 0);
                             },
                             release: function () {
                                 moveFrame = 0;

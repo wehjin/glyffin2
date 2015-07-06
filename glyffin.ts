@@ -521,13 +521,13 @@ module Glyffin {
                                 if (moveFrame) {
                                     return;
                                 }
-                                moveFrame = window.requestAnimationFrame(()=> {
+                                moveFrame = setTimeout(()=> {
                                     if (!moveFrame) {
                                         return;
                                     }
                                     moveFrame = 0;
                                     setAge(targetAge);
-                                });
+                                }, 0);
                             },
                             release() {
                                 moveFrame = 0;
