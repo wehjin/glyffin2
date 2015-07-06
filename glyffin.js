@@ -441,7 +441,7 @@ var Glyffin;
                                     }
                                     moveFrame = 0;
                                     setAge(targetAge);
-                                }, 0);
+                                }, 3);
                             },
                             release: function () {
                                 moveFrame = 0;
