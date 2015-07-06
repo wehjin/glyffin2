@@ -424,13 +424,14 @@ var Glyffin;
                             return null;
                         }
                         var moveFrame;
+                        var targetAge = age;
                         return {
                             move: function (spot, onAbort) {
                                 var slide = spot.xDistance(startSpot);
                                 if (slide > 0) {
                                     return;
                                 }
-                                var newAge = Math.abs(slide / leftSlideRange);
+                                targetAge = Math.abs(slide / leftSlideRange);
                                 if (moveFrame) {
                                     return;
                                 }
@@ -439,12 +440,12 @@ var Glyffin;
                                         return;
                                     }
                                     moveFrame = 0;
-                                    setAge(newAge);
+                                    setAge(targetAge);
                                 });
                             },
                             release: function () {
                                 moveFrame = 0;
-                                if (age < leftTriggerAge) {
+                                if (targetAge < leftTriggerAge) {
                                     animateAge(0, null);
                                 }
                                 else {
