@@ -363,7 +363,7 @@ var Glyffin;
                     presenter.addPresentation(next.present(metrics, audience, new NoResultPresenter(presenter)));
                 }
                 var leftSlideRange = perimeter.right;
-                var leftTriggerAge = (metrics.tapHeight * 2.5) / leftSlideRange;
+                var leftTriggerAge = (metrics.tapHeight * 1.5) / leftSlideRange;
                 var age = 0.0;
                 var center;
                 function setAge(newAge) {
