@@ -386,7 +386,7 @@ var Glyffin;
                     var startAge = age;
                     var ageRange = newAge - startAge;
                     var startTime = Date.now();
-                    var duration = 150;
+                    var duration = 300;
                     var frame;
                     stopAnimation = function () {
                         if (frame) {
