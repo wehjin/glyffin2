@@ -466,7 +466,7 @@ module Glyffin {
                     var startAge = age;
                     var ageRange = newAge - startAge;
                     var startTime = Date.now();
-                    var duration = 300;
+                    var duration = 100;
 
                     var frame;
 
