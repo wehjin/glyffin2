@@ -140,7 +140,7 @@ function main() {
 
             presentation = app.present(metrics, glAudience, (symbol)=> {
                 console.log("%s", symbol);
-                if (symbol === "go") {
+                if (symbol === "go" || symbol === "drill") {
                     var link = item['link'];
                     sessionStorage.setItem("visitedLink", link);
                     presentation.end();

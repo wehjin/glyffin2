@@ -358,7 +358,7 @@ var Glyffin;
             return Glyff.create(function (metrics, audience, presenter) {
                 var perimeter = metrics.perimeter;
                 var unpressed = _this;
-                var unpressedMetrics = metrics.withPerimeter(perimeter.withLevel(perimeter.level + 4));
+                var centerMetrics = metrics.withPerimeter(perimeter.withLevel(perimeter.level + 4));
                 if (next) {
                     presenter.addPresentation(next.present(metrics, audience, new NoResultPresenter(presenter)));
                 }
@@ -366,6 +366,12 @@ var Glyffin;
                 var leftTriggerAge = (metrics.tapHeight * 1.5) / leftSlideRange;
                 var age = 0.0;
                 var center;
+                function setCenter(glyff) {
+                    if (center) {
+                        center.remove();
+                    }
+                    center = presenter.addPresentation(glyff.present(centerMetrics, audience, new NoResultPresenter(presenter)));
+                }
                 function setAge(newAge) {
                     if (newAge < 0) {
                         return;
@@ -373,10 +379,7 @@ var Glyffin;
                     age = newAge;
                     console.log("Age:%f", age);
                     var slide = -(newAge * leftSlideRange);
-                    if (center) {
-                        center.remove();
-                    }
-                    center = presenter.addPresentation(unpressed.move(slide).present(unpressedMetrics, audience));
+                    setCenter(unpressed.move(slide));
                 }
                 var stopAnimation;
                 function animateAge(newAge, onEnd) {
@@ -423,10 +426,18 @@ var Glyffin;
                         if (stopAnimation) {
                             return null;
                         }
+                        var sliding = false;
                         var moveFrame;
                         var targetAge = age;
                         return {
                             move: function (spot, onAbort) {
+                                if (!sliding) {
+                                    var distance = spot.gridDistance(startSpot);
+                                    if (distance < metrics.tapHeight * .75) {
+                                        return;
+                                    }
+                                    sliding = true;
+                                }
                                 var slide = spot.xDistance(startSpot);
                                 if (slide > 0) {
                                     return;
@@ -444,19 +455,32 @@ var Glyffin;
                                 }, 3);
                             },
                             release: function () {
-                                moveFrame = 0;
-                                if (targetAge < leftTriggerAge) {
-                                    animateAge(0, null);
+                                if (sliding) {
+                                    moveFrame = 0;
+                                    if (targetAge < leftTriggerAge) {
+                                        animateAge(0, null);
+                                    }
+                                    else {
+                                        animateAge(1, function () {
+                                            presenter.onResult("next");
+                                        });
+                                    }
                                 }
                                 else {
-                                    animateAge(1, function () {
-                                        presenter.onResult("next");
-                                    });
+                                    setCenter(pressed);
+                                    setTimeout(function () {
+                                        setCenter(unpressed);
+                                        setTimeout(function () {
+                                            presenter.onResult("drill");
+                                        }, 100);
+                                    }, 100);
                                 }
                             },
                             cancel: function () {
-                                moveFrame = 0;
-                                setAge(0);
+                                if (sliding) {
+                                    moveFrame = 0;
+                                    setAge(0);
+                                }
                             }
                         };
                     }
