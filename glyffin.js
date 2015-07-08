@@ -447,7 +447,7 @@ var Glyffin;
                         frame = window.requestAnimationFrame(function () {
                             frame = 0;
                             var elapsed = (Date.now() - startTime);
-                            var progress = (elapsed / duration);
+                            var progress = (elapsed / duration) + .001; // Bias ensures we get there
                             setAge(elapsed >= duration ? newAge : startAge + ageRange * progress);
                             animate();
                         });
