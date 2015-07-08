@@ -359,27 +359,63 @@ var Glyffin;
                 var perimeter = metrics.perimeter;
                 var unpressed = _this;
                 var centerMetrics = metrics.withPerimeter(perimeter.withLevel(perimeter.level + 4));
-                if (next) {
-                    presenter.addPresentation(next.present(metrics, audience, new NoResultPresenter(presenter)));
-                }
-                var leftSlideRange = perimeter.right;
-                var leftTriggerAge = (metrics.tapHeight * 1.5) / leftSlideRange;
-                var age = 0.0;
-                var center;
+                var leftMetrics = metrics.withPerimeter(perimeter.withLevel(perimeter.level + 8));
+                var centerPresenter = new NoResultPresenter(presenter);
+                var rightPresenter = new NoResultPresenter(presenter);
+                var leftPresenter = new NoResultPresenter(presenter);
+                var slideRange = perimeter.right;
+                var centerAdded, rightAdded, leftAdded;
                 function setCenter(glyff) {
-                    if (center) {
-                        center.remove();
+                    if (centerAdded) {
+                        centerAdded.remove();
                     }
-                    center = presenter.addPresentation(glyff.present(centerMetrics, audience, new NoResultPresenter(presenter)));
+                    centerAdded = presenter.addPresentation(glyff.present(centerMetrics, audience, centerPresenter));
                 }
-                function setAge(newAge) {
-                    if (newAge < 0) {
-                        return;
+                var centerSlide;
+                function setCenterSlide(newSlide) {
+                    if (newSlide !== centerSlide) {
+                        centerSlide = newSlide;
+                        setCenter(newSlide === 0 ? unpressed : unpressed.move(newSlide));
                     }
+                }
+                function showRight(show) {
+                    if (show && !rightAdded && next) {
+                        rightAdded = presenter.addPresentation(next.present(metrics, audience, rightPresenter));
+                    }
+                    else if (!show && rightAdded) {
+                        rightAdded.remove();
+                        rightAdded = null;
+                    }
+                }
+                var leftSlide;
+                function setLeftSlide(newSlide) {
+                    if (newSlide <= -slideRange) {
+                        newSlide = -slideRange;
+                    }
+                    if (newSlide >= 0) {
+                        newSlide = 0;
+                    }
+                    if (newSlide !== leftSlide) {
+                        leftSlide = newSlide;
+                        setLeft((newSlide <= -slideRange || !prev) ? null : prev.move(newSlide));
+                    }
+                }
+                function setLeft(glyff) {
+                    if (leftAdded) {
+                        leftAdded.remove();
+                    }
+                    if (glyff) {
+                        leftAdded = presenter.addPresentation(glyff.present(leftMetrics, audience, leftPresenter));
+                    }
+                }
+                var triggerAge = (metrics.tapHeight * 1.5) / slideRange;
+                var age = 0.0;
+                function setAge(newAge) {
+                    setCenterSlide(newAge <= 0 ? 0 : (newAge * -slideRange));
+                    showRight(newAge > 0);
+                    setLeftSlide(newAge >= 0 ? -slideRange : (newAge + 1) * -slideRange);
                     age = newAge;
                     console.log("Age:%f", age);
-                    var slide = -(newAge * leftSlideRange);
-                    setCenter(unpressed.move(slide));
                 }
                 var stopAnimation;
                 function animateAge(newAge, onEnd) {
@@ -432,17 +468,14 @@ var Glyffin;
                         return {
                             move: function (spot, onAbort) {
                                 if (!sliding) {
-                                    var distance = spot.gridDistance(startSpot);
-                                    if (distance < metrics.tapHeight * .75) {
+                                    var gridDelta = spot.gridDistance(startSpot);
+                                    if (gridDelta < metrics.tapHeight * .75) {
                                         return;
                                     }
                                     sliding = true;
                                 }
-                                var slide = spot.xDistance(startSpot);
-                                if (slide > 0) {
-                                    return;
-                                }
-                                targetAge = Math.abs(slide / leftSlideRange);
+                                var xDelta = spot.xDistance(startSpot);
+                                targetAge = -xDelta / slideRange;
                                 if (moveFrame) {
                                     return;
                                 }
@@ -457,12 +490,17 @@ var Glyffin;
                             release: function () {
                                 if (sliding) {
                                     moveFrame = 0;
-                                    if (targetAge < leftTriggerAge) {
+                                    if (Math.abs(targetAge) < triggerAge) {
                                         animateAge(0, null);
                                     }
-                                    else {
+                                    else if (targetAge > 0) {
                                         animateAge(1, function () {
                                             presenter.onResult("next");
+                                        });
+                                    }
+                                    else {
+                                        animateAge(-1, function () {
+                                            presenter.onResult("back");
                                         });
                                     }
                                 }

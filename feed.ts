@@ -92,12 +92,17 @@ function main() {
                     item['title'], item['link']);
             }
 
+            function getLeftCell(item) : Glyff<Void> {
+                return getCell(Glyffin.colorPath(midgroundColorPath, -.1, backgroundColorPath),
+                    item['title'], item['link']);
+            }
+
             var itemIndex = (index % items.length);
             var item = items[itemIndex];
             var nextItem = items[(itemIndex + 1) % items.length];
             var prevItem = items[getPreviousItemIndex(itemIndex)];
             var cell = getUnpressedCell(item).pagen(itemIndex,
-                getRightCell(nextItem), getUnpressedCell(prevItem),
+                getRightCell(nextItem), getLeftCell(prevItem),
                 getCell(pressedBackground, item['title'], item['link']));
 
             function button(label : string, symbol : string) : Glyff<string> {

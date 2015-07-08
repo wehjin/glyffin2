@@ -123,7 +123,7 @@ module Glyffin {
         }
 
         private static mixComponent(mix : number, start : number, end : number) : number {
-            return start + (end - start) * mix;
+            return Math.min(1.0, Math.max(0.0, start + (end - start) * mix));
         }
 
         mix(mix : number, endColor : Color) : Color {

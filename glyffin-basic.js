@@ -94,7 +94,7 @@ var Glyffin;
             return array;
         };
         Color.mixComponent = function (mix, start, end) {
-            return start + (end - start) * mix;
+            return Math.min(1.0, Math.max(0.0, start + (end - start) * mix));
         };
         Color.prototype.mix = function (mix, endColor) {
             return new Color(Color.mixComponent(mix, this.red, endColor.red), Color.mixComponent(mix, this.green, endColor.green), Color.mixComponent(mix, this.blue, endColor.blue), Color.mixComponent(mix, this.alpha, endColor.alpha));

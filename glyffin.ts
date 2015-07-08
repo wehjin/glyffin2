@@ -431,34 +431,77 @@ module Glyffin {
                 var unpressed = this;
                 var centerMetrics = metrics.withPerimeter(perimeter.withLevel(perimeter.level +
                     4));
+                var leftMetrics = metrics.withPerimeter(perimeter.withLevel(perimeter.level +
+                    8));
+                var centerPresenter = new NoResultPresenter(presenter);
+                var rightPresenter = new NoResultPresenter(presenter);
+                var leftPresenter = new NoResultPresenter(presenter);
 
-                if (next) {
-                    presenter.addPresentation(next.present(metrics, audience,
-                        new NoResultPresenter(presenter)));
-                }
-
-                var leftSlideRange = perimeter.right;
-                var leftTriggerAge = (metrics.tapHeight * 1.5) / leftSlideRange;
-                var age = 0.0;
-                var center;
+                var slideRange = perimeter.right;
+                var centerAdded : Removable, rightAdded : Removable, leftAdded : Removable;
 
                 function setCenter(glyff : Glyff<Void>) {
-                    if (center) {
-                        center.remove();
+                    if (centerAdded) {
+                        centerAdded.remove();
                     }
-                    center =
+                    centerAdded =
                         presenter.addPresentation(glyff.present(centerMetrics, audience,
-                            new NoResultPresenter(presenter)));
+                            centerPresenter));
                 }
 
-                function setAge(newAge : number) {
-                    if (newAge < 0) {
-                        return;
+                var centerSlide : number;
+
+                function setCenterSlide(newSlide : number) {
+                    if (newSlide !== centerSlide) {
+                        centerSlide = newSlide;
+                        setCenter(newSlide === 0 ? unpressed : unpressed.move(newSlide));
                     }
+                }
+
+                function showRight(show : boolean) {
+                    if (show && !rightAdded && next) {
+                        rightAdded = presenter.addPresentation(next.present(metrics, audience,
+                            rightPresenter));
+                    } else if (!show && rightAdded) {
+                        rightAdded.remove();
+                        rightAdded = null;
+                    }
+                }
+
+                var leftSlide : number;
+
+                function setLeftSlide(newSlide : number) {
+                    if (newSlide <= -slideRange) {
+                        newSlide = -slideRange;
+                    }
+                    if (newSlide >= 0) {
+                        newSlide = 0;
+                    }
+                    if (newSlide !== leftSlide) {
+                        leftSlide = newSlide;
+                        setLeft((newSlide <= -slideRange || !prev) ? null : prev.move(newSlide));
+                    }
+                }
+
+                function setLeft(glyff : Glyff<Void>) {
+                    if (leftAdded) {
+                        leftAdded.remove();
+                    }
+                    if (glyff) {
+                        leftAdded = presenter.addPresentation(glyff.present(leftMetrics, audience,
+                            leftPresenter));
+                    }
+                }
+
+                var triggerAge = (metrics.tapHeight * 1.5) / slideRange;
+                var age = 0.0;
+
+                function setAge(newAge : number) {
+                    setCenterSlide(newAge <= 0 ? 0 : (newAge * -slideRange));
+                    showRight(newAge > 0);
+                    setLeftSlide(newAge >= 0 ? -slideRange : (newAge + 1) * -slideRange);
                     age = newAge;
                     console.log("Age:%f", age);
-                    var slide = -(newAge * leftSlideRange);
-                    setCenter(unpressed.move(slide));
                 }
 
                 var stopAnimation;
@@ -519,17 +562,14 @@ module Glyffin {
                         return {
                             move(spot : Spot, onAbort : ()=>void) {
                                 if (!sliding) {
-                                    var distance = spot.gridDistance(startSpot);
-                                    if (distance < metrics.tapHeight * .75) {
+                                    var gridDelta = spot.gridDistance(startSpot);
+                                    if (gridDelta < metrics.tapHeight * .75) {
                                         return;
                                     }
                                     sliding = true;
                                 }
-                                var slide = spot.xDistance(startSpot);
-                                if (slide > 0) {
-                                    return;
-                                }
-                                targetAge = Math.abs(slide / leftSlideRange);
+                                var xDelta = spot.xDistance(startSpot);
+                                targetAge = -xDelta / slideRange;
                                 if (moveFrame) {
                                     return;
                                 }
@@ -544,11 +584,15 @@ module Glyffin {
                             release() {
                                 if (sliding) {
                                     moveFrame = 0;
-                                    if (targetAge < leftTriggerAge) {
+                                    if (Math.abs(targetAge) < triggerAge) {
                                         animateAge(0, null);
-                                    } else {
+                                    } else if (targetAge > 0) {
                                         animateAge(1, ()=> {
                                             presenter.onResult("next");
+                                        });
+                                    } else {
+                                        animateAge(-1, ()=> {
+                                            presenter.onResult("back");
                                         });
                                     }
                                 } else {
