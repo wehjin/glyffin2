@@ -569,7 +569,7 @@ module Glyffin {
                                     sliding = true;
                                 }
                                 var xDelta = spot.xDistance(startSpot);
-                                targetAge = -xDelta / slideRange;
+                                targetAge = -xDelta / slideRange * 1.2;
                                 if (moveFrame) {
                                     return;
                                 }
