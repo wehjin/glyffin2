@@ -17,6 +17,8 @@ function getPreviousIndex(index, count) {
     return index == 0 ? (count - 1) : (index - 1);
 }
 
+// TODO Add last page with refresh button.
+
 function main() {
     /*
      document.addEventListener('touchmove', function (e) {
@@ -140,6 +142,7 @@ function main() {
             var spinner = Glyff.colorAnimation(Color.BLUE, Color.RED)
                 .pulseAnimate(1000, 50)
                 .limitHeight(spinnerSize, .5).limitWidth(spinnerSize, .5);
+            // TODO: Design better spinner.
             // TODO: Disable app during transition.
             var transition = app.addNearMajor(10, spinner);
 

@@ -13,6 +13,7 @@ var Color = Glyffin.Color;
 function getPreviousIndex(index, count) {
     return index == 0 ? (count - 1) : (index - 1);
 }
+// TODO Add last page with refresh button.
 function main() {
     /*
      document.addEventListener('touchmove', function (e) {
@@ -96,6 +97,7 @@ function main() {
             var app = Glyffin.colorPath(backgroundColorPath).addNearMajor(1, cell.splitHeightRetain(-tapHeight * 3, Glyffin.ClearGlyff));
             var spinnerSize = tapHeight * 3;
             var spinner = Glyff.colorAnimation(Color.BLUE, Color.RED).pulseAnimate(1000, 50).limitHeight(spinnerSize, .5).limitWidth(spinnerSize, .5);
+            // TODO: Design better spinner.
             // TODO: Disable app during transition.
             var transition = app.addNearMajor(10, spinner);
             presentation = app.present(metrics, glAudience, function (symbol) {
