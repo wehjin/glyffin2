@@ -134,7 +134,7 @@ function main() {
                 .limitHeight(2 * tapHeight, 0);
 
             var app = Glyffin.colorPath(backgroundColorPath)
-                .addNearMajor(1, cell.splitHeightCombine(-tapHeight * 3, actionBar));
+                .addNearMajor(1, cell.splitHeightRetain(-tapHeight * 3, Glyffin.ClearGlyff));
 
             var spinnerSize = tapHeight * 3;
             var spinner = Glyff.colorAnimation(Color.BLUE, Color.RED)

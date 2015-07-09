@@ -93,7 +93,7 @@ function main() {
             var nextButton = button("Next", "next");
             var prevButton = button("Back", "back");
             var actionBar = nextButton.splitWidthCombine(readSize / 2, Glyffin.ClearGlyff).splitWidthCombine(screenWidth * .3, prevButton).pad(readSize, tapHeight / 2).limitHeight(2 * tapHeight, 0);
-            var app = Glyffin.colorPath(backgroundColorPath).addNearMajor(1, cell.splitHeightCombine(-tapHeight * 3, actionBar));
+            var app = Glyffin.colorPath(backgroundColorPath).addNearMajor(1, cell.splitHeightRetain(-tapHeight * 3, Glyffin.ClearGlyff));
             var spinnerSize = tapHeight * 3;
             var spinner = Glyff.colorAnimation(Color.BLUE, Color.RED).pulseAnimate(1000, 50).limitHeight(spinnerSize, .5).limitWidth(spinnerSize, .5);
             // TODO: Disable app during transition.
