@@ -286,7 +286,7 @@ module Glyffin {
             });
         }
 
-        splitHeightRetain<U>(size : number, topGlyff : Glyff<U>) : Glyff<U> {
+        splitHeightYield<U>(size : number, topGlyff : Glyff<U>) : Glyff<U> {
             return Glyff.create((metrics : Metrics, audience : Audience,
                                  presenter : Presenter<U>) => {
                 var split = metrics.perimeter.splitHeight(size);
@@ -297,7 +297,7 @@ module Glyffin {
             });
         }
 
-        splitHeightYield<U>(size : number, addGlyff : Glyff<U>) : Glyff<T> {
+        splitHeightRetain<U>(size : number, addGlyff : Glyff<U>) : Glyff<T> {
             return Glyff.create((metrics : Metrics, audience : Audience,
                                  presenter : Presenter<T>) => {
                 var split = metrics.perimeter.splitHeight(size);

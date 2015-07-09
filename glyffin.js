@@ -239,7 +239,7 @@ var Glyffin;
                 presenter.addPresentation(_this.present(metrics.withPerimeter(split[1]), audience, presenter));
             });
         };
-        Glyff.prototype.splitHeightRetain = function (size, topGlyff) {
+        Glyff.prototype.splitHeightYield = function (size, topGlyff) {
             var _this = this;
             return Glyff.create(function (metrics, audience, presenter) {
                 var split = metrics.perimeter.splitHeight(size);
@@ -247,7 +247,7 @@ var Glyffin;
                 presenter.addPresentation(_this.present(metrics.withPerimeter(split[1]), audience, new NoResultPresenter(presenter)));
             });
         };
-        Glyff.prototype.splitHeightYield = function (size, addGlyff) {
+        Glyff.prototype.splitHeightRetain = function (size, addGlyff) {
             var _this = this;
             return Glyff.create(function (metrics, audience, presenter) {
                 var split = metrics.perimeter.splitHeight(size);
