@@ -415,17 +415,25 @@ var Glyffin;
                     showRight(newAge > 0);
                     setLeftSlide(newAge >= 0 ? -slideRange : (newAge + 1) * -slideRange);
                     age = newAge;
-                    console.log("Age:%f", age);
                 }
                 var stopAnimation;
-                function animateAge(newAge, onEnd) {
+                function animateAge(newAge, ageVelocity, onEnd) {
                     if (stopAnimation) {
                         stopAnimation();
                     }
                     var startAge = age;
                     var ageRange = newAge - startAge;
                     var startTime = Date.now();
-                    var duration = 100;
+                    var duration = 200;
+                    if (ageVelocity * ageRange > 0) {
+                        // Velocity and range are in same direction and both non-zero.
+                        // Continue to see if we should shorten the duration.
+                        var minVelocity = ageRange / duration;
+                        if (ageVelocity / minVelocity > 1) {
+                            // Moving faster than minimum.  Get new duration.
+                            duration = ageRange / ageVelocity;
+                        }
+                    }
                     var frame;
                     stopAnimation = function () {
                         if (frame) {
@@ -465,8 +473,10 @@ var Glyffin;
                         var sliding = false;
                         var moveFrame;
                         var targetAge = age;
+                        var speedometer = new Glyffin.SpeedometerX(startSpot);
                         return {
                             move: function (spot, onAbort) {
+                                speedometer.addSpot(spot);
                                 if (!sliding) {
                                     var gridDelta = spot.gridDistance(startSpot);
                                     if (gridDelta < metrics.tapHeight * .75) {
@@ -490,16 +500,17 @@ var Glyffin;
                             release: function () {
                                 if (sliding) {
                                     moveFrame = 0;
+                                    var ageVelocity = -speedometer.getVelocity() / slideRange;
                                     if (Math.abs(targetAge) < triggerAge) {
-                                        animateAge(0, null);
+                                        animateAge(0, ageVelocity, null);
                                     }
                                     else if (targetAge > 0) {
-                                        animateAge(1, function () {
+                                        animateAge(1, ageVelocity, function () {
                                             presenter.onResult("next");
                                         });
                                     }
                                     else {
-                                        animateAge(-1, function () {
+                                        animateAge(-1, ageVelocity, function () {
                                             presenter.onResult("back");
                                         });
                                     }

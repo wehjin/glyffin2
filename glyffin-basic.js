@@ -172,5 +172,65 @@ var Glyffin;
         return Insertion;
     })();
     Glyffin.Insertion = Insertion;
+    var SpeedometerX = (function () {
+        function SpeedometerX(spot) {
+            this.spots = [null, null, null];
+            this.times = [0, 0, 0];
+            this.count = 0;
+            this.addSpot(spot);
+        }
+        SpeedometerX.prototype.addSpot = function (spot) {
+            var count = this.count;
+            var spots = this.spots;
+            var times = this.times;
+            var time = Date.now();
+            if (count > 0 && time <= times[count - 1]) {
+                count = count - 1;
+            }
+            if (count >= 3) {
+                spots[0] = spots[1];
+                times[0] = times[1];
+                spots[1] = spots[2];
+                times[1] = times[2];
+                count = 2;
+            }
+            spots[count] = spot;
+            times[count] = time;
+            this.count = count + 1;
+        };
+        SpeedometerX.prototype.getVelocity = function () {
+            switch (this.count) {
+                case 3:
+                    return this.getVelocity2();
+                case 2:
+                    return this.getVelocity1();
+                default:
+                    return 0;
+            }
+        };
+        SpeedometerX.prototype.getCount = function () {
+            return this.count;
+        };
+        SpeedometerX.prototype.getVelocity1 = function () {
+            var duration = this.times[1] - this.times[0];
+            var distance = this.spots[1].xDistance(this.spots[0]);
+            if (duration > 100) {
+                // Last mark was fresh move.  We don't have a hard duration so approximate;
+                return distance / 50;
+            }
+            return distance / duration;
+        };
+        SpeedometerX.prototype.getVelocity2 = function () {
+            var duration2 = this.times[2] - this.times[1];
+            var distance2 = this.spots[2].xDistance(this.spots[1]);
+            if (duration2 > 100) {
+                // Last mark was fresh move.  We don't have a hard duration so approximate;
+                return distance2 / 50;
+            }
+            return (this.getVelocity1() + distance2 / duration2) / 2;
+        };
+        return SpeedometerX;
+    })();
+    Glyffin.SpeedometerX = SpeedometerX;
 })(Glyffin || (Glyffin = {}));
 //# sourceMappingURL=glyffin-basic.js.map

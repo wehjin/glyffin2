@@ -244,4 +244,69 @@ module Glyffin {
         constructor(public amount : number, public glyff : Glyff<T>) {
         }
     }
+
+    export class SpeedometerX {
+        private spots : Spot[] = [null, null, null];
+        private times : number[] = [0, 0, 0];
+        private count : number = 0;
+
+        constructor(spot : Spot) {
+            this.addSpot(spot);
+        }
+
+        addSpot(spot : Spot) {
+            var count = this.count;
+            var spots = this.spots;
+            var times = this.times;
+            var time = Date.now();
+            if (count > 0 && time <= times[count - 1]) {
+                count = count - 1;
+            }
+            if (count >= 3) {
+                spots[0] = spots[1];
+                times[0] = times[1];
+                spots[1] = spots[2];
+                times[1] = times[2];
+                count = 2;
+            }
+            spots[count] = spot;
+            times[count] = time;
+            this.count = count + 1;
+        }
+
+        getVelocity() : number {
+            switch (this.count) {
+                case 3:
+                    return this.getVelocity2();
+                case 2:
+                    return this.getVelocity1();
+                default:
+                    return 0;
+            }
+        }
+
+        getCount() : number {
+            return this.count;
+        }
+
+        private getVelocity1() : number {
+            var duration = this.times[1] - this.times[0];
+            var distance = this.spots[1].xDistance(this.spots[0]);
+            if (duration > 100) {
+                // Last mark was fresh move.  We don't have a hard duration so approximate;
+                return distance / 50;
+            }
+            return distance / duration;
+        }
+
+        private getVelocity2() : number {
+            var duration2 = this.times[2] - this.times[1];
+            var distance2 = this.spots[2].xDistance(this.spots[1]);
+            if (duration2 > 100) {
+                // Last mark was fresh move.  We don't have a hard duration so approximate;
+                return distance2 / 50;
+            }
+            return (this.getVelocity1() + distance2 / duration2) / 2;
+        }
+    }
 }

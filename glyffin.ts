@@ -501,19 +501,28 @@ module Glyffin {
                     showRight(newAge > 0);
                     setLeftSlide(newAge >= 0 ? -slideRange : (newAge + 1) * -slideRange);
                     age = newAge;
-                    console.log("Age:%f", age);
                 }
 
                 var stopAnimation;
 
-                function animateAge(newAge : number, onEnd : ()=>void) {
+                function animateAge(newAge : number, ageVelocity : number, onEnd : ()=>void) {
                     if (stopAnimation) {
                         stopAnimation();
                     }
                     var startAge = age;
                     var ageRange = newAge - startAge;
                     var startTime = Date.now();
-                    var duration = 100;
+
+                    var duration = 200;
+                    if (ageVelocity * ageRange > 0) {
+                        // Velocity and range are in same direction and both non-zero.
+                        // Continue to see if we should shorten the duration.
+                        var minVelocity = ageRange / duration;
+                        if (ageVelocity / minVelocity > 1) {
+                            // Moving faster than minimum.  Get new duration.
+                            duration = ageRange / ageVelocity;
+                        }
+                    }
 
                     var frame;
 
@@ -559,8 +568,10 @@ module Glyffin {
                         var sliding = false;
                         var moveFrame;
                         var targetAge = age;
+                        var speedometer = new SpeedometerX(startSpot);
                         return {
                             move(spot : Spot, onAbort : ()=>void) {
+                                speedometer.addSpot(spot);
                                 if (!sliding) {
                                     var gridDelta = spot.gridDistance(startSpot);
                                     if (gridDelta < metrics.tapHeight * .75) {
@@ -584,14 +595,15 @@ module Glyffin {
                             release() {
                                 if (sliding) {
                                     moveFrame = 0;
+                                    var ageVelocity = -speedometer.getVelocity() / slideRange;
                                     if (Math.abs(targetAge) < triggerAge) {
-                                        animateAge(0, null);
+                                        animateAge(0, ageVelocity, null);
                                     } else if (targetAge > 0) {
-                                        animateAge(1, ()=> {
+                                        animateAge(1, ageVelocity, ()=> {
                                             presenter.onResult("next");
                                         });
                                     } else {
-                                        animateAge(-1, ()=> {
+                                        animateAge(-1, ageVelocity, ()=> {
                                             presenter.onResult("back");
                                         });
                                     }

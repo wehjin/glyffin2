@@ -436,9 +436,11 @@ module Glyffin {
             }
 
             this.drawCount = this.editCount;
+            /*
             console.log("Active %i, Free %i, TotalFreed %",
                 this.vertices.getActiveVertexCount(),
                 this.vertices.getFreeVertexCount(), this.vertices.getTotalFreedVertices());
+             */
 
             this.redrawTime = Date.now();
         }
