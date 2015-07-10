@@ -245,6 +245,9 @@ module Glyffin {
         }
     }
 
+    var maxDuration = 50;
+    var approximateDuration = maxDuration / 2;
+
     export class SpeedometerX {
         private spots : Spot[] = [null, null, null];
         private times : number[] = [0, 0, 0];
@@ -292,9 +295,9 @@ module Glyffin {
         private getVelocity1() : number {
             var duration = this.times[1] - this.times[0];
             var distance = this.spots[1].xDistance(this.spots[0]);
-            if (duration > 100) {
+            if (duration > maxDuration) {
                 // Last mark was fresh move.  We don't have a hard duration so approximate;
-                return distance / 50;
+                return distance / approximateDuration;
             }
             return distance / duration;
         }
@@ -302,9 +305,9 @@ module Glyffin {
         private getVelocity2() : number {
             var duration2 = this.times[2] - this.times[1];
             var distance2 = this.spots[2].xDistance(this.spots[1]);
-            if (duration2 > 100) {
+            if (duration2 > maxDuration) {
                 // Last mark was fresh move.  We don't have a hard duration so approximate;
-                return distance2 / 50;
+                return distance2 / approximateDuration;
             }
             return (this.getVelocity1() + distance2 / duration2) / 2;
         }
