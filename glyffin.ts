@@ -27,6 +27,12 @@ module Glyffin {
         }
     }
 
+    export class Insertion<T> {
+
+        constructor(public amount : number, public glyff : Glyff<T>) {
+        }
+    }
+
     class ClickGesturing implements Gesturing {
 
         private isEnded : boolean = false;

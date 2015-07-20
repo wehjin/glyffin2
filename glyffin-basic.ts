@@ -1,7 +1,6 @@
 /**
  * Created by wehjin on 5/24/15.
  */
-/// <reference path="glyffin.ts" />
 
 module Glyffin {
 
@@ -237,12 +236,6 @@ module Glyffin {
         getMetrics(metrics : Metrics, presenter : Presenter<U>): Metrics;
         getUpperAudience(audience : Audience, presenter : Presenter<U>): Audience;
         getUpperReaction(audience : Audience, presenter : Presenter<U>): Reaction<T>;
-    }
-
-    export class Insertion<T> {
-
-        constructor(public amount : number, public glyff : Glyff<T>) {
-        }
     }
 
     var maxDuration = 50;

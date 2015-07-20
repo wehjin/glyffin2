@@ -1,7 +1,6 @@
 /**
  * Created by wehjin on 5/24/15.
  */
-/// <reference path="glyffin.ts" />
 var Glyffin;
 (function (Glyffin) {
     var Void = (function () {
@@ -164,14 +163,6 @@ var Glyffin;
     };
     Glyffin.EMPTY_PATCH = Glyffin.EMPTY_REMOVABLE;
     Glyffin.EMPTY_ACTIVE = Glyffin.EMPTY_REMOVABLE;
-    var Insertion = (function () {
-        function Insertion(amount, glyff) {
-            this.amount = amount;
-            this.glyff = glyff;
-        }
-        return Insertion;
-    })();
-    Glyffin.Insertion = Insertion;
     var maxDuration = 50;
     var approximateDuration = maxDuration / 2;
     var SpeedometerX = (function () {

@@ -20,6 +20,14 @@ var Glyffin;
         };
         return NoResultPresenter;
     })();
+    var Insertion = (function () {
+        function Insertion(amount, glyff) {
+            this.amount = amount;
+            this.glyff = glyff;
+        }
+        return Insertion;
+    })();
+    Glyffin.Insertion = Insertion;
     var ClickGesturing = (function () {
         function ClickGesturing(startSpot, threshold, onPress, onUnpress, onClick) {
             var _this = this;
