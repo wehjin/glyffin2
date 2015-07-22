@@ -104,8 +104,11 @@ module Glyffin {
         public static WHITE = new Color(1, 1, 1, 1);
         public static BLACK = new Color(0, 0, 0, 1);
         public static RED = new Color(1, 0, 0, 1);
+        public static YELLOW = new Color(.5, .5, 0, 1);
         public static GREEN = new Color(0, 1, 0, 1);
+        public static CYAN = new Color(0, .5, .5, 1);
         public static BLUE = new Color(0, 0, 1, 1);
+        public static MAGENTA = new Color(.5, 0, .5, 1);
         public static BEIGE = new Color(245 / 255, 245 / 255, 220 / 255, 1);
 
         public static get(red : number, green : number, blue : number, alpha : number) : Color {
