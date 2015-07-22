@@ -38,14 +38,14 @@ var Glyffin;
         }
         return letterWeights + spaceWeights;
     }
-    function asciiByCode(code) {
+    function asciiByCode(code, base) {
         code = getAsciiCode(code);
         var spots = code >= ascii_spots.length ? no_spots : ascii_spots[code];
         var xWeight = getCharXWeight(code);
-        return Glyffin.BeigeGlyff.kaleid(xWeight, 7, spots);
+        return (base ? base : Glyffin.BeigeGlyff).kaleid(xWeight, 7, spots);
     }
     Glyffin.asciiByCode = asciiByCode;
-    function asciiMultiLine(lines, paragraph) {
+    function asciiMultiLine(lines, paragraph, base) {
         return Glyffin.Glyff.create(function (metrics, audience, presenter) {
             var perimeter = metrics.perimeter;
             var linesAndLeadings = (lines * 2 - 1);
@@ -84,24 +84,24 @@ var Glyffin;
             var lineNumber = 0;
             lineContents.forEach(function (lineContent) {
                 var lineMetrics = metrics.withPerimeter(perimeter.downFromTop(lineNumber * lineHeight, ascentPixels));
-                presenter.addPresentation(asciiEntireWord(lineContent.text).present(lineMetrics, audience, presenter));
+                presenter.addPresentation(asciiEntireWord(lineContent.text, base).present(lineMetrics, audience, presenter));
                 lineNumber++;
             });
         });
     }
     Glyffin.asciiMultiLine = asciiMultiLine;
-    function asciiEntireWord(word) {
+    function asciiEntireWord(word, base) {
         var wordXWeight = getWordXWeight(word);
         return Glyffin.Glyff.create(function (metrics, audience, presenter) {
             var perimeter = metrics.perimeter;
             var wordXWeightPixels = perimeter.getWidth() / wordXWeight;
             var preferredWeightPixels = perimeter.getHeight() / 7;
             var fittedWeightPixels = Math.min(preferredWeightPixels, wordXWeightPixels);
-            presenter.addPresentation(asciiWord(word, fittedWeightPixels).present(metrics, audience, presenter));
+            presenter.addPresentation(asciiWord(word, fittedWeightPixels, base).present(metrics, audience, presenter));
         });
     }
     Glyffin.asciiEntireWord = asciiEntireWord;
-    function asciiWord(word, xWeightPixels) {
+    function asciiWord(word, xWeightPixels, base) {
         var insertions = [];
         for (var i = 0; i < word.length; i++) {
             var code = word.charCodeAt(i);
@@ -109,13 +109,13 @@ var Glyffin;
             if (i > 0) {
                 insertions.push(new Glyffin.Insertion(xWeightPixels, Glyffin.ClearGlyff));
             }
-            insertions.push(new Glyffin.Insertion(charWidth, Glyffin.asciiByCode(code)));
+            insertions.push(new Glyffin.Insertion(charWidth, Glyffin.asciiByCode(code, base)));
         }
         return Glyffin.ClearGlyff.addLefts(insertions);
     }
     Glyffin.asciiWord = asciiWord;
-    function asciiChar(ch) {
-        return asciiByCode(ch.charCodeAt(0));
+    function asciiChar(ch, base) {
+        return asciiByCode(ch.charCodeAt(0), base);
     }
     Glyffin.asciiChar = asciiChar;
     var no_spots = [];

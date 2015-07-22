@@ -55,9 +55,10 @@ function main() {
             var tapHeight = metrics.tapHeight;
             var readSize = metrics.readHeight;
             var textSize = readSize * 1.2;
+            var textBase = Glyff.color(Color.CYAN);
             function getCell(background, text, subtext) {
                 function addTitle(background) {
-                    return background.addNearMajor(0.5, Glyffin.asciiMultiLine(2, text).splitHeightYield(-textSize, Glyffin.ClearGlyff).splitHeightYield(-textSize, Glyffin.asciiEntireWord(subtext)).pad(readSize * 2, readSize * 2).limitHeight(readSize * 4 + textSize * 5, .4));
+                    return background.addNearMajor(0.5, Glyffin.asciiMultiLine(2, text).splitHeightYield(-textSize, Glyffin.ClearGlyff).splitHeightYield(-textSize, Glyffin.asciiEntireWord(subtext, textBase)).pad(readSize * 2, readSize * 2).limitHeight(readSize * 4 + textSize * 5, .4));
                 }
                 return background.rebuild(addTitle);
             }
