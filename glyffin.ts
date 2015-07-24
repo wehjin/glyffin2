@@ -587,6 +587,9 @@ module Glyffin {
                                 }
                                 var xDelta = spot.xDistance(startSpot);
                                 targetAge = -xDelta / slideRange * 1.2;
+                                if ((targetAge < 0 && !prev) || (targetAge > 0 && !next)) {
+                                    targetAge = 0;
+                                }
                                 if (moveFrame) {
                                     return;
                                 }
