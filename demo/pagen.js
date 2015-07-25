@@ -10,9 +10,6 @@
 var Void = Glyffin.Void;
 var Glyff = Glyffin.Glyff;
 var Color = Glyffin.Color;
-function getPreviousIndex(index, count) {
-    return index == 0 ? (count - 1) : (index - 1);
-}
 function main() {
     var glAudience = new Glyffin.GlAudience();
     var backColors = [Color.RED, Color.GREEN, Color.BLUE];

@@ -13,10 +13,6 @@ import Void = Glyffin.Void;
 import Glyff = Glyffin.Glyff;
 import Color = Glyffin.Color;
 
-function getPreviousIndex(index, count) {
-    return index == 0 ? (count - 1) : (index - 1);
-}
-
 function main() {
 
     var glAudience = new Glyffin.GlAudience();
