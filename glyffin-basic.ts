@@ -185,13 +185,6 @@ module Glyffin {
         }
     }
 
-    export interface Audience {
-        addPatch(bounds : Perimeter, color : Color):Patch;
-        addZone(bounds : Perimeter,
-                touchProvider : Gesturable):Zone;
-
-    }
-
     export interface Removable {
         remove();
     }
@@ -226,19 +219,25 @@ module Glyffin {
     export type ResultCallback = <T>(result : T)=>void;
     export type ErrorCallback = (error : Error)=>void;
 
+    export interface OnError {
+        (err : Error):void;
+    }
+
+    export interface OnResult<T> {
+        (result : T):void;
+    }
+
 
     export interface Presentation {
         end();
     }
+    export var EMPTY_PRESENTATION : Presentation = {
+        end() {
+        }
+    };
 
     export interface Presenter<T> extends Reaction<T> {
         addPresentation(presentation : Presentation):Removable;
-    }
-
-    export interface Mogrifier<T,U> {
-        getMetrics(metrics : Metrics, presenter : Presenter<U>): Metrics;
-        getUpperAudience(audience : Audience, presenter : Presenter<U>): Audience;
-        getUpperReaction(audience : Audience, presenter : Presenter<U>): Reaction<T>;
     }
 
     var maxDuration = 50;

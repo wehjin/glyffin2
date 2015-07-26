@@ -128,8 +128,10 @@ module Glyffin {
             'vec4 pack (float depth) {\n' +
             '  const vec4 bitShift = vec4(1.0, 256.0, 256.0 * 256.0, 256.0 * 256.0 * 256.0);\n' +
             '  const vec4 bitMask = vec4(1.0/256.0, 1.0/256.0, 1.0/256.0, 0.0);\n' +
-            '  vec4 rgbaDepth = fract(gl_FragCoord.z * bitShift);\n' + // Calculate the value stored into each byte
-            '  rgbaDepth -= rgbaDepth.gbaa * bitMask;\n' + // Cut off the value which do not fit in 8 bits
+            '  vec4 rgbaDepth = fract(gl_FragCoord.z * bitShift);\n' + // Calculate the value
+                                                                       // stored into each byte
+            '  rgbaDepth -= rgbaDepth.gbaa * bitMask;\n' + // Cut off the value which do not fit in
+                                                           // 8 bits
             '  return rgbaDepth;\n' +
             '}\n' +
             'void main() {\n' +
@@ -199,7 +201,8 @@ module Glyffin {
             'varying vec4 v_PositionFromLight;\n' +
             'float unpack(const in vec4 rgbaDepth) {\n' +
             '  const vec4 bitShift = vec4(1.0, 1.0/256.0, 1.0/(256.0*256.0), 1.0/(256.0*256.0*256.0));\n' +
-            '  float depth = dot(rgbaDepth, bitShift);\n' + // Use dot() since the calculations is same
+            '  float depth = dot(rgbaDepth, bitShift);\n' + // Use dot() since the calculations is
+                                                            // same
             '  return depth;\n' +
             '}\n' +
             'void main(){\n' +
@@ -473,6 +476,18 @@ module Glyffin {
         }
 
 
+        present<U>(glyff : Glyff<U>, reactionOrOnResult : Reaction<U>|OnResult<U>,
+                   onError : OnError) : Presentation {
+            return EMPTY_PRESENTATION;
+        }
+
+        disperse() {
+            //TODO
+        }
+
+        engage() {
+            // TODO
+        }
     }
 
     class VerticesAndColor {
@@ -570,6 +585,44 @@ module Glyffin {
                 this.clearedPatchIndices = this.clearedPatchIndices.concat(this.freePatchIndices);
                 this.freePatchIndices = [];
             }
+        }
+    }
+
+    export class GlHall implements Hall {
+
+        audience : GlAudience;
+        audiences : GlAudience[] = [];
+
+        constructor(private canvas : HTMLCanvasElement) {
+            this.audience = new GlAudience();
+        }
+
+        addAudience(previous : Glyffin.Audience) : Glyffin.AudienceRemovable {
+            if (this.audiences.length > 0 &&
+                this.audiences[this.audiences.length - 1] !== previous) {
+                throw new Error("Audience is not latest audience");
+            }
+            var glAudience = new GlAudience();
+            // TODO Pass canvas to GlAudience constructor.
+            this.audiences.push(glAudience);
+            this.audience = glAudience;
+            this.audience.engage();
+            return {
+                audience: glAudience,
+                end: ()=> {
+                    var index = this.audiences.indexOf(glAudience);
+                    if (index < 0) {
+                        return;
+                    }
+                    var laterAudiences : GlAudience[] = this.audiences.slice(index);
+                    this.audiences.length = index;
+                    this.audience = this.audience[index - 1];
+                    for (var i = 0, count = laterAudiences.length; i < count; i++) {
+                        laterAudiences[i].disperse();
+                    }
+                    this.audience.engage()
+                }
+            };
         }
     }
 }

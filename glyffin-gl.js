@@ -313,6 +313,15 @@ var Glyffin;
                 }
             };
         };
+        GlAudience.prototype.present = function (glyff, reactionOrOnResult, onError) {
+            return Glyffin.EMPTY_PRESENTATION;
+        };
+        GlAudience.prototype.disperse = function () {
+            //TODO
+        };
+        GlAudience.prototype.engage = function () {
+            // TODO
+        };
         return GlAudience;
     })();
     Glyffin.GlAudience = GlAudience;
@@ -384,5 +393,41 @@ var Glyffin;
         };
         return VerticesAndColor;
     })();
+    var GlHall = (function () {
+        function GlHall(canvas) {
+            this.canvas = canvas;
+            this.audiences = [];
+            this.audience = new GlAudience();
+        }
+        GlHall.prototype.addAudience = function (previous) {
+            var _this = this;
+            if (this.audiences.length > 0 && this.audiences[this.audiences.length - 1] !== previous) {
+                throw new Error("Audience is not latest audience");
+            }
+            var glAudience = new GlAudience();
+            // TODO Pass canvas to GlAudience constructor.
+            this.audiences.push(glAudience);
+            this.audience = glAudience;
+            this.audience.engage();
+            return {
+                audience: glAudience,
+                end: function () {
+                    var index = _this.audiences.indexOf(glAudience);
+                    if (index < 0) {
+                        return;
+                    }
+                    var laterAudiences = _this.audiences.slice(index);
+                    _this.audiences.length = index;
+                    _this.audience = _this.audience[index - 1];
+                    for (var i = 0, count = laterAudiences.length; i < count; i++) {
+                        laterAudiences[i].disperse();
+                    }
+                    _this.audience.engage();
+                }
+            };
+        };
+        return GlHall;
+    })();
+    Glyffin.GlHall = GlHall;
 })(Glyffin || (Glyffin = {}));
 //# sourceMappingURL=glyffin-gl.js.map

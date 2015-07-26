@@ -33,6 +33,28 @@ module Glyffin {
         }
     }
 
+    export interface Audience {
+        addPatch(bounds : Perimeter, color : Color):Patch;
+        addZone(bounds : Perimeter,
+                touchProvider : Gesturable):Zone;
+        present<U>(glyff : Glyff<U>, reactionOrOnResult ? : Reaction<U>|OnResult<U>,
+                   onError? : OnError) : Presentation;
+    }
+
+    export interface AudienceRemovable {
+        audience:Audience;
+    }
+
+    export interface Hall {
+        addAudience(previous? : Audience):AudienceRemovable;
+    }
+
+    export interface Mogrifier<T,U> {
+        getMetrics(metrics : Metrics, presenter : Presenter<U>): Metrics;
+        getUpperAudience(audience : Audience, presenter : Presenter<U>): Audience;
+        getUpperReaction(audience : Audience, presenter : Presenter<U>): Reaction<T>;
+    }
+
     class ClickGesturing implements Gesturing {
 
         private isEnded : boolean = false;

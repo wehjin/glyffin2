@@ -166,6 +166,10 @@ var Glyffin;
     };
     Glyffin.EMPTY_PATCH = Glyffin.EMPTY_REMOVABLE;
     Glyffin.EMPTY_ACTIVE = Glyffin.EMPTY_REMOVABLE;
+    Glyffin.EMPTY_PRESENTATION = {
+        end: function () {
+        }
+    };
     var maxDuration = 50;
     var approximateDuration = maxDuration / 2;
     var SpeedometerX = (function () {
