@@ -4,7 +4,10 @@
 
 /// <reference path="glyffin.ts" />
 
+
 module Glyffin {
+
+    // TODO: Add horizontal alignment
 
     class LineContent {
 
@@ -746,20 +749,37 @@ module Glyffin {
         [2, 5],
         [0, 6], [1, 6], [2, 6]
     ];
-
+    var amper_spots = [
+        [2, 0],
+        [1, 1], [3, 1],
+        [2, 2],
+        [1, 3], [2, 3], [4, 3],
+        [0, 4], [2, 4], [3, 4],
+        [0, 5], [3, 5],
+        [1, 6], [2, 6], [4, 6]
+    ];
+    var at_spots = [
+        [1, 0], [2, 0], [3, 0], [4, 0],
+        [0, 1], [5, 1],
+        [0, 2], [2, 2], [3, 2], [5, 2],
+        [0, 3], [2, 3], [3, 3], [5, 3],
+        [0, 4], [2, 4], [3, 4], [4, 4], [5, 4],
+        [0, 5],
+        [1, 6], [2, 6], [3, 6], [4, 6], [5, 6]
+    ];
     var ascii_spots = [
         no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
         no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
         no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
         no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
 
-        no_spots, no_spots, dquote_spots, no_spots, no_spots, no_spots, no_spots, quote_spots,
+        no_spots, no_spots, dquote_spots, no_spots, no_spots, no_spots, amper_spots, quote_spots,
         lparen_spots, rparen_spots, no_spots, plus_spots, comma_spots, minus_spots, period_spots,
         slash_spots,
         d0_spots, d1_spots, d2_spots, d3_spots, d4_spots, d5_spots, d6_spots, d7_spots,
         d8_spots, d9_spots, colon_spots, no_spots, no_spots, no_spots, no_spots, qmark_spots,
 
-        no_spots, A_spots, B_spots, C_spots, D_spots, E_spots, F_spots, G_spots,
+        at_spots, A_spots, B_spots, C_spots, D_spots, E_spots, F_spots, G_spots,
         H_spots, I_spots, J_spots, K_spots, L_spots, M_spots, N_spots, O_spots,
         P_spots, Q_spots, R_spots, S_spots, T_spots, U_spots, V_spots, W_spots,
         X_spots, Y_spots, Z_spots, lbrack_spots, no_spots, rbrack_spots, no_spots, no_spots,
@@ -782,7 +802,7 @@ module Glyffin {
         5, 5, 5, 5, 5, 5, 5, 5,
         5, 5, 1, 5, 5, 5, 5, 5,
 
-        5, 5, 5, 5, 5, 5, 5, 5,
+        6, 5, 5, 5, 5, 5, 5, 5,
         5, 3, 5, 5, 5, 5, 5, 5,
         5, 5, 5, 5, 5, 5, 5, 5,
         5, 5, 5, 3, 5, 3, 5, 5,

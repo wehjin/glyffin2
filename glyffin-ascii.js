@@ -4,6 +4,7 @@
 /// <reference path="glyffin.ts" />
 var Glyffin;
 (function (Glyffin) {
+    // TODO: Add horizontal alignment
     var LineContent = (function () {
         function LineContent(weight, text) {
             this.weight = weight;
@@ -1210,6 +1211,50 @@ var Glyffin;
         [1, 6],
         [2, 6]
     ];
+    var amper_spots = [
+        [2, 0],
+        [1, 1],
+        [3, 1],
+        [2, 2],
+        [1, 3],
+        [2, 3],
+        [4, 3],
+        [0, 4],
+        [2, 4],
+        [3, 4],
+        [0, 5],
+        [3, 5],
+        [1, 6],
+        [2, 6],
+        [4, 6]
+    ];
+    var at_spots = [
+        [1, 0],
+        [2, 0],
+        [3, 0],
+        [4, 0],
+        [0, 1],
+        [5, 1],
+        [0, 2],
+        [2, 2],
+        [3, 2],
+        [5, 2],
+        [0, 3],
+        [2, 3],
+        [3, 3],
+        [5, 3],
+        [0, 4],
+        [2, 4],
+        [3, 4],
+        [4, 4],
+        [5, 4],
+        [0, 5],
+        [1, 6],
+        [2, 6],
+        [3, 6],
+        [4, 6],
+        [5, 6]
+    ];
     var ascii_spots = [
         no_spots,
         no_spots,
@@ -1249,7 +1294,7 @@ var Glyffin;
         no_spots,
         no_spots,
         no_spots,
-        no_spots,
+        amper_spots,
         quote_spots,
         lparen_spots,
         rparen_spots,
@@ -1275,7 +1320,7 @@ var Glyffin;
         no_spots,
         no_spots,
         qmark_spots,
-        no_spots,
+        at_spots,
         A_spots,
         B_spots,
         C_spots,
@@ -1406,7 +1451,7 @@ var Glyffin;
         5,
         5,
         5,
-        5,
+        6,
         5,
         5,
         5,
