@@ -18,7 +18,7 @@ import Presentation = Glyffin.Presentation;
 import Metrics = Glyffin.Metrics;
 
 function main() {
-    var glAudience = new Glyffin.GlAudience();
+    var glAudience = new Glyffin.GlAudience(<HTMLCanvasElement>document.getElementById('webgl'));
     var perimeter = new Glyffin.Perimeter(0, 0, glAudience.canvas.width, glAudience.canvas.height,
         1, 0);
     var metrics = new Glyffin.Metrics(perimeter, 48, 10, new Glyffin.Palette());

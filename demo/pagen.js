@@ -11,7 +11,13 @@ var Void = Glyffin.Void;
 var Glyff = Glyffin.Glyff;
 var Color = Glyffin.Color;
 function main() {
-    var glAudience = new Glyffin.GlAudience();
+    var canvas = document.getElementById('webgl');
+    canvas.style.position = "absolute";
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
+    canvas.style.overflow = "hidden";
+    canvas.style.touchAction = "none";
+    var glAudience = new Glyffin.GlAudience(canvas);
     var backColors = [Color.RED, Color.GREEN, Color.BLUE];
     var pageGlyffs = [];
     backColors.forEach(function (color) {

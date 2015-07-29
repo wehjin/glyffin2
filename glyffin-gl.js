@@ -22,6 +22,16 @@ var UP_Z = 0;
 var showShadow = false;
 var redShadow = false;
 var useShadow = true;
+var MAX_PATCH_COUNT = 10000;
+var VERTICES_PER_PATCH = 6;
+var FLOATS_PER_POSITION = 3;
+var FLOATS_PER_COLOR = 4;
+var FLOATS_PER_VERTEX = FLOATS_PER_POSITION + FLOATS_PER_COLOR;
+var FLOATS_PER_PATCH = VERTICES_PER_PATCH * FLOATS_PER_VERTEX;
+var BYTES_PER_FLOAT = 4;
+var BYTES_BEFORE_COLOR = FLOATS_PER_POSITION * BYTES_PER_FLOAT;
+var BYTES_PER_VERTEX = FLOATS_PER_VERTEX * BYTES_PER_FLOAT;
+var BYTES_PER_PATCH = FLOATS_PER_PATCH * BYTES_PER_FLOAT;
 var FrameBuffer = (function () {
     function FrameBuffer(gl) {
         var framebuffer;
@@ -85,76 +95,133 @@ var FrameBuffer = (function () {
     }
     return FrameBuffer;
 })();
+var VerticesAndColor = (function () {
+    function VerticesAndColor(maxPatchCount, gl) {
+        this.maxPatchCount = maxPatchCount;
+        this.nextPatchIndex = 0;
+        this.freePatchIndices = [];
+        this.clearedPatchIndices = [];
+        this.totalFreed = 0;
+        this.emptyPatchVertices = new Float32Array(FLOATS_PER_PATCH);
+        this.patchVertices = new Float32Array(FLOATS_PER_PATCH);
+        this.gl = gl;
+        gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+        var vertices = new Float32Array(maxPatchCount * FLOATS_PER_PATCH);
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+    }
+    VerticesAndColor.prototype.enableColorAttributes = function (program) {
+        // TODO Take a_Color as parameter.
+        var a_Color = this.gl.getAttribLocation(program, 'a_Color');
+        this.gl.vertexAttribPointer(a_Color, FLOATS_PER_COLOR, this.gl.FLOAT, false, BYTES_PER_VERTEX, BYTES_BEFORE_COLOR);
+        this.gl.enableVertexAttribArray(a_Color);
+    };
+    VerticesAndColor.prototype.enablePositionAttributes = function (program) {
+        // TODO Take a_Position as a parameter.
+        var a_Position = this.gl.getAttribLocation(program, 'a_Position');
+        this.gl.vertexAttribPointer(a_Position, FLOATS_PER_POSITION, this.gl.FLOAT, false, BYTES_PER_VERTEX, 0);
+        this.gl.enableVertexAttribArray(a_Position);
+    };
+    VerticesAndColor.prototype.getActiveVertexCount = function () {
+        return this.nextPatchIndex * VERTICES_PER_PATCH;
+    };
+    VerticesAndColor.prototype.getFreeVertexCount = function () {
+        return (this.freePatchIndices.length + this.clearedPatchIndices.length) * VERTICES_PER_PATCH;
+    };
+    VerticesAndColor.prototype.getTotalFreedVertices = function () {
+        return this.totalFreed * VERTICES_PER_PATCH;
+    };
+    VerticesAndColor.prototype.getPatch = function (left, top, right, bottom, level, color) {
+        var patchIndex;
+        if (this.freePatchIndices.length > 0) {
+            patchIndex = this.freePatchIndices.pop();
+        }
+        else if (this.clearedPatchIndices.length > 0) {
+            patchIndex = this.clearedPatchIndices.pop();
+        }
+        else {
+            if (this.nextPatchIndex >= MAX_PATCH_COUNT) {
+                throw "Too many patches";
+            }
+            patchIndex = this.nextPatchIndex++;
+        }
+        this.patchVertices.set([left, top, level, color.red, color.green, color.blue, color.alpha, right, top, level, color.red, color.green, color.blue, color.alpha, left, bottom, level, color.red, color.green, color.blue, color.alpha, left, bottom, level, color.red, color.green, color.blue, color.alpha, right, top, level, color.red, color.green, color.blue, color.alpha, right, bottom, level, color.red, color.green, color.blue, color.alpha,]);
+        this.gl.bufferSubData(this.gl.ARRAY_BUFFER, patchIndex * BYTES_PER_PATCH, this.patchVertices);
+        return patchIndex;
+    };
+    VerticesAndColor.prototype.putPatch = function (patchIndex) {
+        this.freePatchIndices.push(patchIndex);
+        this.totalFreed++;
+    };
+    VerticesAndColor.prototype.clearFreePatches = function () {
+        if (this.freePatchIndices.length > 0) {
+            for (var i = 0; i < this.freePatchIndices.length; i++) {
+                this.gl.bufferSubData(this.gl.ARRAY_BUFFER, this.freePatchIndices[i] * BYTES_PER_PATCH, this.emptyPatchVertices);
+            }
+            this.clearedPatchIndices = this.clearedPatchIndices.concat(this.freePatchIndices);
+            this.freePatchIndices = [];
+        }
+    };
+    return VerticesAndColor;
+})();
+var ShadowProgram = (function () {
+    function ShadowProgram(gl, mvpMatrix, vertices) {
+        this.vertices = vertices;
+        this.VSHADER_SOURCE = 'attribute vec4 a_Position;\n' + 'uniform mat4 u_MvpMatrix;\n' + 'void main() {\n' + '  gl_Position = u_MvpMatrix * a_Position;\n' + '}\n';
+        this.FSHADER_SOURCE = '#ifdef GL_ES\n' + 'precision mediump float;\n' + '#endif\n' + 'vec4 pack (float depth) {\n' + '  const vec4 bitShift = vec4(1.0, 256.0, 256.0 * 256.0, 256.0 * 256.0 * 256.0);\n' + '  const vec4 bitMask = vec4(1.0/256.0, 1.0/256.0, 1.0/256.0, 0.0);\n' + '  vec4 rgbaDepth = fract(gl_FragCoord.z * bitShift);\n' + '  rgbaDepth -= rgbaDepth.gbaa * bitMask;\n' + '  return rgbaDepth;\n' + '}\n' + 'void main() {\n' + (showShadow ? '  gl_FragColor = vec4(gl_FragCoord.z,0.0,0.0,1.0);\n' : '  gl_FragColor = pack(gl_FragCoord.z);\n') + '}\n';
+        var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
+        this.program = program;
+        this.u_MvpMatrix = gl.getUniformLocation(program, 'u_MvpMatrix');
+        this.a_Position = gl.getAttribLocation(program, 'a_Position');
+        if (this.a_Position < 0 || !this.u_MvpMatrix) {
+            console.log('Failed to get the storage location of attribute or uniform variable from shadowProgram');
+            return;
+        }
+        this.mvpMatrix = mvpMatrix;
+        gl.useProgram(program);
+        gl.uniformMatrix4fv(this.u_MvpMatrix, false, mvpMatrix.elements);
+    }
+    ShadowProgram.prototype.enableVertexAttributes = function () {
+        this.vertices.enablePositionAttributes(this.program);
+    };
+    return ShadowProgram;
+})();
+var LightProgram = (function () {
+    function LightProgram(gl, modelMatrix, mvpMatrix, vertices) {
+        this.vertices = vertices;
+        this.VSHADER_SOURCE = 'const vec3 c_Normal = vec3( 0.0, 0.0, 1.0 );\n' + 'uniform mat4 u_ModelMatrix;\n' + 'uniform mat4 u_MvpMatrix;\n' + 'uniform mat4 u_MvpMatrixFromLight;\n' + 'attribute vec4 a_Position;\n' + 'attribute vec4 a_Color;\n' + 'varying vec4 v_Color;\n' + 'varying vec3 v_Normal;\n' + 'varying vec3 v_Position;\n' + 'varying vec4 v_PositionFromLight;\n' + 'void main(){\n' + '  gl_Position = u_MvpMatrix * a_Position;\n' + '  v_Position = vec3(u_ModelMatrix * a_Position);\n' + '  v_PositionFromLight = u_MvpMatrixFromLight * a_Position;\n' + '  v_Normal = c_Normal;\n' + '  v_Color = a_Color;\n' + '}\n';
+        this.FSHADER_SOURCE = '#ifdef GL_ES\n' + 'precision mediump float;\n' + '#endif\n' + 'uniform vec3 u_LightColor;\n' + 'uniform vec3 u_LightPosition;\n' + 'uniform vec3 u_AmbientLight;\n' + 'uniform sampler2D u_ShadowMap;\n' + 'varying vec3 v_Position;\n' + 'varying vec3 v_Normal;\n' + 'varying vec4 v_Color;\n' + 'varying vec4 v_PositionFromLight;\n' + 'float unpack(const in vec4 rgbaDepth) {\n' + '  const vec4 bitShift = vec4(1.0, 1.0/256.0, 1.0/(256.0*256.0), 1.0/(256.0*256.0*256.0));\n' + '  float depth = dot(rgbaDepth, bitShift);\n' + '  return depth;\n' + '}\n' + 'void main(){\n' + '  vec3 normal = normalize(v_Normal);\n' + '  vec3 lightDirection = normalize(u_LightPosition - v_Position);\n' + '  float lightIntensity = max(dot(lightDirection, normal), 0.0);\n' + '  vec3 diffuse = u_LightColor * v_Color.rgb * lightIntensity;\n' + '  vec3 ambient = u_AmbientLight * v_Color.rgb;\n' + '  vec4 color = vec4(diffuse + ambient, v_Color.a);\n' + '  vec3 shadowCoord = (v_PositionFromLight.xyz/v_PositionFromLight.w)/2.0 + 0.5;\n' + '  float poissonVisibility = 0.0;\n' + '  const float bias = 0.003;\n' + '  float depthAcc = 0.0;\n' + '  vec2 poissonDisk[4];\n' + '  poissonDisk[0] = vec2( -0.94201624, -0.39906216 );\n' + '  poissonDisk[1] = vec2( 0.94558609, -0.76890725 );\n' + '  poissonDisk[2] = vec2( -0.094184101, -0.92938870 );\n' + '  poissonDisk[3] = vec2( 0.34495938, 0.29387760 );\n' + '  for (int i=0;i<4;i++) {\n' + '    vec4 rgbaDepth = texture2D(u_ShadowMap, shadowCoord.xy + poissonDisk[i]/700.0*0.0);\n' + '    float depth = unpack(rgbaDepth);\n' + '    depthAcc += depth;\n' + '  }\n' + '  float visibility = (shadowCoord.z > depthAcc/4.0 + bias) ? 0.8 : 1.0;\n' + (redShadow ? '  gl_FragColor = (visibility < 1.0) ? vec4(1.0,0.0,0.0,1.0) : color;\n' : '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n') + '}\n';
+        var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
+        this.program = program;
+        this.u_ModelMatrix = gl.getUniformLocation(program, 'u_ModelMatrix');
+        this.u_MvpMatrix = gl.getUniformLocation(program, 'u_MvpMatrix');
+        this.u_AmbientLight = gl.getUniformLocation(program, 'u_AmbientLight');
+        this.u_LightColor = gl.getUniformLocation(program, 'u_LightColor');
+        this.u_LightPosition = gl.getUniformLocation(program, 'u_LightPosition');
+        this.u_MvpMatrixFromLight = gl.getUniformLocation(program, 'u_MvpMatrixFromLight');
+        this.u_ShadowMap = gl.getUniformLocation(program, 'u_ShadowMap');
+        if (!this.u_ModelMatrix || !this.u_MvpMatrix || !this.u_AmbientLight || !this.u_LightColor || !this.u_LightPosition || !this.u_MvpMatrixFromLight || !this.u_ShadowMap) {
+            console.log('Failed to get uniform storage location');
+        }
+        gl.useProgram(program);
+        gl.uniform3f(this.u_AmbientLight, 0.2, 0.2, 0.2);
+        gl.uniform3f(this.u_LightColor, 1.0, 1.0, 1.0);
+        gl.uniform3f(this.u_LightPosition, LIGHT_X, LIGHT_Y, LIGHT_Z);
+        gl.uniformMatrix4fv(this.u_ModelMatrix, false, modelMatrix.elements);
+        gl.uniformMatrix4fv(this.u_MvpMatrix, false, mvpMatrix.elements);
+    }
+    LightProgram.prototype.enableVertexAttributes = function () {
+        this.vertices.enablePositionAttributes(this.program);
+        this.vertices.enableColorAttributes(this.program);
+    };
+    return LightProgram;
+})();
 var Glyffin;
 (function (Glyffin) {
-    var MAX_PATCH_COUNT = 10000;
-    var VERTICES_PER_PATCH = 6;
-    var FLOATS_PER_POSITION = 3;
-    var FLOATS_PER_COLOR = 4;
-    var FLOATS_PER_VERTEX = FLOATS_PER_POSITION + FLOATS_PER_COLOR;
-    var FLOATS_PER_PATCH = VERTICES_PER_PATCH * FLOATS_PER_VERTEX;
-    var BYTES_PER_FLOAT = 4;
-    var BYTES_BEFORE_COLOR = FLOATS_PER_POSITION * BYTES_PER_FLOAT;
-    var BYTES_PER_VERTEX = FLOATS_PER_VERTEX * BYTES_PER_FLOAT;
-    var BYTES_PER_PATCH = FLOATS_PER_PATCH * BYTES_PER_FLOAT;
-    var ShadowProgram = (function () {
-        function ShadowProgram(gl, mvpMatrix, vertices) {
-            this.vertices = vertices;
-            this.VSHADER_SOURCE = 'attribute vec4 a_Position;\n' + 'uniform mat4 u_MvpMatrix;\n' + 'void main() {\n' + '  gl_Position = u_MvpMatrix * a_Position;\n' + '}\n';
-            this.FSHADER_SOURCE = '#ifdef GL_ES\n' + 'precision mediump float;\n' + '#endif\n' + 'vec4 pack (float depth) {\n' + '  const vec4 bitShift = vec4(1.0, 256.0, 256.0 * 256.0, 256.0 * 256.0 * 256.0);\n' + '  const vec4 bitMask = vec4(1.0/256.0, 1.0/256.0, 1.0/256.0, 0.0);\n' + '  vec4 rgbaDepth = fract(gl_FragCoord.z * bitShift);\n' + '  rgbaDepth -= rgbaDepth.gbaa * bitMask;\n' + '  return rgbaDepth;\n' + '}\n' + 'void main() {\n' + (showShadow ? '  gl_FragColor = vec4(gl_FragCoord.z,0.0,0.0,1.0);\n' : '  gl_FragColor = pack(gl_FragCoord.z);\n') + '}\n';
-            var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
-            this.program = program;
-            this.u_MvpMatrix = gl.getUniformLocation(program, 'u_MvpMatrix');
-            this.a_Position = gl.getAttribLocation(program, 'a_Position');
-            if (this.a_Position < 0 || !this.u_MvpMatrix) {
-                console.log('Failed to get the storage location of attribute or uniform variable from shadowProgram');
-                return;
-            }
-            this.mvpMatrix = mvpMatrix;
-            gl.useProgram(program);
-            gl.uniformMatrix4fv(this.u_MvpMatrix, false, mvpMatrix.elements);
-        }
-        ShadowProgram.prototype.enableVertexAttributes = function () {
-            this.vertices.enablePositionAttributes(this.program);
-        };
-        return ShadowProgram;
-    })();
-    var LightProgram = (function () {
-        function LightProgram(gl, modelMatrix, mvpMatrix, vertices) {
-            this.vertices = vertices;
-            this.VSHADER_SOURCE = 'const vec3 c_Normal = vec3( 0.0, 0.0, 1.0 );\n' + 'uniform mat4 u_ModelMatrix;\n' + 'uniform mat4 u_MvpMatrix;\n' + 'uniform mat4 u_MvpMatrixFromLight;\n' + 'attribute vec4 a_Position;\n' + 'attribute vec4 a_Color;\n' + 'varying vec4 v_Color;\n' + 'varying vec3 v_Normal;\n' + 'varying vec3 v_Position;\n' + 'varying vec4 v_PositionFromLight;\n' + 'void main(){\n' + '  gl_Position = u_MvpMatrix * a_Position;\n' + '  v_Position = vec3(u_ModelMatrix * a_Position);\n' + '  v_PositionFromLight = u_MvpMatrixFromLight * a_Position;\n' + '  v_Normal = c_Normal;\n' + '  v_Color = a_Color;\n' + '}\n';
-            this.FSHADER_SOURCE = '#ifdef GL_ES\n' + 'precision mediump float;\n' + '#endif\n' + 'uniform vec3 u_LightColor;\n' + 'uniform vec3 u_LightPosition;\n' + 'uniform vec3 u_AmbientLight;\n' + 'uniform sampler2D u_ShadowMap;\n' + 'varying vec3 v_Position;\n' + 'varying vec3 v_Normal;\n' + 'varying vec4 v_Color;\n' + 'varying vec4 v_PositionFromLight;\n' + 'float unpack(const in vec4 rgbaDepth) {\n' + '  const vec4 bitShift = vec4(1.0, 1.0/256.0, 1.0/(256.0*256.0), 1.0/(256.0*256.0*256.0));\n' + '  float depth = dot(rgbaDepth, bitShift);\n' + '  return depth;\n' + '}\n' + 'void main(){\n' + '  vec3 normal = normalize(v_Normal);\n' + '  vec3 lightDirection = normalize(u_LightPosition - v_Position);\n' + '  float lightIntensity = max(dot(lightDirection, normal), 0.0);\n' + '  vec3 diffuse = u_LightColor * v_Color.rgb * lightIntensity;\n' + '  vec3 ambient = u_AmbientLight * v_Color.rgb;\n' + '  vec4 color = vec4(diffuse + ambient, v_Color.a);\n' + '  vec3 shadowCoord = (v_PositionFromLight.xyz/v_PositionFromLight.w)/2.0 + 0.5;\n' + '  float poissonVisibility = 0.0;\n' + '  const float bias = 0.003;\n' + '  float depthAcc = 0.0;\n' + '  vec2 poissonDisk[4];\n' + '  poissonDisk[0] = vec2( -0.94201624, -0.39906216 );\n' + '  poissonDisk[1] = vec2( 0.94558609, -0.76890725 );\n' + '  poissonDisk[2] = vec2( -0.094184101, -0.92938870 );\n' + '  poissonDisk[3] = vec2( 0.34495938, 0.29387760 );\n' + '  for (int i=0;i<4;i++) {\n' + '    vec4 rgbaDepth = texture2D(u_ShadowMap, shadowCoord.xy + poissonDisk[i]/700.0*0.0);\n' + '    float depth = unpack(rgbaDepth);\n' + '    depthAcc += depth;\n' + '  }\n' + '  float visibility = (shadowCoord.z > depthAcc/4.0 + bias) ? 0.8 : 1.0;\n' + (redShadow ? '  gl_FragColor = (visibility < 1.0) ? vec4(1.0,0.0,0.0,1.0) : color;\n' : '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n') + '}\n';
-            var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
-            this.program = program;
-            this.u_ModelMatrix = gl.getUniformLocation(program, 'u_ModelMatrix');
-            this.u_MvpMatrix = gl.getUniformLocation(program, 'u_MvpMatrix');
-            this.u_AmbientLight = gl.getUniformLocation(program, 'u_AmbientLight');
-            this.u_LightColor = gl.getUniformLocation(program, 'u_LightColor');
-            this.u_LightPosition = gl.getUniformLocation(program, 'u_LightPosition');
-            this.u_MvpMatrixFromLight = gl.getUniformLocation(program, 'u_MvpMatrixFromLight');
-            this.u_ShadowMap = gl.getUniformLocation(program, 'u_ShadowMap');
-            if (!this.u_ModelMatrix || !this.u_MvpMatrix || !this.u_AmbientLight || !this.u_LightColor || !this.u_LightPosition || !this.u_MvpMatrixFromLight || !this.u_ShadowMap) {
-                console.log('Failed to get uniform storage location');
-            }
-            gl.useProgram(program);
-            gl.uniform3f(this.u_AmbientLight, 0.2, 0.2, 0.2);
-            gl.uniform3f(this.u_LightColor, 1.0, 1.0, 1.0);
-            gl.uniform3f(this.u_LightPosition, LIGHT_X, LIGHT_Y, LIGHT_Z);
-            gl.uniformMatrix4fv(this.u_ModelMatrix, false, modelMatrix.elements);
-            gl.uniformMatrix4fv(this.u_MvpMatrix, false, mvpMatrix.elements);
-        }
-        LightProgram.prototype.enableVertexAttributes = function () {
-            this.vertices.enablePositionAttributes(this.program);
-            this.vertices.enableColorAttributes(this.program);
-        };
-        return LightProgram;
-    })();
     var GlAudience = (function () {
-        function GlAudience() {
+        function GlAudience(canvas) {
             this.interactives = [];
             this.drawCount = 0;
             this.editCount = 0;
-            var canvas = document.getElementById('webgl');
             canvas.width = canvas.clientWidth;
             canvas.height = canvas.clientHeight;
             this.canvas = canvas;
@@ -325,94 +392,21 @@ var Glyffin;
         return GlAudience;
     })();
     Glyffin.GlAudience = GlAudience;
-    var VerticesAndColor = (function () {
-        function VerticesAndColor(maxPatchCount, gl) {
-            this.maxPatchCount = maxPatchCount;
-            this.nextPatchIndex = 0;
-            this.freePatchIndices = [];
-            this.clearedPatchIndices = [];
-            this.totalFreed = 0;
-            this.emptyPatchVertices = new Float32Array(FLOATS_PER_PATCH);
-            this.patchVertices = new Float32Array(FLOATS_PER_PATCH);
-            this.gl = gl;
-            gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-            var vertices = new Float32Array(maxPatchCount * FLOATS_PER_PATCH);
-            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-        }
-        VerticesAndColor.prototype.enableColorAttributes = function (program) {
-            // TODO Take a_Color as parameter.
-            var a_Color = this.gl.getAttribLocation(program, 'a_Color');
-            this.gl.vertexAttribPointer(a_Color, FLOATS_PER_COLOR, this.gl.FLOAT, false, BYTES_PER_VERTEX, BYTES_BEFORE_COLOR);
-            this.gl.enableVertexAttribArray(a_Color);
-        };
-        VerticesAndColor.prototype.enablePositionAttributes = function (program) {
-            // TODO Take a_Position as a parameter.
-            var a_Position = this.gl.getAttribLocation(program, 'a_Position');
-            this.gl.vertexAttribPointer(a_Position, FLOATS_PER_POSITION, this.gl.FLOAT, false, BYTES_PER_VERTEX, 0);
-            this.gl.enableVertexAttribArray(a_Position);
-        };
-        VerticesAndColor.prototype.getActiveVertexCount = function () {
-            return this.nextPatchIndex * VERTICES_PER_PATCH;
-        };
-        VerticesAndColor.prototype.getFreeVertexCount = function () {
-            return (this.freePatchIndices.length + this.clearedPatchIndices.length) * VERTICES_PER_PATCH;
-        };
-        VerticesAndColor.prototype.getTotalFreedVertices = function () {
-            return this.totalFreed * VERTICES_PER_PATCH;
-        };
-        VerticesAndColor.prototype.getPatch = function (left, top, right, bottom, level, color) {
-            var patchIndex;
-            if (this.freePatchIndices.length > 0) {
-                patchIndex = this.freePatchIndices.pop();
-            }
-            else if (this.clearedPatchIndices.length > 0) {
-                patchIndex = this.clearedPatchIndices.pop();
-            }
-            else {
-                if (this.nextPatchIndex >= MAX_PATCH_COUNT) {
-                    throw "Too many patches";
-                }
-                patchIndex = this.nextPatchIndex++;
-            }
-            this.patchVertices.set([left, top, level, color.red, color.green, color.blue, color.alpha, right, top, level, color.red, color.green, color.blue, color.alpha, left, bottom, level, color.red, color.green, color.blue, color.alpha, left, bottom, level, color.red, color.green, color.blue, color.alpha, right, top, level, color.red, color.green, color.blue, color.alpha, right, bottom, level, color.red, color.green, color.blue, color.alpha,]);
-            this.gl.bufferSubData(this.gl.ARRAY_BUFFER, patchIndex * BYTES_PER_PATCH, this.patchVertices);
-            return patchIndex;
-        };
-        VerticesAndColor.prototype.putPatch = function (patchIndex) {
-            this.freePatchIndices.push(patchIndex);
-            this.totalFreed++;
-        };
-        VerticesAndColor.prototype.clearFreePatches = function () {
-            if (this.freePatchIndices.length > 0) {
-                for (var i = 0; i < this.freePatchIndices.length; i++) {
-                    this.gl.bufferSubData(this.gl.ARRAY_BUFFER, this.freePatchIndices[i] * BYTES_PER_PATCH, this.emptyPatchVertices);
-                }
-                this.clearedPatchIndices = this.clearedPatchIndices.concat(this.freePatchIndices);
-                this.freePatchIndices = [];
-            }
-        };
-        return VerticesAndColor;
-    })();
     var GlHall = (function () {
         function GlHall(canvas) {
             this.canvas = canvas;
             this.audiences = [];
-            this.audience = new GlAudience();
         }
-        GlHall.prototype.addAudience = function (previous) {
+        GlHall.prototype.present = function (glyff, onResult, onError) {
             var _this = this;
-            if (this.audiences.length > 0 && this.audiences[this.audiences.length - 1] !== previous) {
-                throw new Error("Audience is not latest audience");
-            }
-            var glAudience = new GlAudience();
-            // TODO Pass canvas to GlAudience constructor.
-            this.audiences.push(glAudience);
-            this.audience = glAudience;
-            this.audience.engage();
+            var previousAudience = this.audiences.length == 0 ? null : this.audiences[this.audiences.length - 1];
+            var nextCanvas = previousAudience ? this.createCanvas(previousAudience.canvas) : this.canvas;
+            var nextAudience = new GlAudience(nextCanvas);
+            this.audiences.push(nextAudience);
+            this.audience = nextAudience;
             return {
-                audience: glAudience,
                 end: function () {
-                    var index = _this.audiences.indexOf(glAudience);
+                    var index = _this.audiences.indexOf(nextAudience);
                     if (index < 0) {
                         return;
                     }
@@ -425,6 +419,16 @@ var Glyffin;
                     _this.audience.engage();
                 }
             };
+        };
+        GlHall.prototype.createCanvas = function (previousCanvas) {
+            var nextCanvas = new HTMLCanvasElement();
+            if (previousCanvas) {
+                nextCanvas.width = previousCanvas.width;
+                nextCanvas.height = previousCanvas.height;
+            }
+            else {
+            }
+            return nextCanvas;
         };
         return GlHall;
     })();

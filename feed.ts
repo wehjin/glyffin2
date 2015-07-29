@@ -28,7 +28,7 @@ function main() {
      }, false);
      */
 
-    var glAudience = new Glyffin.GlAudience();
+    var glAudience = new Glyffin.GlAudience(<HTMLCanvasElement>document.getElementById('webgl'));
 
     var background = [0xbb, 0xbb, 0xbb, 0xff];
     var midground = [0x55, 0x055, 0x55, 0xff];

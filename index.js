@@ -11,7 +11,7 @@ var Glyff = Glyffin.Glyff;
 var Void = Glyffin.Void;
 var Metrics = Glyffin.Metrics;
 function main() {
-    var glAudience = new Glyffin.GlAudience();
+    var glAudience = new Glyffin.GlAudience(document.getElementById('webgl'));
     var perimeter = new Glyffin.Perimeter(0, 0, glAudience.canvas.width, glAudience.canvas.height, 1, 0);
     var metrics = new Glyffin.Metrics(perimeter, 48, 10, new Glyffin.Palette());
     var headline = "Bidding for the 2026 World Cup is suspended by FIFA as Valcke denies wrongdoing";

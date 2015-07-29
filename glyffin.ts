@@ -41,14 +41,6 @@ module Glyffin {
                    onError? : OnError) : Presentation;
     }
 
-    export interface AudienceRemovable {
-        audience:Audience;
-    }
-
-    export interface Hall {
-        addAudience(previous? : Audience):AudienceRemovable;
-    }
-
     export interface Mogrifier<T,U> {
         getMetrics(metrics : Metrics, presenter : Presenter<U>): Metrics;
         getUpperAudience(audience : Audience, presenter : Presenter<U>): Audience;
@@ -724,6 +716,10 @@ module Glyffin {
                 presenter.addPresentation(colorGlyff.present(metrics, audience, presenter));
             });
         }
+    }
+
+    export interface Hall {
+        present<U>(glyff : Glyff<U>, onResult? : OnResult<U>, onError? : OnError): Presentation;
     }
 
     export var ClearGlyff = Glyff.create<Void>(()=> {
