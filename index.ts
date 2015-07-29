@@ -18,8 +18,9 @@ import Presentation = Glyffin.Presentation;
 import Metrics = Glyffin.Metrics;
 
 function main() {
-    var glAudience = new Glyffin.GlAudience(<HTMLCanvasElement>document.getElementById('webgl'));
-    var perimeter = new Glyffin.Perimeter(0, 0, glAudience.canvas.width, glAudience.canvas.height,
+    var room = new Glyffin.GlRoom(<HTMLCanvasElement>document.getElementById('webgl'));
+    var glAudience = new Glyffin.GlAudience(room);
+    var perimeter = new Glyffin.Perimeter(0, 0, room.width, room.height,
         1, 0);
     var metrics = new Glyffin.Metrics(perimeter, 48, 10, new Glyffin.Palette());
     var headline = "Bidding for the 2026 World Cup is suspended by FIFA as Valcke denies wrongdoing";

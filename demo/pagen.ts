@@ -15,15 +15,8 @@ import Color = Glyffin.Color;
 
 function main() {
 
-    var canvas = <HTMLCanvasElement>document.getElementById('webgl');
-
-    canvas.style.position = "absolute";
-    canvas.style.width = "100%";
-    canvas.style.height = "100%";
-    canvas.style.overflow = "hidden";
-    canvas.style.touchAction = "none";
-
-    var glAudience = new Glyffin.GlAudience(canvas);
+    var room = new Glyffin.GlRoom(<HTMLCanvasElement>document.getElementById('webgl'));
+    var glAudience = new Glyffin.GlAudience(room);
 
     var backColors = [Color.RED, Color.GREEN, Color.BLUE];
     var pageGlyffs = [];
@@ -36,8 +29,8 @@ function main() {
     }
 
     var palette = new Glyffin.Palette();
-    var screenWidth = glAudience.canvas.width;
-    var perimeter = new Glyffin.Perimeter(0, 0, screenWidth, glAudience.canvas.height, 1, 0);
+    var screenWidth = room.width;
+    var perimeter = new Glyffin.Perimeter(0, 0, screenWidth, room.height, 1, 0);
     var metrics = new Glyffin.Metrics(perimeter, 48, 13, palette);
 
     var index = 0;

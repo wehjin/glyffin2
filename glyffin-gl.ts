@@ -36,6 +36,26 @@ var BYTES_BEFORE_COLOR = FLOATS_PER_POSITION * BYTES_PER_FLOAT;
 var BYTES_PER_VERTEX = FLOATS_PER_VERTEX * BYTES_PER_FLOAT;
 var BYTES_PER_PATCH = FLOATS_PER_PATCH * BYTES_PER_FLOAT;
 
+interface Program {
+    glProgram: WebGLProgram;
+}
+
+function enableColorAttributes(program : Program, gl : WebGLRenderingContext) {
+    // TODO Take a_Color as parameter.
+    var a_Color = gl.getAttribLocation(program.glProgram, 'a_Color');
+    gl.vertexAttribPointer(a_Color, FLOATS_PER_COLOR, gl.FLOAT, false,
+        BYTES_PER_VERTEX,
+        BYTES_BEFORE_COLOR);
+    gl.enableVertexAttribArray(a_Color);
+}
+
+function enablePositionAttributes(program : Program, gl : WebGLRenderingContext) {
+    // TODO Take a_Position as a parameter.
+    var a_Position = gl.getAttribLocation(program.glProgram, 'a_Position');
+    gl.vertexAttribPointer(a_Position, FLOATS_PER_POSITION, gl.FLOAT, false,
+        BYTES_PER_VERTEX, 0);
+    gl.enableVertexAttribArray(a_Position);
+}
 
 class FrameBuffer {
 
@@ -118,51 +138,15 @@ class VerticesAndColor {
     private freePatchIndices : number[] = [];
     private clearedPatchIndices : number[] = [];
     public totalFreed = 0;
-    private gl;
     private emptyPatchVertices = new Float32Array(FLOATS_PER_PATCH);
     private patchVertices = new Float32Array(FLOATS_PER_PATCH);
-
-    constructor(private maxPatchCount : number, gl : WebGLBookContext) {
-        this.gl = gl;
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-
-        var vertices = new Float32Array(maxPatchCount * FLOATS_PER_PATCH);
-        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-    }
-
-    enableColorAttributes(program) {
-        // TODO Take a_Color as parameter.
-        var a_Color = this.gl.getAttribLocation(program, 'a_Color');
-        this.gl.vertexAttribPointer(a_Color, FLOATS_PER_COLOR, this.gl.FLOAT, false,
-            BYTES_PER_VERTEX,
-            BYTES_BEFORE_COLOR);
-        this.gl.enableVertexAttribArray(a_Color);
-    }
-
-    enablePositionAttributes(program) {
-        // TODO Take a_Position as a parameter.
-        var a_Position = this.gl.getAttribLocation(program, 'a_Position');
-        this.gl.vertexAttribPointer(a_Position, FLOATS_PER_POSITION, this.gl.FLOAT, false,
-            BYTES_PER_VERTEX, 0);
-        this.gl.enableVertexAttribArray(a_Position);
-    }
 
     getActiveVertexCount() : number {
         return this.nextPatchIndex * VERTICES_PER_PATCH;
     }
 
-    getFreeVertexCount() : number {
-        return (this.freePatchIndices.length + this.clearedPatchIndices.length) *
-            VERTICES_PER_PATCH;
-    }
-
-    getTotalFreedVertices() : number {
-        return this.totalFreed * VERTICES_PER_PATCH;
-    }
-
     getPatch(left : number, top : number, right : number, bottom : number, level : number,
-             color : Glyffin.Color) : number {
+             color : Glyffin.Color, room : MyRoom) : number {
         var patchIndex;
         if (this.freePatchIndices.length > 0) {
             patchIndex = this.freePatchIndices.pop();
@@ -187,8 +171,7 @@ class VerticesAndColor {
                                 right, bottom, level,
                                 color.red, color.green, color.blue, color.alpha,
         ]);
-        this.gl.bufferSubData(this.gl.ARRAY_BUFFER, patchIndex * BYTES_PER_PATCH,
-            this.patchVertices);
+        room.writePatch(patchIndex * BYTES_PER_PATCH, this.patchVertices);
         return patchIndex;
     }
 
@@ -197,11 +180,10 @@ class VerticesAndColor {
         this.totalFreed++;
     }
 
-    clearFreePatches() {
+    clearFreePatches(room : MyRoom) {
         if (this.freePatchIndices.length > 0) {
             for (var i = 0; i < this.freePatchIndices.length; i++) {
-                this.gl.bufferSubData(this.gl.ARRAY_BUFFER,
-                    this.freePatchIndices[i] * BYTES_PER_PATCH,
+                room.writePatch(this.freePatchIndices[i] * BYTES_PER_PATCH,
                     this.emptyPatchVertices);
             }
             this.clearedPatchIndices = this.clearedPatchIndices.concat(this.freePatchIndices);
@@ -210,7 +192,7 @@ class VerticesAndColor {
     }
 }
 
-class ShadowProgram {
+class ShadowProgram implements Program {
     private VSHADER_SOURCE : string =
         'attribute vec4 a_Position;\n' +
         'uniform mat4 u_MvpMatrix;\n' +
@@ -236,15 +218,14 @@ class ShadowProgram {
             '  gl_FragColor = pack(gl_FragCoord.z);\n') +
         '}\n';
 
-    public program : WebGLProgram;
+    public glProgram : WebGLProgram;
     public mvpMatrix : Matrix4;
     private u_MvpMatrix : WebGLUniformLocation;
     private a_Position : number;
 
-    constructor(gl : WebGLRenderingContext, mvpMatrix : Matrix4,
-                private vertices : VerticesAndColor) {
+    constructor(gl : WebGLRenderingContext, mvpMatrix : Matrix4) {
         var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
-        this.program = program;
+        this.glProgram = program;
 
         this.u_MvpMatrix = gl.getUniformLocation(program, 'u_MvpMatrix');
         this.a_Position = gl.getAttribLocation(program, 'a_Position');
@@ -259,12 +240,12 @@ class ShadowProgram {
         gl.uniformMatrix4fv(this.u_MvpMatrix, false, mvpMatrix.elements);
     }
 
-    public enableVertexAttributes() {
-        this.vertices.enablePositionAttributes(this.program);
+    public enableVertexAttributes(gl : WebGLRenderingContext) {
+        enablePositionAttributes(this, gl);
     }
 }
 
-class LightProgram {
+class LightProgram implements Program {
     private VSHADER_SOURCE : string =
         'const vec3 c_Normal = vec3( 0.0, 0.0, 1.0 );\n' +
         'uniform mat4 u_ModelMatrix;\n' +
@@ -329,7 +310,7 @@ class LightProgram {
             '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n') +
         '}\n';
 
-    public program : WebGLProgram;
+    public glProgram : WebGLProgram;
     private u_ModelMatrix : WebGLUniformLocation;
     private u_MvpMatrix : WebGLUniformLocation;
     private u_LightColor : WebGLUniformLocation;
@@ -338,10 +319,9 @@ class LightProgram {
     public u_MvpMatrixFromLight : WebGLUniformLocation;
     public u_ShadowMap : WebGLUniformLocation;
 
-    constructor(gl : WebGLRenderingContext, modelMatrix : Matrix4, mvpMatrix : Matrix4,
-                private vertices : VerticesAndColor) {
+    constructor(gl : WebGLRenderingContext, modelMatrix : Matrix4, mvpMatrix : Matrix4) {
         var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
-        this.program = program;
+        this.glProgram = program;
 
         this.u_ModelMatrix = gl.getUniformLocation(program, 'u_ModelMatrix');
         this.u_MvpMatrix = gl.getUniformLocation(program, 'u_MvpMatrix');
@@ -365,34 +345,155 @@ class LightProgram {
         gl.uniformMatrix4fv(this.u_MvpMatrix, false, mvpMatrix.elements);
     }
 
-    public enableVertexAttributes() {
-        this.vertices.enablePositionAttributes(this.program);
-        this.vertices.enableColorAttributes(this.program);
+    public enableVertexAttributes(gl : WebGLRenderingContext) {
+        enablePositionAttributes(this, gl);
+        enableColorAttributes(this, gl);
+    }
+}
+
+class MyRoom {
+
+    private gl : WebGLRenderingContext;
+    private lightProgram : LightProgram;
+    private shadowProgram : ShadowProgram;
+    private frameBuffer : FrameBuffer;
+    width : number;
+    height : number;
+
+    constructor(public canvas : HTMLCanvasElement) {
+        canvas.style.position = "absolute";
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
+        canvas.style.overflow = "hidden";
+        canvas.style.touchAction = "none";
+        // TODO Respond to size changes.
+        this.width = canvas.width = canvas.clientWidth;
+        this.height = canvas.height = canvas.clientHeight;
+
+        var maxDimension = Math.max(canvas.width, canvas.height);
+        var modelMatrix = new Matrix4();
+        modelMatrix.setScale(STAGE_SIZE / canvas.width, -STAGE_SIZE / canvas.height,
+            STAGE_SIZE / maxDimension);
+        modelMatrix.translate(-canvas.width / 2, -canvas.height / 2, -maxDimension);
+
+        var vpMatrix = new Matrix4();
+        vpMatrix.setPerspective(53, 1, 200, STAGE_SIZE * 1.25);
+        vpMatrix.lookAt(0, 0, 0, AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z, UP_X, UP_Y, UP_Z);
+
+        var mvpMatrix = new Matrix4(vpMatrix);
+        mvpMatrix.multiply(modelMatrix);
+
+        // The earlier setPerspective puts vpMatrix into a left-hand NDC system.  We'll
+        // need to recover the right-hand system by scaling.  This also reverses the cycle
+        // direction so we'll need to switch the front face when drawing with this matrix.
+        var vpMatrixS = new Matrix4();
+        vpMatrixS.setScale(-1, -1, 1);
+        vpMatrixS.multiply(vpMatrix);
+
+        var postLight = vpMatrixS.multiplyVector4(new Vector4(LIGHT));
+        var postAudience = vpMatrixS.multiplyVector4(new Vector4(AUDIENCE));
+
+        var postAudienceZ = postAudience.elements[2] / postAudience.elements[3];
+        var postLightY = postLight.elements[1] / postLight.elements[3];
+        var postLightZ = postLight.elements[2] / postLight.elements[3];
+
+        var distanceZ = postLightZ;
+        var distance = Math.sqrt(postLightY * postLightY + distanceZ * distanceZ);
+
+        var mvpLightMatrix = new Matrix4();
+        var spread = Math.abs(postAudienceZ) * 2.5;
+        mvpLightMatrix.setPerspective(.15, 1, distance - spread, distance + spread);
+        mvpLightMatrix.lookAt(0, postLightY, postLightZ, 0, 0, postAudienceZ, UP_X, UP_Y, UP_Z);
+        mvpLightMatrix.multiply(vpMatrixS);
+        mvpLightMatrix.multiply(modelMatrix);
+
+        var gl = getWebGLContext(canvas, false);
+        gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(MAX_PATCH_COUNT * FLOATS_PER_PATCH),
+            gl.STATIC_DRAW);
+        this.gl = gl;
+
+        this.lightProgram = new LightProgram(gl, modelMatrix, mvpMatrix);
+        this.shadowProgram = new ShadowProgram(gl, mvpLightMatrix);
+
+        // Initialize framebuffer object (FBO)
+        var fbo = new FrameBuffer(gl);
+        if (!fbo.framebuffer) {
+            console.log('Failed to initialize frame buffer object');
+            return;
+        }
+        this.frameBuffer = fbo;
+        gl.activeTexture(gl.TEXTURE0); // Set a texture object to the texture unit
+        gl.bindTexture(gl.TEXTURE_2D, fbo.texture);
+
+        gl.enable(gl.DEPTH_TEST);
+        gl.enable(gl.CULL_FACE);
+        gl.cullFace(gl.BACK);
+    }
+
+    writePatch(offset : number, bytes : Float32Array) : void {
+        this.gl.bufferSubData(this.gl.ARRAY_BUFFER, offset, bytes);
+    }
+
+    redraw(vertexCount : number) {
+        var gl = this.gl;
+
+        if (useShadow) {
+            if (!showShadow) {
+                gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer.framebuffer);
+                gl.viewport(0, 0, OFFSCREEN_WIDTH, OFFSCREEN_HEIGHT);
+            }
+            gl.clearColor(1.0, 1.0, 1.0, 1.0);
+            gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+
+            gl.useProgram(this.shadowProgram.glProgram);
+            this.shadowProgram.enableVertexAttributes(this.gl);
+            gl.frontFace(gl.CCW);
+            gl.drawArrays(this.gl.TRIANGLES, 0, vertexCount);
+        }
+
+        if (!useShadow || !showShadow) {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+
+            gl.useProgram(this.lightProgram.glProgram);
+            gl.uniform1i(this.lightProgram.u_ShadowMap, 0);
+            gl.uniformMatrix4fv(this.lightProgram.u_MvpMatrixFromLight, false,
+                this.shadowProgram.mvpMatrix.elements);
+            this.lightProgram.enableVertexAttributes(this.gl);
+            gl.frontFace(gl.CW);
+            gl.drawArrays(this.gl.TRIANGLES, 0, vertexCount);
+        }
     }
 }
 
 module Glyffin {
 
+    export class GlRoom extends MyRoom {
+    }
+
     export class GlAudience implements Audience {
-        public canvas : HTMLCanvasElement;
-        private gl : WebGLRenderingContext;
         private vertices : VerticesAndColor;
         private interactives : Interactive[] = [];
         private drawCount : number = 0;
         private editCount : number = 0;
         private unsubscribeSpots : ()=>void;
-        private lightProgram : LightProgram;
-        private shadowProgram : ShadowProgram;
-        private frameBuffer : FrameBuffer;
         private redrawTime;
 
-        beginGestures() {
+        constructor(private room : GlRoom) {
+            this.vertices = new VerticesAndColor();
+            this.beginGestures(room.canvas);
+        }
+
+        beginGestures(element : HTMLElement) {
             if (this.unsubscribeSpots) {
                 this.unsubscribeSpots();
             }
             var touch;
             var touchStartTime;
-            this.unsubscribeSpots = new SpotObservable(this.canvas).subscribe({
+            this.unsubscribeSpots = new SpotObservable(element).subscribe({
                 onStart: (spot : Spot) : boolean => {
                     var hits = Interactive.findHits(this.interactives, spot.x, spot.y);
                     if (hits.length < 1) {
@@ -409,7 +510,7 @@ module Glyffin {
                     var preMoveTime = Date.now();
                     var moveResponseTime = preMoveTime - touchStartTime;
                     touch.move(spot, ()=> {
-                        this.beginGestures();
+                        this.beginGestures(element);
                     });
                     var afterMove = Date.now();
                     var moveRealizationTime = afterMove - preMoveTime;
@@ -417,79 +518,13 @@ module Glyffin {
                 },
                 onCancel: ()=> {
                     touch.cancel();
-                    this.beginGestures();
+                    this.beginGestures(element);
                 },
                 onEnd: ()=> {
                     touch.release();
-                    this.beginGestures();
+                    this.beginGestures(element);
                 }
             });
-        }
-
-        constructor(canvas : HTMLCanvasElement) {
-            canvas.width = canvas.clientWidth;
-            canvas.height = canvas.clientHeight;
-            this.canvas = canvas;
-            var maxDimension = Math.max(canvas.width, canvas.height);
-
-            var gl = getWebGLContext(canvas, false);
-            this.gl = gl;
-
-            var modelMatrix = new Matrix4();
-            modelMatrix.setScale(STAGE_SIZE / canvas.width, -STAGE_SIZE / canvas.height,
-                STAGE_SIZE / maxDimension);
-            modelMatrix.translate(-canvas.width / 2, -canvas.height / 2, -maxDimension);
-
-            var vpMatrix = new Matrix4();
-            vpMatrix.setPerspective(53, 1, 200, STAGE_SIZE * 1.25);
-            vpMatrix.lookAt(0, 0, 0, AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z, UP_X, UP_Y, UP_Z);
-
-            var mvpMatrix = new Matrix4(vpMatrix);
-            mvpMatrix.multiply(modelMatrix);
-
-            // The earlier setPerspective puts vpMatrix into a left-hand NDC system.  We'll
-            // need to recover the right-hand system by scaling.  This also reverses the cycle
-            // direction so we'll need to switch the front face when drawing with this matrix.
-            var vpMatrixS = new Matrix4();
-            vpMatrixS.setScale(-1, -1, 1);
-            vpMatrixS.multiply(vpMatrix);
-
-            var postLight = vpMatrixS.multiplyVector4(new Vector4(LIGHT));
-            var postAudience = vpMatrixS.multiplyVector4(new Vector4(AUDIENCE));
-
-            var postAudienceZ = postAudience.elements[2] / postAudience.elements[3];
-            var postLightY = postLight.elements[1] / postLight.elements[3];
-            var postLightZ = postLight.elements[2] / postLight.elements[3];
-
-            var distanceZ = postLightZ;
-            var distance = Math.sqrt(postLightY * postLightY + distanceZ * distanceZ);
-
-            var mvpLightMatrix = new Matrix4();
-            var spread = Math.abs(postAudienceZ) * 2.5;
-            mvpLightMatrix.setPerspective(.15, 1, distance - spread, distance + spread);
-            mvpLightMatrix.lookAt(0, postLightY, postLightZ, 0, 0, postAudienceZ, UP_X, UP_Y, UP_Z);
-            mvpLightMatrix.multiply(vpMatrixS);
-            mvpLightMatrix.multiply(modelMatrix);
-
-            this.vertices = new VerticesAndColor(MAX_PATCH_COUNT, gl);
-            this.lightProgram = new LightProgram(gl, modelMatrix, mvpMatrix, this.vertices);
-            this.shadowProgram = new ShadowProgram(gl, mvpLightMatrix, this.vertices);
-
-            // Initialize framebuffer object (FBO)
-            var fbo = new FrameBuffer(gl);
-            if (!fbo.framebuffer) {
-                console.log('Failed to initialize frame buffer object');
-                return;
-            }
-            this.frameBuffer = fbo;
-            gl.activeTexture(gl.TEXTURE0); // Set a texture object to the texture unit
-            gl.bindTexture(gl.TEXTURE_2D, fbo.texture);
-
-            gl.enable(gl.DEPTH_TEST);
-            gl.enable(gl.CULL_FACE);
-            gl.cullFace(gl.BACK);
-
-            this.beginGestures();
         }
 
         scheduleRedraw() {
@@ -503,47 +538,15 @@ module Glyffin {
         }
 
         private redraw() {
-            this.vertices.clearFreePatches();
-
-            var gl = this.gl;
-
-            if (useShadow) {
-                if (!showShadow) {
-                    gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer.framebuffer);
-                    gl.viewport(0, 0, OFFSCREEN_WIDTH, OFFSCREEN_HEIGHT);
-                }
-                gl.clearColor(1.0, 1.0, 1.0, 1.0);
-                gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-
-                gl.useProgram(this.shadowProgram.program);
-                this.shadowProgram.enableVertexAttributes();
-                gl.frontFace(gl.CCW);
-                gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
-            }
-
-            if (!useShadow || !showShadow) {
-                gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-                gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-                gl.clearColor(0.0, 0.0, 0.0, 1.0);
-                gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-
-                gl.useProgram(this.lightProgram.program);
-                gl.uniform1i(this.lightProgram.u_ShadowMap, 0);
-                gl.uniformMatrix4fv(this.lightProgram.u_MvpMatrixFromLight, false,
-                    this.shadowProgram.mvpMatrix.elements);
-                this.lightProgram.enableVertexAttributes();
-                gl.frontFace(gl.CW);
-                gl.drawArrays(this.gl.TRIANGLES, 0, this.vertices.getActiveVertexCount());
-            }
-
+            this.vertices.clearFreePatches(this.room);
+            this.room.redraw(this.vertices.getActiveVertexCount());
             this.drawCount = this.editCount;
-            /*
-            console.log("Active %i, Free %i, TotalFreed %",
-                this.vertices.getActiveVertexCount(),
-                this.vertices.getFreeVertexCount(), this.vertices.getTotalFreedVertices());
-             */
-
             this.redrawTime = Date.now();
+            /*
+             console.log("Active %i, Free %i, TotalFreed %",
+             this.vertices.getActiveVertexCount(),
+             this.vertices.getFreeVertexCount(), this.vertices.getTotalFreedVertices());
+             */
         }
 
         addPatch(bounds : Perimeter, color : Color) : Patch {
@@ -552,7 +555,7 @@ module Glyffin {
             }
 
             var patch = this.vertices.getPatch(bounds.left, bounds.top, bounds.right,
-                bounds.bottom, bounds.level, color);
+                bounds.bottom, bounds.level, color, this.room);
             this.scheduleRedraw();
             return <Patch>{
                 remove: ()=> {
@@ -573,18 +576,9 @@ module Glyffin {
             };
         }
 
-
         present<U>(glyff : Glyff<U>, reactionOrOnResult : Reaction<U>|OnResult<U>,
                    onError : OnError) : Presentation {
             return EMPTY_PRESENTATION;
-        }
-
-        disperse() {
-            //TODO
-        }
-
-        engage() {
-            // TODO
         }
     }
 
@@ -600,6 +594,7 @@ module Glyffin {
         present<U>(glyff : Glyff<U>, onResult? : OnResult<U>, onError? : OnError) : Presentation {
             var previousAudience : GlAudience = this.audiences.length == 0 ?
                 null : this.audiences[this.audiences.length - 1];
+            /*
             var nextCanvas = previousAudience ? this.createCanvas(previousAudience.canvas) : this.canvas;
 
             var nextAudience = new GlAudience(nextCanvas);
@@ -620,6 +615,8 @@ module Glyffin {
                     this.audience.engage()
                 }
             };
+             */
+            return null;
         }
 
         private createCanvas(previousCanvas : HTMLCanvasElement) : HTMLCanvasElement {

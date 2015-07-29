@@ -28,7 +28,8 @@ function main() {
      }, false);
      */
 
-    var glAudience = new Glyffin.GlAudience(<HTMLCanvasElement>document.getElementById('webgl'));
+    var room = new Glyffin.GlRoom(<HTMLCanvasElement>document.getElementById('webgl'));
+    var glAudience = new Glyffin.GlAudience(room);
 
     var background = [0xbb, 0xbb, 0xbb, 0xff];
     var midground = [0x55, 0x055, 0x55, 0xff];
@@ -36,8 +37,8 @@ function main() {
     var backgroundColorPath = [0, 0];
     var midgroundColorPath = [0, 1];
 
-    var screenWidth = glAudience.canvas.width;
-    var perimeter = new Glyffin.Perimeter(0, 0, screenWidth, glAudience.canvas.height, 1, 0);
+    var screenWidth = room.width;
+    var perimeter = new Glyffin.Perimeter(0, 0, screenWidth, room.height, 1, 0);
     var metrics = new Glyffin.Metrics(perimeter, 48, 13, palette);
 
     var hNewsUri = "https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20rss%20where%20url%3D%22https%3A%2F%2Fnews.ycombinator.com%2Frss%22&format=json&diagnostics=true&callback=";
@@ -109,34 +110,6 @@ function main() {
                 getRightCell(nextItem), getLeftCell(prevItem),
                 getCell(pressedBackground, item['title'], item['link']));
 
-            function button(label : string, symbol : string) : Glyff<string> {
-                function addLabel(label : string) : (glyff : Glyff<Void>)=>Glyff<Void> {
-                    return function (background : Glyffin.Glyff<Void>) : Glyff<Void> {
-                        var buttonText = Glyffin.asciiMultiLine(1, label)
-                            .pad(readSize, 0)
-                            .limitHeight(readSize * 1.75, .5);
-                        return background.addNearMajor(0.2, buttonText);
-                    }
-                }
-
-                var buttonBackgroundUnpressed = Glyffin.colorPath(midgroundColorPath, .3,
-                    backgroundColorPath);
-                var buttonBackgroundPressed = Glyffin.colorPath(midgroundColorPath, .6,
-                    backgroundColorPath);
-                var addButtonLabel = addLabel(label);
-                var buttonUnpressed = buttonBackgroundUnpressed.rebuild(addButtonLabel);
-                var buttonPressed = buttonBackgroundPressed.rebuild(addButtonLabel);
-                return buttonUnpressed.clicken(symbol, buttonPressed);
-            }
-
-            var nextButton = button("Next", "next");
-            var prevButton = button("Back", "back");
-            var actionBar = nextButton
-                .splitWidthCombine(readSize / 2, Glyffin.ClearGlyff)
-                .splitWidthCombine(screenWidth * .3, prevButton)
-                .pad(readSize, tapHeight / 2)
-                .limitHeight(2 * tapHeight, 0);
-
             var app = Glyffin.colorPath(backgroundColorPath)
                 .addNearMajor(1, cell.splitHeightRetain(-tapHeight * 3, Glyffin.ClearGlyff));
 
@@ -169,7 +142,6 @@ function main() {
         }
 
         refresh();
-        //window.scrollTo(0, 0);
     });
 }
 
