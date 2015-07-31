@@ -17,6 +17,23 @@ module Glyffin {
         }
     }
 
+    export class Spot {
+        constructor(public x : number, public y : number) {
+        }
+
+        gridDistance(other : Spot) : number {
+            return Math.max(Math.abs(other.x - this.x), Math.abs(other.y - this.y));
+        }
+
+        xDistance(origin : Spot) : number {
+            return this.x - origin.x;
+        }
+
+        yDistance(origin : Spot) : number {
+            return this.y - origin.y;
+        }
+    }
+
     export class Perimeter {
 
         constructor(public left : number, public top : number, public right : number,
@@ -175,19 +192,6 @@ module Glyffin {
         }
     }
 
-    export class Spot {
-        constructor(public x : number, public y : number) {
-        }
-
-        gridDistance(other : Spot) : number {
-            return Math.max(Math.abs(other.x - this.x), Math.abs(other.y - this.y));
-        }
-
-        xDistance(origin : Spot) : number {
-            return this.x - origin.x;
-        }
-    }
-
     export class Metrics {
 
         constructor(public perimeter : Perimeter, public tapHeight : number,
@@ -229,6 +233,64 @@ module Glyffin {
         move(spot : Spot, onAbort : ()=>void);
         release();
         cancel();
+    }
+
+    export class DownGesturing implements Gesturing {
+
+        private started : boolean;
+        private done : boolean;
+        private down : number;
+
+        constructor(private startSpot : Spot, private minMove : number,
+                    private onStarted : (down : number)=>void,
+                    private onCanceled : (started : boolean, down : number)=>void,
+                    private onFinished : (started : boolean, down : number)=>void) {
+            this.done = false;
+            this.started = false;
+            this.down = 0;
+        }
+
+        move(spot : Glyffin.Spot, onAbort : ()=>void) {
+            if (this.done) {
+                return;
+            }
+            if (!this.started) {
+                var xOffset = Math.abs(spot.xDistance(this.startSpot));
+                if (xOffset > this.minMove) {
+                    this.done = true;
+                    onAbort();
+                    return;
+                }
+                var yOffset = spot.yDistance(this.startSpot);
+                if (Math.abs(yOffset) < this.minMove) {
+                    return;
+                }
+                if (yOffset < 0) {
+                    return;
+                }
+                this.started = true;
+                this.onStarted(yOffset);
+                return;
+            }
+            var yOffset = spot.yDistance(this.startSpot);
+            this.onStarted(this.down = Math.max(0, yOffset));
+        }
+
+        release() {
+            if (this.done) {
+                return;
+            }
+            this.done = true;
+            this.onFinished(this.started, this.down);
+        }
+
+        cancel() {
+            if (this.done) {
+                return;
+            }
+            this.done = true;
+            this.onCanceled(this.started, this.down);
+        }
     }
 
     export interface Reaction<T> {

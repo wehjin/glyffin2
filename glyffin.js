@@ -277,11 +277,46 @@ var Glyffin;
             return Glyff.create(function (metrics, audience, presenter) {
                 var perimeter = metrics.perimeter;
                 var perimeterHeight = perimeter.getHeight();
-                var revelationHeight = inset.getPixels(perimeterHeight);
-                var revelationMetrics = metrics.withPerimeter(perimeter.resizeFromTop(revelationHeight));
-                var coverMetrics = metrics.withPerimeter(perimeter.downFromTop(revelationHeight, perimeterHeight).addLevel(1));
-                presenter.addPresentation(_this.present(coverMetrics, audience, presenter));
-                presenter.addPresentation(revelation.present(revelationMetrics, audience, presenter));
+                var maxRevelationHeight = inset.getPixels(perimeterHeight);
+                var revelationHeight;
+                var unpresent = null;
+                var cover = _this;
+                function setRevelationHeight(height) {
+                    revelationHeight = Math.min(height, maxRevelationHeight);
+                    var revelationMetrics = metrics.withPerimeter(perimeter.resizeFromTop(revelationHeight));
+                    var coverMetrics = metrics.withPerimeter(perimeter.downFromTop(revelationHeight, perimeterHeight).addLevel(1));
+                    if (unpresent) {
+                        unpresent();
+                    }
+                    var coverRemovable = presenter.addPresentation(cover.present(coverMetrics, audience, presenter));
+                    var revelationRemovable = presenter.addPresentation(revelation.present(revelationMetrics, audience, presenter));
+                    unpresent = function () {
+                        coverRemovable.remove();
+                        revelationRemovable.remove();
+                    };
+                }
+                setRevelationHeight(0);
+                var zone = audience.addZone(perimeter, {
+                    init: function (spot) {
+                        return new Glyffin.DownGesturing(spot, metrics.tapHeight, function (down) {
+                            setRevelationHeight(down);
+                        }, function (started, down) {
+                            if (started) {
+                                setRevelationHeight(0);
+                            }
+                        }, function (started, down) {
+                            if (started) {
+                                // TODO: Enable de-revelation.
+                                setRevelationHeight(0);
+                            }
+                        });
+                    }
+                });
+                presenter.addPresentation({
+                    end: function () {
+                        zone.remove();
+                    }
+                });
             });
         };
         Glyff.prototype.limitWidth = function (maxWidth, align) {

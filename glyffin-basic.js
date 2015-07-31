@@ -20,6 +20,23 @@ var Glyffin;
         return Inset1;
     })();
     Glyffin.Inset1 = Inset1;
+    var Spot = (function () {
+        function Spot(x, y) {
+            this.x = x;
+            this.y = y;
+        }
+        Spot.prototype.gridDistance = function (other) {
+            return Math.max(Math.abs(other.x - this.x), Math.abs(other.y - this.y));
+        };
+        Spot.prototype.xDistance = function (origin) {
+            return this.x - origin.x;
+        };
+        Spot.prototype.yDistance = function (origin) {
+            return this.y - origin.y;
+        };
+        return Spot;
+    })();
+    Glyffin.Spot = Spot;
     var Perimeter = (function () {
         function Perimeter(left, top, right, bottom, age, level) {
             this.left = left;
@@ -142,20 +159,6 @@ var Glyffin;
         return Palette;
     })();
     Glyffin.Palette = Palette;
-    var Spot = (function () {
-        function Spot(x, y) {
-            this.x = x;
-            this.y = y;
-        }
-        Spot.prototype.gridDistance = function (other) {
-            return Math.max(Math.abs(other.x - this.x), Math.abs(other.y - this.y));
-        };
-        Spot.prototype.xDistance = function (origin) {
-            return this.x - origin.x;
-        };
-        return Spot;
-    })();
-    Glyffin.Spot = Spot;
     var Metrics = (function () {
         function Metrics(perimeter, tapHeight, readHeight, palette) {
             this.perimeter = perimeter;
@@ -183,6 +186,59 @@ var Glyffin;
     };
     Glyffin.EMPTY_PATCH = Glyffin.EMPTY_REMOVABLE;
     Glyffin.EMPTY_ACTIVE = Glyffin.EMPTY_REMOVABLE;
+    var DownGesturing = (function () {
+        function DownGesturing(startSpot, minMove, onStarted, onCanceled, onFinished) {
+            this.startSpot = startSpot;
+            this.minMove = minMove;
+            this.onStarted = onStarted;
+            this.onCanceled = onCanceled;
+            this.onFinished = onFinished;
+            this.done = false;
+            this.started = false;
+            this.down = 0;
+        }
+        DownGesturing.prototype.move = function (spot, onAbort) {
+            if (this.done) {
+                return;
+            }
+            if (!this.started) {
+                var xOffset = Math.abs(spot.xDistance(this.startSpot));
+                if (xOffset > this.minMove) {
+                    this.done = true;
+                    onAbort();
+                    return;
+                }
+                var yOffset = spot.yDistance(this.startSpot);
+                if (Math.abs(yOffset) < this.minMove) {
+                    return;
+                }
+                if (yOffset < 0) {
+                    return;
+                }
+                this.started = true;
+                this.onStarted(yOffset);
+                return;
+            }
+            var yOffset = spot.yDistance(this.startSpot);
+            this.onStarted(this.down = Math.max(0, yOffset));
+        };
+        DownGesturing.prototype.release = function () {
+            if (this.done) {
+                return;
+            }
+            this.done = true;
+            this.onFinished(this.started, this.down);
+        };
+        DownGesturing.prototype.cancel = function () {
+            if (this.done) {
+                return;
+            }
+            this.done = true;
+            this.onCanceled(this.started, this.down);
+        };
+        return DownGesturing;
+    })();
+    Glyffin.DownGesturing = DownGesturing;
     Glyffin.EMPTY_PRESENTATION = {
         end: function () {
         }

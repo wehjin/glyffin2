@@ -347,13 +347,54 @@ module Glyffin {
                                       presenter : Presenter<T|U>) => {
                 var perimeter = metrics.perimeter;
                 var perimeterHeight = perimeter.getHeight();
-                var revelationHeight = inset.getPixels(perimeterHeight);
-                var revelationMetrics = metrics.withPerimeter(perimeter.resizeFromTop(revelationHeight));
-                var coverMetrics = metrics.withPerimeter(
-                    perimeter.downFromTop(revelationHeight, perimeterHeight).addLevel(1));
-                presenter.addPresentation(this.present(coverMetrics, audience, presenter));
-                presenter.addPresentation(revelation.present(revelationMetrics, audience,
-                    presenter));
+                var maxRevelationHeight = inset.getPixels(perimeterHeight);
+
+                var revelationHeight;
+                var unpresent : ()=>void = null;
+                var cover = this;
+
+                function setRevelationHeight(height : number) {
+                    revelationHeight = Math.min(height, maxRevelationHeight);
+                    var revelationMetrics = metrics.withPerimeter(perimeter.resizeFromTop(revelationHeight));
+                    var coverMetrics = metrics.withPerimeter(
+                        perimeter.downFromTop(revelationHeight, perimeterHeight).addLevel(1));
+
+                    if (unpresent) {
+                        unpresent();
+                    }
+                    var coverRemovable = presenter.addPresentation(cover.present(coverMetrics,
+                        audience, presenter));
+                    var revelationRemovable = presenter.addPresentation(revelation.present(revelationMetrics,
+                        audience,
+                        presenter));
+                    unpresent = ()=> {
+                        coverRemovable.remove();
+                        revelationRemovable.remove();
+                    }
+                }
+
+                setRevelationHeight(0);
+                var zone = audience.addZone(perimeter, {
+                    init: (spot : Spot) : Gesturing => {
+                        return new DownGesturing(spot, metrics.tapHeight, (down)=> {
+                            setRevelationHeight(down);
+                        }, (started, down)=> {
+                            if (started) {
+                                setRevelationHeight(0);
+                            }
+                        }, (started, down)=> {
+                            if (started) {
+                                // TODO: Enable de-revelation.
+                                setRevelationHeight(0);
+                            }
+                        })
+                    }
+                });
+                presenter.addPresentation({
+                    end: ()=> {
+                        zone.remove();
+                    }
+                });
             });
         }
 
