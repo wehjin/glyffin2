@@ -295,9 +295,9 @@ module Glyffin {
             });
         }
 
-        splitHeightCombine(size : number, topGlyff : Glyff<T>) : Glyff<T> {
+        splitHeight<U>(size : number, topGlyff : Glyff<U>) : Glyff<T|U> {
             return Glyff.create((metrics : Metrics, audience : Audience,
-                                 presenter : Presenter<T>) => {
+                                 presenter : Presenter<T|U>) => {
                 var split = metrics.perimeter.splitHeight(size);
                 presenter.addPresentation(topGlyff.present(metrics.withPerimeter(split[0]),
                     audience, presenter));
@@ -338,6 +338,22 @@ module Glyffin {
                 var nearPerimeter = metrics.perimeter.withLevel(metrics.perimeter.level + level);
                 presenter.addPresentation(nearGlyff.present(metrics.withPerimeter(nearPerimeter),
                     audience, presenter));
+            });
+        }
+
+
+        revealDown<U>(inset : Inset1, revelation : Glyff<U>) : Glyff<T|U> {
+            return Glyff.create<T|U>((metrics : Metrics, audience : Audience,
+                                      presenter : Presenter<T|U>) => {
+                var perimeter = metrics.perimeter;
+                var perimeterHeight = perimeter.getHeight();
+                var revelationHeight = inset.getPixels(perimeterHeight);
+                var revelationMetrics = metrics.withPerimeter(perimeter.resizeFromTop(revelationHeight));
+                var coverMetrics = metrics.withPerimeter(
+                    perimeter.downFromTop(revelationHeight, perimeterHeight).addLevel(1));
+                presenter.addPresentation(this.present(coverMetrics, audience, presenter));
+                presenter.addPresentation(revelation.present(revelationMetrics, audience,
+                    presenter));
             });
         }
 

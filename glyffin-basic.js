@@ -9,6 +9,17 @@ var Glyffin;
         return Void;
     })();
     Glyffin.Void = Void;
+    var Inset1 = (function () {
+        function Inset1(fraction, fixed) {
+            this.fraction = fraction;
+            this.fixed = fixed;
+        }
+        Inset1.prototype.getPixels = function (whole) {
+            return this.fraction * whole + this.fixed;
+        };
+        return Inset1;
+    })();
+    Glyffin.Inset1 = Inset1;
     var Perimeter = (function () {
         function Perimeter(left, top, right, bottom, age, level) {
             this.left = left;
@@ -30,6 +41,9 @@ var Glyffin;
         Perimeter.prototype.withLevel = function (level) {
             return new Perimeter(this.left, this.top, this.right, this.bottom, this.age, level);
         };
+        Perimeter.prototype.addLevel = function (add) {
+            return new Perimeter(this.left, this.top, this.right, this.bottom, this.age, this.level + add);
+        };
         Perimeter.prototype.translate = function (x) {
             return new Perimeter(this.left + x, this.top, this.right + x, this.bottom, this.age, this.level);
         };
@@ -43,6 +57,9 @@ var Glyffin;
         Perimeter.prototype.rightFromLeft = function (pixelsX, pixelsWide) {
             var insetLeft = this.left + pixelsX;
             return new Perimeter(insetLeft, this.top, insetLeft + pixelsWide, this.bottom, this.age, this.level);
+        };
+        Perimeter.prototype.resizeFromTop = function (pixelsHigh) {
+            return new Perimeter(this.left, this.top, this.right, this.top + pixelsHigh, this.age, this.level);
         };
         Perimeter.prototype.splitHeight = function (pixels) {
             if (pixels >= 0) {

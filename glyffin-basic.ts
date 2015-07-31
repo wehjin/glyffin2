@@ -7,6 +7,16 @@ module Glyffin {
     export class Void {
     }
 
+    export class Inset1 {
+
+        constructor(public fraction : number, public fixed : number) {
+        }
+
+        public getPixels(whole : number) : number {
+            return this.fraction * whole + this.fixed;
+        }
+    }
+
     export class Perimeter {
 
         constructor(public left : number, public top : number, public right : number,
@@ -29,6 +39,11 @@ module Glyffin {
             return new Perimeter(this.left, this.top, this.right, this.bottom, this.age, level);
         }
 
+        addLevel(add : number) : Perimeter {
+            return new Perimeter(this.left, this.top, this.right, this.bottom, this.age,
+                this.level + add);
+        }
+
         translate(x : number) : Perimeter {
             return new Perimeter(this.left + x, this.top, this.right + x, this.bottom, this.age,
                 this.level);
@@ -49,6 +64,11 @@ module Glyffin {
             var insetLeft = this.left + pixelsX;
             return new Perimeter(insetLeft, this.top, insetLeft + pixelsWide, this.bottom,
                 this.age, this.level);
+        }
+
+        resizeFromTop(pixelsHigh : number) : Perimeter {
+            return new Perimeter(this.left, this.top, this.right, this.top + pixelsHigh, this.age,
+                this.level);
         }
 
         splitHeight(pixels : number) : Perimeter[] {

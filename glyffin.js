@@ -239,7 +239,7 @@ var Glyffin;
                 presenter.addPresentation(_this.present(metrics.withPerimeter(split[1]), audience, presenter));
             });
         };
-        Glyff.prototype.splitHeightCombine = function (size, topGlyff) {
+        Glyff.prototype.splitHeight = function (size, topGlyff) {
             var _this = this;
             return Glyff.create(function (metrics, audience, presenter) {
                 var split = metrics.perimeter.splitHeight(size);
@@ -270,6 +270,18 @@ var Glyffin;
                 // TODO: Think through relative versus absolute level.
                 var nearPerimeter = metrics.perimeter.withLevel(metrics.perimeter.level + level);
                 presenter.addPresentation(nearGlyff.present(metrics.withPerimeter(nearPerimeter), audience, presenter));
+            });
+        };
+        Glyff.prototype.revealDown = function (inset, revelation) {
+            var _this = this;
+            return Glyff.create(function (metrics, audience, presenter) {
+                var perimeter = metrics.perimeter;
+                var perimeterHeight = perimeter.getHeight();
+                var revelationHeight = inset.getPixels(perimeterHeight);
+                var revelationMetrics = metrics.withPerimeter(perimeter.resizeFromTop(revelationHeight));
+                var coverMetrics = metrics.withPerimeter(perimeter.downFromTop(revelationHeight, perimeterHeight).addLevel(1));
+                presenter.addPresentation(_this.present(coverMetrics, audience, presenter));
+                presenter.addPresentation(revelation.present(revelationMetrics, audience, presenter));
             });
         };
         Glyff.prototype.limitWidth = function (maxWidth, align) {
