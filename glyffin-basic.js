@@ -34,6 +34,9 @@ var Glyffin;
         Spot.prototype.yDistance = function (origin) {
             return this.y - origin.y;
         };
+        Spot.prototype.addY = function (addition) {
+            return new Spot(this.x, this.y + addition);
+        };
         return Spot;
     })();
     Glyffin.Spot = Spot;
@@ -186,59 +189,6 @@ var Glyffin;
     };
     Glyffin.EMPTY_PATCH = Glyffin.EMPTY_REMOVABLE;
     Glyffin.EMPTY_ACTIVE = Glyffin.EMPTY_REMOVABLE;
-    var DownGesturing = (function () {
-        function DownGesturing(startSpot, minMove, onStarted, onCanceled, onFinished) {
-            this.startSpot = startSpot;
-            this.minMove = minMove;
-            this.onStarted = onStarted;
-            this.onCanceled = onCanceled;
-            this.onFinished = onFinished;
-            this.done = false;
-            this.started = false;
-            this.down = 0;
-        }
-        DownGesturing.prototype.move = function (spot, onAbort) {
-            if (this.done) {
-                return;
-            }
-            if (!this.started) {
-                var xOffset = Math.abs(spot.xDistance(this.startSpot));
-                if (xOffset > this.minMove) {
-                    this.done = true;
-                    onAbort();
-                    return;
-                }
-                var yOffset = spot.yDistance(this.startSpot);
-                if (Math.abs(yOffset) < this.minMove) {
-                    return;
-                }
-                if (yOffset < 0) {
-                    return;
-                }
-                this.started = true;
-                this.onStarted(yOffset);
-                return;
-            }
-            var yOffset = spot.yDistance(this.startSpot);
-            this.onStarted(this.down = Math.max(0, yOffset));
-        };
-        DownGesturing.prototype.release = function () {
-            if (this.done) {
-                return;
-            }
-            this.done = true;
-            this.onFinished(this.started, this.down);
-        };
-        DownGesturing.prototype.cancel = function () {
-            if (this.done) {
-                return;
-            }
-            this.done = true;
-            this.onCanceled(this.started, this.down);
-        };
-        return DownGesturing;
-    })();
-    Glyffin.DownGesturing = DownGesturing;
     Glyffin.EMPTY_PRESENTATION = {
         end: function () {
         }
@@ -305,5 +255,70 @@ var Glyffin;
         return SpeedometerX;
     })();
     Glyffin.SpeedometerX = SpeedometerX;
+    var VerticalGesturing = (function () {
+        function VerticalGesturing(downSpot, minMove, onStarted, onCanceled, onFinished) {
+            this.downSpot = downSpot;
+            this.minMove = minMove;
+            this.onStarted = onStarted;
+            this.onCanceled = onCanceled;
+            this.onFinished = onFinished;
+            this.done = false;
+            this.moved = 0;
+        }
+        VerticalGesturing.prototype.move = function (spot, onAbort) {
+            if (this.done) {
+                return;
+            }
+            if (!this.startSpot) {
+                var crossOffset = Math.abs(spot.xDistance(this.downSpot));
+                if (crossOffset > Math.abs(this.minMove)) {
+                    this.done = true;
+                    onAbort();
+                    return;
+                }
+                var grainOffset = spot.yDistance(this.downSpot);
+                if (Math.abs(grainOffset) < Math.abs(this.minMove)) {
+                    return;
+                }
+                if ((this.minMove > 0 && grainOffset < 0) || (this.minMove < 0 && grainOffset > 0)) {
+                    return;
+                }
+                this.startSpot = this.downSpot.addY(this.minMove);
+                this.onStarted(spot.yDistance(this.startSpot));
+                return;
+            }
+            var grainOffset = spot.yDistance(this.startSpot);
+            if (this.minMove > 0) {
+                this.moved = Math.max(0, grainOffset);
+            }
+            else if (this.minMove < 0) {
+                this.moved = Math.min(0, grainOffset);
+            }
+            else {
+                this.moved = grainOffset;
+            }
+            this.onStarted(this.moved);
+        };
+        VerticalGesturing.prototype.release = function () {
+            if (this.done) {
+                return;
+            }
+            this.done = true;
+            if (this.startSpot) {
+                this.onFinished();
+            }
+        };
+        VerticalGesturing.prototype.cancel = function () {
+            if (this.done) {
+                return;
+            }
+            this.done = true;
+            if (this.startSpot) {
+                this.onCanceled();
+            }
+        };
+        return VerticalGesturing;
+    })();
+    Glyffin.VerticalGesturing = VerticalGesturing;
 })(Glyffin || (Glyffin = {}));
 //# sourceMappingURL=glyffin-basic.js.map

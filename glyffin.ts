@@ -354,7 +354,7 @@ module Glyffin {
                 var cover = this;
 
                 function setRevelationHeight(height : number) {
-                    revelationHeight = Math.min(height, maxRevelationHeight);
+                    revelationHeight = Math.max(0, Math.min(height, maxRevelationHeight));
                     var revelationMetrics = metrics.withPerimeter(perimeter.resizeFromTop(revelationHeight));
                     var coverMetrics = metrics.withPerimeter(
                         perimeter.downFromTop(revelationHeight, perimeterHeight).addLevel(1));
@@ -373,26 +373,42 @@ module Glyffin {
                     }
                 }
 
-                setRevelationHeight(0);
-                var zone = audience.addZone(perimeter, {
-                    init: (spot : Spot) : Gesturing => {
-                        return new DownGesturing(spot, metrics.tapHeight, (down)=> {
-                            setRevelationHeight(down);
-                        }, (started, down)=> {
-                            if (started) {
-                                setRevelationHeight(0);
-                            }
-                        }, (started, down)=> {
-                            if (started) {
-                                // TODO: Enable de-revelation.
-                                setRevelationHeight(0);
-                            }
-                        })
+                var anchorHeight;
+                var zone : Removable;
+
+                function setAnchorHeight(height : number) {
+                    if (zone) {
+                        zone.remove();
                     }
-                });
+                    setRevelationHeight(height);
+                    anchorHeight = height;
+                    zone = audience.addZone(perimeter, {
+                        init: (spot : Spot) : Gesturing => {
+                            return new VerticalGesturing(spot,
+                                metrics.tapHeight * (anchorHeight <= 0 ? 1 : -1),
+                                (moved)=> {
+                                    setRevelationHeight(anchorHeight + moved);
+                                }, ()=> {
+                                    setRevelationHeight(anchorHeight);
+                                }, ()=> {
+                                    var target = anchorHeight <= 0 ? maxRevelationHeight : 0;
+                                    var distanceFromTarget = Math.abs(revelationHeight - target);
+                                    if (distanceFromTarget < maxRevelationHeight / 2) {
+                                        setAnchorHeight(target);
+                                    } else {
+                                        setRevelationHeight(anchorHeight);
+                                    }
+                                })
+                        }
+                    });
+                }
+
+                setAnchorHeight(0);
                 presenter.addPresentation({
                     end: ()=> {
-                        zone.remove();
+                        if (zone) {
+                            zone.remove();
+                        }
                     }
                 });
             });

@@ -32,6 +32,10 @@ module Glyffin {
         yDistance(origin : Spot) : number {
             return this.y - origin.y;
         }
+
+        addY(addition : number) : Spot {
+            return new Spot(this.x, this.y + addition);
+        }
     }
 
     export class Perimeter {
@@ -235,64 +239,6 @@ module Glyffin {
         cancel();
     }
 
-    export class DownGesturing implements Gesturing {
-
-        private started : boolean;
-        private done : boolean;
-        private down : number;
-
-        constructor(private startSpot : Spot, private minMove : number,
-                    private onStarted : (down : number)=>void,
-                    private onCanceled : (started : boolean, down : number)=>void,
-                    private onFinished : (started : boolean, down : number)=>void) {
-            this.done = false;
-            this.started = false;
-            this.down = 0;
-        }
-
-        move(spot : Glyffin.Spot, onAbort : ()=>void) {
-            if (this.done) {
-                return;
-            }
-            if (!this.started) {
-                var xOffset = Math.abs(spot.xDistance(this.startSpot));
-                if (xOffset > this.minMove) {
-                    this.done = true;
-                    onAbort();
-                    return;
-                }
-                var yOffset = spot.yDistance(this.startSpot);
-                if (Math.abs(yOffset) < this.minMove) {
-                    return;
-                }
-                if (yOffset < 0) {
-                    return;
-                }
-                this.started = true;
-                this.onStarted(yOffset);
-                return;
-            }
-            var yOffset = spot.yDistance(this.startSpot);
-            this.onStarted(this.down = Math.max(0, yOffset));
-        }
-
-        release() {
-            if (this.done) {
-                return;
-            }
-            this.done = true;
-            this.onFinished(this.started, this.down);
-        }
-
-        cancel() {
-            if (this.done) {
-                return;
-            }
-            this.done = true;
-            this.onCanceled(this.started, this.down);
-        }
-    }
-
     export interface Reaction<T> {
         onResult(result : T);
         onError(error : Error);
@@ -387,6 +333,75 @@ module Glyffin {
                 return distance2 / approximateDuration;
             }
             return (this.getVelocity1() + distance2 / duration2) / 2;
+        }
+    }
+
+    export class VerticalGesturing implements Gesturing {
+
+        private startSpot : Spot;
+        private done : boolean;
+        private moved : number;
+
+        constructor(private downSpot : Spot, private minMove : number,
+                    private onStarted : (down : number)=>void,
+                    private onCanceled : ()=>void,
+                    private onFinished : ()=>void) {
+            this.done = false;
+            this.moved = 0;
+        }
+
+        move(spot : Glyffin.Spot, onAbort : ()=>void) {
+            if (this.done) {
+                return;
+            }
+            if (!this.startSpot) {
+                var crossOffset = Math.abs(spot.xDistance(this.downSpot));
+                if (crossOffset > Math.abs(this.minMove)) {
+                    this.done = true;
+                    onAbort();
+                    return;
+                }
+                var grainOffset = spot.yDistance(this.downSpot);
+                if (Math.abs(grainOffset) < Math.abs(this.minMove)) {
+                    return;
+                }
+                if ((this.minMove > 0 && grainOffset < 0) ||
+                    (this.minMove < 0 && grainOffset > 0)) {
+                    return;
+                }
+                this.startSpot = this.downSpot.addY(this.minMove);
+                this.onStarted(spot.yDistance(this.startSpot));
+                return;
+            }
+            var grainOffset = spot.yDistance(this.startSpot);
+            if (this.minMove > 0) {
+                this.moved = Math.max(0, grainOffset);
+            } else if (this.minMove < 0) {
+                this.moved = Math.min(0, grainOffset);
+            } else {
+                this.moved = grainOffset;
+            }
+            this.onStarted(this.moved);
+        }
+
+        release() {
+            if (this.done) {
+                return;
+            }
+            this.done = true;
+            if (this.startSpot) {
+                this.onFinished();
+            }
+        }
+
+        cancel() {
+            if (this.done) {
+                return;
+            }
+            this.done = true;
+            if (this.startSpot) {
+                this.onCanceled();
+            }
         }
     }
 }
