@@ -15,7 +15,18 @@ function main() {
     var audience = new Glyffin.GlAudience(room);
     var perimeter = new Glyffin.Perimeter(0, 0, room.width, room.height, 1, 0);
     var metrics = new Metrics(perimeter, 48, 10, new Glyffin.Palette());
-    var glyff = Glyffin.RedGlyff.revealDown(new Glyffin.Inset1(.33, 0), Glyffin.BlueGlyff);
-    glyff.present(metrics, audience);
+    var covers = [Glyffin.RedGlyff, Glyffin.GreenGlyff];
+    var coverIndex = 0;
+    var presentation;
+    function represent() {
+        coverIndex = (coverIndex + 1) == covers.length ? 0 : (coverIndex + 1);
+        var cover = covers[coverIndex];
+        if (presentation) {
+            presentation.end();
+        }
+        var glyff = cover.revealDown(new Glyffin.Inset1(.33, 0), Glyffin.BlueGlyff);
+        presentation = glyff.present(metrics, audience);
+    }
+    represent();
 }
 //# sourceMappingURL=revealDown.js.map
