@@ -175,6 +175,14 @@ module Glyffin {
                 Color.mixComponent(mix, this.blue, endColor.blue),
                 Color.mixComponent(mix, this.alpha, endColor.alpha));
         }
+
+        darken(mix : number) : Color {
+            return this.mix(mix, Color.BLACK);
+        }
+
+        lighten(mix : number) : Color {
+            return this.mix(mix, Color.WHITE);
+        }
     }
 
     export class Palette {

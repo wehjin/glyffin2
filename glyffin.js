@@ -229,6 +229,25 @@ var Glyffin;
                 presenter.addPresentation(upperGlyff.present(mogrifier.getMetrics(metrics, presenter), mogrifier.getUpperAudience(audience, presenter), mogrifier.getUpperReaction(audience, presenter)));
             });
         };
+        Glyff.prototype.isolate = function (isolated) {
+            var _this = this;
+            return Glyff.create(function (metrics, audience, presenter) {
+                presenter.addPresentation(_this.present(metrics, isolated ? {
+                    addPatch: function (bounds, color) {
+                        return audience.addPatch(bounds, color);
+                    },
+                    addZone: function (bounds, touchProvider) {
+                        return {
+                            remove: function () {
+                            }
+                        };
+                    },
+                    present: function (glyff, reactionOrOnResult, onError) {
+                        return audience.present(glyff, reactionOrOnResult, onError);
+                    }
+                } : audience, presenter));
+            });
+        };
         Glyff.prototype.addLefts = function (insertions) {
             var current = this;
             var todo = insertions.slice();
@@ -298,7 +317,7 @@ var Glyffin;
                         unpresent();
                     }
                     var coverRemovable = presenter.addPresentation(cover.present(coverMetrics, audience, presenter));
-                    var revelationRemovable = presenter.addPresentation(revelation.present(revelationMetrics, audience, presenter));
+                    var revelationRemovable = presenter.addPresentation(revelation.isolate(revelationHeight < maxRevelationHeight).present(revelationMetrics, audience, presenter));
                     unpresent = function () {
                         coverRemovable.remove();
                         revelationRemovable.remove();
@@ -416,9 +435,15 @@ var Glyffin;
                 var unpressedMetrics = metrics.withPerimeter(perimeter.withLevel(perimeter.level + 4));
                 var removable = presenter.addPresentation(unpressed.present(unpressedMetrics, audience));
                 var zone = audience.addZone(perimeter, new ClickGesturable(metrics.tapHeight / 2, function () {
+                    if (!pressed) {
+                        return;
+                    }
                     removable.remove();
                     removable = presenter.addPresentation(pressed.present(metrics, audience));
                 }, function () {
+                    if (!pressed) {
+                        return;
+                    }
                     removable.remove();
                     removable = presenter.addPresentation(unpressed.present(unpressedMetrics, audience));
                 }, function () {

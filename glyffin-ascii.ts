@@ -105,7 +105,7 @@ module Glyffin {
         });
     }
 
-    export function asciiEntireWord(word : string, base? : Glyff<Void>) : Glyff<Void> {
+    export function asciiEntireWord(word : string, ink? : Glyff<Void>) : Glyff<Void> {
         var wordXWeight = getWordXWeight(word);
         return Glyff.create((metrics : Metrics, audience : Audience,
                              presenter : Presenter<Void>) => {
@@ -113,7 +113,7 @@ module Glyffin {
             var wordXWeightPixels = perimeter.getWidth() / wordXWeight;
             var preferredWeightPixels = perimeter.getHeight() / 7;
             var fittedWeightPixels = Math.min(preferredWeightPixels, wordXWeightPixels);
-            presenter.addPresentation(asciiWord(word, fittedWeightPixels, base)
+            presenter.addPresentation(asciiWord(word, fittedWeightPixels, ink)
                 .present(metrics, audience, presenter));
         });
     }

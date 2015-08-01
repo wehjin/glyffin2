@@ -282,6 +282,27 @@ module Glyffin {
             });
         }
 
+        isolate(isolated : boolean) : Glyff<T> {
+            return Glyff.create<T>((metrics : Metrics, audience : Audience,
+                                    presenter : Presenter<Void>)=> {
+                presenter.addPresentation(this.present(metrics, isolated ? {
+                    addPatch(bounds : Perimeter, color : Color) : Patch {
+                        return audience.addPatch(bounds, color);
+                    },
+                    addZone(bounds : Perimeter, touchProvider : Gesturable) : Zone {
+                        return {
+                            remove() {
+                            }
+                        };
+                    },
+                    present: <U>(glyff : Glyff<U>, reactionOrOnResult ? : Reaction<U>|OnResult<U>,
+                                 onError? : OnError) : Presentation => {
+                        return audience.present(glyff, reactionOrOnResult, onError);
+                    }
+                } : audience, presenter));
+            });
+        }
+
         addLefts(insertions : Insertion<T>[]) : Glyff<T> {
             var current : Glyff<T> = this;
             var todo = insertions.slice();
@@ -374,11 +395,11 @@ module Glyffin {
                     if (unpresent) {
                         unpresent();
                     }
-                    var coverRemovable = presenter.addPresentation(cover.present(coverMetrics,
-                        audience, presenter));
-                    var revelationRemovable = presenter.addPresentation(revelation.present(revelationMetrics,
-                        audience,
-                        presenter));
+                    var coverRemovable = presenter.addPresentation(cover
+                        .present(coverMetrics, audience, presenter));
+                    var revelationRemovable = presenter.addPresentation(revelation
+                        .isolate(revelationHeight < maxRevelationHeight)
+                        .present(revelationMetrics, audience, presenter));
                     unpresent = ()=> {
                         coverRemovable.remove();
                         revelationRemovable.remove();
@@ -501,7 +522,7 @@ module Glyffin {
             });
         }
 
-        clicken<U>(symbol : string, pressed : Glyff<U>) : Glyff<string> {
+        clicken<U>(symbol : string, pressed? : Glyff<U>) : Glyff<string> {
             return Glyff.create<string>((metrics : Metrics, audience : Audience,
                                          presenter : Presenter<Void>)=> {
                 var perimeter = metrics.perimeter;
@@ -512,9 +533,15 @@ module Glyffin {
                     audience));
                 var zone = audience.addZone(perimeter,
                     new ClickGesturable(metrics.tapHeight / 2, ()=> {
+                        if (!pressed) {
+                            return;
+                        }
                         removable.remove();
                         removable = presenter.addPresentation(pressed.present(metrics, audience));
                     }, ()=> {
+                        if (!pressed) {
+                            return;
+                        }
                         removable.remove();
                         removable = presenter.addPresentation(unpressed.present(unpressedMetrics,
                             audience));

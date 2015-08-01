@@ -91,14 +91,14 @@ var Glyffin;
         });
     }
     Glyffin.asciiMultiLine = asciiMultiLine;
-    function asciiEntireWord(word, base) {
+    function asciiEntireWord(word, ink) {
         var wordXWeight = getWordXWeight(word);
         return Glyffin.Glyff.create(function (metrics, audience, presenter) {
             var perimeter = metrics.perimeter;
             var wordXWeightPixels = perimeter.getWidth() / wordXWeight;
             var preferredWeightPixels = perimeter.getHeight() / 7;
             var fittedWeightPixels = Math.min(preferredWeightPixels, wordXWeightPixels);
-            presenter.addPresentation(asciiWord(word, fittedWeightPixels, base).present(metrics, audience, presenter));
+            presenter.addPresentation(asciiWord(word, fittedWeightPixels, ink).present(metrics, audience, presenter));
         });
     }
     Glyffin.asciiEntireWord = asciiEntireWord;

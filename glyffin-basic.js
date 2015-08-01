@@ -135,6 +135,12 @@ var Glyffin;
         Color.prototype.mix = function (mix, endColor) {
             return new Color(Color.mixComponent(mix, this.red, endColor.red), Color.mixComponent(mix, this.green, endColor.green), Color.mixComponent(mix, this.blue, endColor.blue), Color.mixComponent(mix, this.alpha, endColor.alpha));
         };
+        Color.prototype.darken = function (mix) {
+            return this.mix(mix, Color.BLACK);
+        };
+        Color.prototype.lighten = function (mix) {
+            return this.mix(mix, Color.WHITE);
+        };
         Color.WHITE = new Color(1, 1, 1, 1);
         Color.BLACK = new Color(0, 0, 0, 1);
         Color.RED = new Color(1, 0, 0, 1);
