@@ -15,9 +15,13 @@ var Glyffin;
         Interactive.findHits = function (all, x, y) {
             var hitInteractives = [];
             all.forEach(function (interactive) {
-                if (interactive.isHit(x, y)) {
+                var isHit = interactive.isHit(x, y);
+                if (isHit) {
                     hitInteractives.push(interactive);
                 }
+            });
+            hitInteractives.sort(function (a, b) {
+                return -(a.bounds.level - b.bounds.level);
             });
             return hitInteractives;
         };

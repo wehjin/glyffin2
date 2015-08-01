@@ -35,8 +35,7 @@ module Glyffin {
 
     export interface Audience {
         addPatch(bounds : Perimeter, color : Color):Patch;
-        addZone(bounds : Perimeter,
-                touchProvider : Gesturable):Zone;
+        addZone(bounds : Perimeter, touchProvider : Gesturable):Zone;
         present<U>(glyff : Glyff<U>, reactionOrOnResult ? : Reaction<U>|OnResult<U>,
                    onError? : OnError) : Presentation;
     }
@@ -213,7 +212,7 @@ module Glyffin {
         }
 
         present(metrics : Metrics, audience : Audience,
-                reactionOrOnResult ? : Reaction<T>|ResultCallback,
+                reactionOrOnResult ? : Reaction<T>|OnResult<T>,
                 onError? : ErrorCallback) : Presentation {
             var presented : Presentation[] = [];
             var presenter = {
@@ -233,7 +232,7 @@ module Glyffin {
                     if (typeof reactionOrOnResult === 'object') {
                         (<Reaction<T>>reactionOrOnResult).onResult(result);
                     } else if (typeof reactionOrOnResult === 'function') {
-                        (<ResultCallback>reactionOrOnResult)(result);
+                        (<OnResult<T>>reactionOrOnResult)(result);
                     }
                 },
                 onError(error : Error) {
@@ -348,16 +347,20 @@ module Glyffin {
                 var perimeter = metrics.perimeter;
                 var perimeterHeight = perimeter.getHeight();
                 var maxRevelationHeight = inset.getPixels(perimeterHeight);
+                var revelationMetrics = metrics.withPerimeter(perimeter.resizeFromTop(maxRevelationHeight));
 
                 var revelationHeight;
                 var unpresent : ()=>void = null;
                 var cover = this;
 
+                var levels = 5;
+
                 function setRevelationHeight(height : number) {
                     revelationHeight = Math.max(0, Math.min(height, maxRevelationHeight));
-                    var revelationMetrics = metrics.withPerimeter(perimeter.resizeFromTop(revelationHeight));
+
+                    // TODO levels should depend on the maximum level of the revelation glyff.
                     var coverMetrics = metrics.withPerimeter(
-                        perimeter.downFromTop(revelationHeight, perimeterHeight).addLevel(1));
+                        perimeter.downFromTop(revelationHeight, perimeterHeight).addLevel(levels));
 
                     if (unpresent) {
                         unpresent();
@@ -375,6 +378,7 @@ module Glyffin {
 
                 var anchorHeight;
                 var zone : Removable;
+                var zonePerimeter = perimeter.addLevel(levels);
 
                 function setAnchorHeight(height : number) {
                     if (zone) {
@@ -382,7 +386,7 @@ module Glyffin {
                     }
                     setRevelationHeight(height);
                     anchorHeight = height;
-                    zone = audience.addZone(perimeter, {
+                    zone = audience.addZone(zonePerimeter, {
                         init: (spot : Spot) : Gesturing => {
                             return new VerticalGesturing(spot,
                                 metrics.tapHeight * (anchorHeight <= 0 ? 1 : -1),

@@ -278,13 +278,15 @@ var Glyffin;
                 var perimeter = metrics.perimeter;
                 var perimeterHeight = perimeter.getHeight();
                 var maxRevelationHeight = inset.getPixels(perimeterHeight);
+                var revelationMetrics = metrics.withPerimeter(perimeter.resizeFromTop(maxRevelationHeight));
                 var revelationHeight;
                 var unpresent = null;
                 var cover = _this;
+                var levels = 5;
                 function setRevelationHeight(height) {
                     revelationHeight = Math.max(0, Math.min(height, maxRevelationHeight));
-                    var revelationMetrics = metrics.withPerimeter(perimeter.resizeFromTop(revelationHeight));
-                    var coverMetrics = metrics.withPerimeter(perimeter.downFromTop(revelationHeight, perimeterHeight).addLevel(1));
+                    // TODO levels should depend on the maximum level of the revelation glyff.
+                    var coverMetrics = metrics.withPerimeter(perimeter.downFromTop(revelationHeight, perimeterHeight).addLevel(levels));
                     if (unpresent) {
                         unpresent();
                     }
@@ -297,13 +299,14 @@ var Glyffin;
                 }
                 var anchorHeight;
                 var zone;
+                var zonePerimeter = perimeter.addLevel(levels);
                 function setAnchorHeight(height) {
                     if (zone) {
                         zone.remove();
                     }
                     setRevelationHeight(height);
                     anchorHeight = height;
-                    zone = audience.addZone(perimeter, {
+                    zone = audience.addZone(zonePerimeter, {
                         init: function (spot) {
                             return new Glyffin.VerticalGesturing(spot, metrics.tapHeight * (anchorHeight <= 0 ? 1 : -1), function (moved) {
                                 setRevelationHeight(anchorHeight + moved);

@@ -326,10 +326,12 @@ var Glyffin;
             var touchStartTime;
             this.unsubscribeSpots = new Glyffin.SpotObservable(element).subscribe({
                 onStart: function (spot) {
+                    console.log("Interactives:", _this.interactives);
                     var hits = Glyffin.Interactive.findHits(_this.interactives, spot.x, spot.y);
                     if (hits.length < 1) {
                         return false;
                     }
+                    console.log("Hits:", hits);
                     touch = hits[0].touchProvider.init(spot);
                     if (!touch) {
                         return false;

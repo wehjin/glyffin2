@@ -24,8 +24,14 @@ function main() {
         if (presentation) {
             presentation.end();
         }
-        var glyff = cover.revealDown(new Glyffin.Inset1(.33, 0), Glyffin.BlueGlyff);
-        presentation = glyff.present(metrics, audience);
+        var revelation = Glyffin.BlueGlyff.clicken("change", Glyff.color(Glyffin.Color.CYAN));
+        var glyff = cover.revealDown(new Glyffin.Inset1(.33, 0), revelation);
+        presentation = glyff.present(metrics, audience, function (symbol) {
+            console.log(symbol);
+            if ("change" == symbol) {
+                represent();
+            }
+        });
     }
     represent();
 }

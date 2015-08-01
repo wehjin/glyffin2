@@ -244,7 +244,6 @@ module Glyffin {
         onError(error : Error);
     }
 
-    export type ResultCallback = <T>(result : T)=>void;
     export type ErrorCallback = (error : Error)=>void;
 
     export interface OnError {

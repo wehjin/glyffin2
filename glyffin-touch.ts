@@ -20,9 +20,13 @@ module Glyffin {
         static findHits(all : Interactive[], x : number, y : number) : Interactive[] {
             var hitInteractives : Interactive[] = [];
             all.forEach((interactive : Interactive)=> {
-                if (interactive.isHit(x, y)) {
+                var isHit = interactive.isHit(x, y);
+                if (isHit) {
                     hitInteractives.push(interactive);
                 }
+            });
+            hitInteractives.sort((a : Interactive, b : Interactive) : number=> {
+                return -(a.bounds.level - b.bounds.level);
             });
             return hitInteractives;
         }
