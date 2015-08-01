@@ -322,8 +322,7 @@ var Glyffin;
             if (this.unsubscribeSpots) {
                 this.unsubscribeSpots();
             }
-            var touch;
-            var touchStartTime;
+            var gesturings = [];
             this.unsubscribeSpots = new Glyffin.SpotObservable(element).subscribe({
                 onStart: function (spot) {
                     console.log("Interactives:", _this.interactives);
@@ -332,29 +331,65 @@ var Glyffin;
                         return false;
                     }
                     console.log("Hits:", hits);
-                    touch = hits[0].touchProvider.init(spot);
-                    if (!touch) {
-                        return false;
-                    }
-                    touchStartTime = Date.now();
-                    return true;
+                    gesturings = [];
+                    hits.forEach(function (hit) {
+                        var gesturing = hit.touchProvider.init(spot);
+                        if (!gesturing) {
+                            return;
+                        }
+                        gesturings.push(gesturing);
+                    });
+                    return gesturings.length != 0;
                 },
                 onMove: function (spot) {
-                    var preMoveTime = Date.now();
-                    var moveResponseTime = preMoveTime - touchStartTime;
-                    touch.move(spot, function () {
-                        _this.beginGestures(element);
-                    });
-                    var afterMove = Date.now();
-                    var moveRealizationTime = afterMove - preMoveTime;
+                    var shouldDrain = false;
+                    for (var i = 0, count = gesturings.length; i < count; i++) {
+                        var gesturing = gesturings[i];
+                        if (gesturing.isDrained()) {
+                            continue;
+                        }
+                        if (shouldDrain) {
+                            gesturing.cancel();
+                            continue;
+                        }
+                        var status = gesturing.move(spot);
+                        if (status === 2 /* SUPERCHARGED */) {
+                            shouldDrain = true;
+                        }
+                    }
                     return true;
                 },
                 onCancel: function () {
-                    touch.cancel();
+                    for (var i = 0, count = gesturings.length; i < count; i++) {
+                        var gesturing = gesturings[i];
+                        if (gesturing.isDrained()) {
+                            continue;
+                        }
+                        gesturing.cancel();
+                    }
                     _this.beginGestures(element);
                 },
                 onEnd: function () {
-                    touch.release();
+                    var powered;
+                    for (var i = 0, count = gesturings.length; i < count; i++) {
+                        var gesturing = gesturings[i];
+                        if (gesturing.isDrained()) {
+                            continue;
+                        }
+                        if (powered) {
+                            gesturing.cancel();
+                            continue;
+                        }
+                        if (gesturing.isPowered()) {
+                            powered = gesturing;
+                        }
+                        else {
+                            gesturing.cancel();
+                        }
+                    }
+                    if (powered) {
+                        powered.release();
+                    }
                     _this.beginGestures(element);
                 }
             });

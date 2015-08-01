@@ -189,6 +189,13 @@ var Glyffin;
     };
     Glyffin.EMPTY_PATCH = Glyffin.EMPTY_REMOVABLE;
     Glyffin.EMPTY_ACTIVE = Glyffin.EMPTY_REMOVABLE;
+    (function (GestureStatus) {
+        GestureStatus[GestureStatus["CHARGING"] = 0] = "CHARGING";
+        GestureStatus[GestureStatus["CHARGED"] = 1] = "CHARGED";
+        GestureStatus[GestureStatus["SUPERCHARGED"] = 2] = "SUPERCHARGED";
+        GestureStatus[GestureStatus["DRAINED"] = 3] = "DRAINED";
+    })(Glyffin.GestureStatus || (Glyffin.GestureStatus = {}));
+    var GestureStatus = Glyffin.GestureStatus;
     Glyffin.EMPTY_PRESENTATION = {
         end: function () {
         }
@@ -262,57 +269,61 @@ var Glyffin;
             this.onStarted = onStarted;
             this.onCanceled = onCanceled;
             this.onFinished = onFinished;
-            this.done = false;
-            this.moved = 0;
+            this.drained = false;
+            this.pixelsMoved = 0;
         }
-        VerticalGesturing.prototype.move = function (spot, onAbort) {
-            if (this.done) {
+        VerticalGesturing.prototype.isDrained = function () {
+            return this.drained;
+        };
+        VerticalGesturing.prototype.isPowered = function () {
+            return this.startSpot ? true : false;
+        };
+        VerticalGesturing.prototype.move = function (spot) {
+            if (this.drained) {
                 return;
             }
             if (!this.startSpot) {
                 var crossOffset = Math.abs(spot.xDistance(this.downSpot));
                 if (crossOffset > Math.abs(this.minMove)) {
-                    this.done = true;
-                    onAbort();
-                    return;
+                    this.drained = true;
+                    return 3 /* DRAINED */;
                 }
                 var grainOffset = spot.yDistance(this.downSpot);
                 if (Math.abs(grainOffset) < Math.abs(this.minMove)) {
-                    return;
+                    return 0 /* CHARGING */;
                 }
                 if ((this.minMove > 0 && grainOffset < 0) || (this.minMove < 0 && grainOffset > 0)) {
-                    return;
+                    return 0 /* CHARGING */;
                 }
                 this.startSpot = this.downSpot.addY(this.minMove);
                 this.onStarted(spot.yDistance(this.startSpot));
-                return;
+                return 2 /* SUPERCHARGED */;
             }
             var grainOffset = spot.yDistance(this.startSpot);
             if (this.minMove > 0) {
-                this.moved = Math.max(0, grainOffset);
+                this.pixelsMoved = Math.max(0, grainOffset);
             }
             else if (this.minMove < 0) {
-                this.moved = Math.min(0, grainOffset);
+                this.pixelsMoved = Math.min(0, grainOffset);
             }
             else {
-                this.moved = grainOffset;
+                this.pixelsMoved = grainOffset;
             }
-            this.onStarted(this.moved);
+            this.onStarted(this.pixelsMoved);
+            return 2 /* SUPERCHARGED */;
         };
         VerticalGesturing.prototype.release = function () {
-            if (this.done) {
+            if (this.drained || !this.startSpot) {
                 return;
             }
-            this.done = true;
-            if (this.startSpot) {
-                this.onFinished();
-            }
+            this.drained = true;
+            this.onFinished();
         };
         VerticalGesturing.prototype.cancel = function () {
-            if (this.done) {
+            if (this.drained) {
                 return;
             }
-            this.done = true;
+            this.drained = true;
             if (this.startSpot) {
                 this.onCanceled();
             }

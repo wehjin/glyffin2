@@ -64,6 +64,12 @@ var Glyffin;
                 this.onUnpress();
             }
         };
+        ClickGesturing.prototype.isDrained = function () {
+            return this.isEnded;
+        };
+        ClickGesturing.prototype.isPowered = function () {
+            return !this.isEnded;
+        };
         ClickGesturing.prototype.release = function () {
             var _this = this;
             if (this.isEnded) {
@@ -80,14 +86,15 @@ var Glyffin;
                 setTimeout(_this.onClick, 100);
             }, (delay > 0) ? delay : 0);
         };
-        ClickGesturing.prototype.move = function (spot, onAbort) {
+        ClickGesturing.prototype.move = function (spot) {
             if (this.isEnded) {
-                return;
+                return 3 /* DRAINED */;
             }
             if (spot.gridDistance(this.startSpot) > this.threshold) {
                 this.doEnd();
-                onAbort();
+                return 3 /* DRAINED */;
             }
+            return 1 /* CHARGED */;
         };
         ClickGesturing.prototype.cancel = function () {
             if (this.isEnded) {
@@ -542,16 +549,26 @@ var Glyffin;
                             return null;
                         }
                         var sliding = false;
+                        var drained = false;
                         var moveFrame;
                         var targetAge = age;
                         var speedometer = new Glyffin.SpeedometerX(startSpot);
                         return {
-                            move: function (spot, onAbort) {
+                            isDrained: function () {
+                                return drained;
+                            },
+                            isPowered: function () {
+                                return !drained && sliding;
+                            },
+                            move: function (spot) {
+                                if (drained) {
+                                    return;
+                                }
                                 speedometer.addSpot(spot);
                                 if (!sliding) {
                                     var gridDelta = spot.gridDistance(startSpot);
                                     if (gridDelta < metrics.tapHeight * .75) {
-                                        return;
+                                        return 0 /* CHARGING */;
                                     }
                                     sliding = true;
                                 }
@@ -560,18 +577,21 @@ var Glyffin;
                                 if ((targetAge < 0 && !prev) || (targetAge > 0 && !next)) {
                                     targetAge = 0;
                                 }
-                                if (moveFrame) {
-                                    return;
+                                if (!moveFrame) {
+                                    moveFrame = setTimeout(function () {
+                                        if (!moveFrame) {
+                                            return;
+                                        }
+                                        moveFrame = 0;
+                                        setAge(targetAge);
+                                    }, 3);
                                 }
-                                moveFrame = setTimeout(function () {
-                                    if (!moveFrame) {
-                                        return;
-                                    }
-                                    moveFrame = 0;
-                                    setAge(targetAge);
-                                }, 3);
+                                return 2 /* SUPERCHARGED */;
                             },
                             release: function () {
+                                if (drained) {
+                                    return;
+                                }
                                 if (sliding) {
                                     moveFrame = 0;
                                     var ageVelocity = -speedometer.getVelocity() / slideRange;
@@ -600,6 +620,10 @@ var Glyffin;
                                 }
                             },
                             cancel: function () {
+                                if (drained) {
+                                    return;
+                                }
+                                drained = true;
                                 if (sliding) {
                                     moveFrame = 0;
                                     setAge(0);

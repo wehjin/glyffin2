@@ -229,12 +229,21 @@ module Glyffin {
     export var EMPTY_PATCH : Patch = EMPTY_REMOVABLE;
     export var EMPTY_ACTIVE : Zone = EMPTY_REMOVABLE;
 
+    export enum GestureStatus {
+        CHARGING,
+        CHARGED,
+        SUPERCHARGED,
+        DRAINED
+    }
+
     export interface Gesturable {
         init(spot : Spot): Gesturing;
     }
 
     export interface Gesturing {
-        move(spot : Spot, onAbort : ()=>void);
+        isDrained():boolean;
+        isPowered():boolean;
+        move(spot : Spot):GestureStatus;
         release();
         cancel();
     }
@@ -338,66 +347,72 @@ module Glyffin {
     export class VerticalGesturing implements Gesturing {
 
         private startSpot : Spot;
-        private done : boolean;
-        private moved : number;
+        private drained : boolean;
+        private pixelsMoved : number;
 
         constructor(private downSpot : Spot, private minMove : number,
                     private onStarted : (down : number)=>void,
                     private onCanceled : ()=>void,
                     private onFinished : ()=>void) {
-            this.done = false;
-            this.moved = 0;
+            this.drained = false;
+            this.pixelsMoved = 0;
         }
 
-        move(spot : Glyffin.Spot, onAbort : ()=>void) {
-            if (this.done) {
+        isDrained() : boolean {
+            return this.drained;
+        }
+
+        isPowered() : boolean {
+            return this.startSpot ? true : false;
+        }
+
+        move(spot : Glyffin.Spot) : GestureStatus {
+            if (this.drained) {
                 return;
             }
             if (!this.startSpot) {
                 var crossOffset = Math.abs(spot.xDistance(this.downSpot));
                 if (crossOffset > Math.abs(this.minMove)) {
-                    this.done = true;
-                    onAbort();
-                    return;
+                    this.drained = true;
+                    return GestureStatus.DRAINED;
                 }
                 var grainOffset = spot.yDistance(this.downSpot);
                 if (Math.abs(grainOffset) < Math.abs(this.minMove)) {
-                    return;
+                    return GestureStatus.CHARGING;
                 }
                 if ((this.minMove > 0 && grainOffset < 0) ||
                     (this.minMove < 0 && grainOffset > 0)) {
-                    return;
+                    return GestureStatus.CHARGING;
                 }
                 this.startSpot = this.downSpot.addY(this.minMove);
                 this.onStarted(spot.yDistance(this.startSpot));
-                return;
+                return GestureStatus.SUPERCHARGED;
             }
             var grainOffset = spot.yDistance(this.startSpot);
             if (this.minMove > 0) {
-                this.moved = Math.max(0, grainOffset);
+                this.pixelsMoved = Math.max(0, grainOffset);
             } else if (this.minMove < 0) {
-                this.moved = Math.min(0, grainOffset);
+                this.pixelsMoved = Math.min(0, grainOffset);
             } else {
-                this.moved = grainOffset;
+                this.pixelsMoved = grainOffset;
             }
-            this.onStarted(this.moved);
+            this.onStarted(this.pixelsMoved);
+            return GestureStatus.SUPERCHARGED;
         }
 
         release() {
-            if (this.done) {
+            if (this.drained || !this.startSpot) {
                 return;
             }
-            this.done = true;
-            if (this.startSpot) {
-                this.onFinished();
-            }
+            this.drained = true;
+            this.onFinished();
         }
 
         cancel() {
-            if (this.done) {
+            if (this.drained) {
                 return;
             }
-            this.done = true;
+            this.drained = true;
             if (this.startSpot) {
                 this.onCanceled();
             }

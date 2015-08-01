@@ -491,8 +491,8 @@ module Glyffin {
             if (this.unsubscribeSpots) {
                 this.unsubscribeSpots();
             }
-            var touch;
-            var touchStartTime;
+
+            var gesturings : Gesturing[] = [];
             this.unsubscribeSpots = new SpotObservable(element).subscribe({
                 onStart: (spot : Spot) : boolean => {
                     console.log("Interactives:", this.interactives);
@@ -501,29 +501,65 @@ module Glyffin {
                         return false;
                     }
                     console.log("Hits:", hits);
-                    touch = hits[0].touchProvider.init(spot);
-                    if (!touch) {
-                        return false;
-                    }
-                    touchStartTime = Date.now();
-                    return true;
+
+                    gesturings = [];
+                    hits.forEach((hit : Interactive)=> {
+                        var gesturing = hit.touchProvider.init(spot);
+                        if (!gesturing) {
+                            return;
+                        }
+                        gesturings.push(gesturing);
+                    });
+                    return gesturings.length != 0;
                 },
                 onMove: (spot : Spot) : boolean=> {
-                    var preMoveTime = Date.now();
-                    var moveResponseTime = preMoveTime - touchStartTime;
-                    touch.move(spot, ()=> {
-                        this.beginGestures(element);
-                    });
-                    var afterMove = Date.now();
-                    var moveRealizationTime = afterMove - preMoveTime;
+                    var shouldDrain : boolean = false;
+                    for (var i = 0, count = gesturings.length; i < count; i++) {
+                        var gesturing : Gesturing = gesturings[i];
+                        if (gesturing.isDrained()) {
+                            continue;
+                        }
+                        if (shouldDrain) {
+                            gesturing.cancel();
+                            continue;
+                        }
+                        var status = gesturing.move(spot);
+                        if (status === GestureStatus.SUPERCHARGED) {
+                            shouldDrain = true;
+                        }
+                    }
                     return true;
                 },
                 onCancel: ()=> {
-                    touch.cancel();
+                    for (var i = 0, count = gesturings.length; i < count; i++) {
+                        var gesturing : Gesturing = gesturings[i];
+                        if (gesturing.isDrained()) {
+                            continue;
+                        }
+                        gesturing.cancel();
+                    }
                     this.beginGestures(element);
                 },
                 onEnd: ()=> {
-                    touch.release();
+                    var powered : Gesturing;
+                    for (var i = 0, count = gesturings.length; i < count; i++) {
+                        var gesturing : Gesturing = gesturings[i];
+                        if (gesturing.isDrained()) {
+                            continue;
+                        }
+                        if (powered) {
+                            gesturing.cancel();
+                            continue;
+                        }
+                        if (gesturing.isPowered()) {
+                            powered = gesturing;
+                        } else {
+                            gesturing.cancel();
+                        }
+                    }
+                    if (powered) {
+                        powered.release();
+                    }
                     this.beginGestures(element);
                 }
             });

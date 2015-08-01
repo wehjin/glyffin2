@@ -84,6 +84,14 @@ module Glyffin {
             }, 200);
         }
 
+        isDrained() : boolean {
+            return this.isEnded;
+        }
+
+        isPowered() : boolean {
+            return !this.isEnded;
+        }
+
         release() {
             if (this.isEnded) {
                 return;
@@ -103,14 +111,15 @@ module Glyffin {
             }, (delay > 0) ? delay : 0);
         }
 
-        move(spot : Glyffin.Spot, onAbort : ()=>void) {
+        move(spot : Glyffin.Spot) : GestureStatus {
             if (this.isEnded) {
-                return;
+                return GestureStatus.DRAINED;
             }
             if (spot.gridDistance(this.startSpot) > this.threshold) {
                 this.doEnd();
-                onAbort();
+                return GestureStatus.DRAINED;
             }
+            return GestureStatus.CHARGED;
         }
 
         cancel() {
@@ -663,16 +672,26 @@ module Glyffin {
                         }
 
                         var sliding = false;
+                        var drained = false;
                         var moveFrame;
                         var targetAge = age;
                         var speedometer = new SpeedometerX(startSpot);
                         return {
-                            move(spot : Spot, onAbort : ()=>void) {
+                            isDrained() : boolean {
+                                return drained;
+                            },
+                            isPowered() : boolean {
+                                return !drained && sliding;
+                            },
+                            move(spot : Spot) : GestureStatus {
+                                if (drained) {
+                                    return;
+                                }
                                 speedometer.addSpot(spot);
                                 if (!sliding) {
                                     var gridDelta = spot.gridDistance(startSpot);
                                     if (gridDelta < metrics.tapHeight * .75) {
-                                        return;
+                                        return GestureStatus.CHARGING;
                                     }
                                     sliding = true;
                                 }
@@ -681,18 +700,21 @@ module Glyffin {
                                 if ((targetAge < 0 && !prev) || (targetAge > 0 && !next)) {
                                     targetAge = 0;
                                 }
-                                if (moveFrame) {
-                                    return;
+                                if (!moveFrame) {
+                                    moveFrame = setTimeout(()=> {
+                                        if (!moveFrame) {
+                                            return;
+                                        }
+                                        moveFrame = 0;
+                                        setAge(targetAge);
+                                    }, 3);
                                 }
-                                moveFrame = setTimeout(()=> {
-                                    if (!moveFrame) {
-                                        return;
-                                    }
-                                    moveFrame = 0;
-                                    setAge(targetAge);
-                                }, 3);
+                                return GestureStatus.SUPERCHARGED;
                             },
                             release() {
+                                if (drained) {
+                                    return;
+                                }
                                 if (sliding) {
                                     moveFrame = 0;
                                     var ageVelocity = -speedometer.getVelocity() / slideRange;
@@ -718,6 +740,10 @@ module Glyffin {
                                 }
                             },
                             cancel() {
+                                if (drained) {
+                                    return;
+                                }
+                                drained = true;
                                 if (sliding) {
                                     moveFrame = 0;
                                     setAge(0);
