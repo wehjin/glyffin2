@@ -33,6 +33,10 @@ module Glyffin {
             return this.y - origin.y;
         }
 
+        addX(addition : number) : Spot {
+            return new Spot(this.x + addition, this.y);
+        }
+
         addY(addition : number) : Spot {
             return new Spot(this.x, this.y + addition);
         }
@@ -352,18 +356,92 @@ module Glyffin {
         }
     }
 
+    export class HorizontalGesturing implements Gesturing {
+
+        private startSpot : Spot;
+        private drained : boolean;
+        private direction : number;
+
+        constructor(private downSpot : Spot,
+                    private chargingSize : number, private chargingDirection : number,
+                    private onStarted : (pixelsMoved : number)=>void,
+                    private onCanceled : ()=>void,
+                    private onFinished : ()=>void) {
+            this.drained = false;
+        }
+
+        isDrained() : boolean {
+            return this.drained;
+        }
+
+        isPowered() : boolean {
+            return this.startSpot ? true : false;
+        }
+
+        move(spot : Glyffin.Spot) : GestureStatus {
+            if (this.drained) {
+                return;
+            }
+            if (!this.startSpot) {
+                var crossOffset = Math.abs(spot.yDistance(this.downSpot));
+                if (crossOffset > this.chargingSize) {
+                    this.drained = true;
+                    return GestureStatus.DRAINED;
+                }
+                var grainOffset = spot.xDistance(this.downSpot);
+                if (Math.abs(grainOffset) < this.chargingSize) {
+                    return GestureStatus.CHARGING;
+                }
+                if ((this.chargingDirection > 0 && grainOffset < 0) ||
+                    (this.chargingDirection < 0 && grainOffset > 0)) {
+                    return GestureStatus.CHARGING;
+                }
+
+                this.direction = grainOffset >= 0 ? 1 : -1;
+                this.startSpot = this.downSpot.addX(this.chargingSize * this.direction);
+            }
+            var grainOffset = spot.xDistance(this.startSpot);
+            var pixelsMoved;
+            if (this.direction > 0) {
+                pixelsMoved = Math.max(0, grainOffset);
+            } else if (this.direction < 0) {
+                pixelsMoved = Math.min(0, grainOffset);
+            } else {
+                pixelsMoved = grainOffset;
+            }
+            this.onStarted(pixelsMoved);
+            return GestureStatus.SUPERCHARGED;
+        }
+
+        release() {
+            if (this.drained || !this.startSpot) {
+                return;
+            }
+            this.drained = true;
+            this.onFinished();
+        }
+
+        cancel() {
+            if (this.drained) {
+                return;
+            }
+            this.drained = true;
+            if (this.startSpot) {
+                this.onCanceled();
+            }
+        }
+    }
+
     export class VerticalGesturing implements Gesturing {
 
         private startSpot : Spot;
         private drained : boolean;
-        private pixelsMoved : number;
 
         constructor(private downSpot : Spot, private minMove : number,
                     private onStarted : (down : number)=>void,
                     private onCanceled : ()=>void,
                     private onFinished : ()=>void) {
             this.drained = false;
-            this.pixelsMoved = 0;
         }
 
         isDrained() : boolean {
@@ -393,18 +471,17 @@ module Glyffin {
                     return GestureStatus.CHARGING;
                 }
                 this.startSpot = this.downSpot.addY(this.minMove);
-                this.onStarted(spot.yDistance(this.startSpot));
-                return GestureStatus.SUPERCHARGED;
             }
             var grainOffset = spot.yDistance(this.startSpot);
+            var pixelsMoved : number;
             if (this.minMove > 0) {
-                this.pixelsMoved = Math.max(0, grainOffset);
+                pixelsMoved = Math.max(0, grainOffset);
             } else if (this.minMove < 0) {
-                this.pixelsMoved = Math.min(0, grainOffset);
+                pixelsMoved = Math.min(0, grainOffset);
             } else {
-                this.pixelsMoved = grainOffset;
+                pixelsMoved = grainOffset;
             }
-            this.onStarted(this.pixelsMoved);
+            this.onStarted(pixelsMoved);
             return GestureStatus.SUPERCHARGED;
         }
 

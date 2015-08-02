@@ -334,7 +334,7 @@ var Glyffin;
                     anchorHeight = height;
                     zone = audience.addZone(zonePerimeter, {
                         init: function (spot) {
-                            return new Glyffin.VerticalGesturing(spot, metrics.tapHeight * (anchorHeight <= 0 ? 1 : -1), function (moved) {
+                            return new Glyffin.VerticalGesturing(spot, metrics.tapHeight / 2 * (anchorHeight <= 0 ? 1 : -1), function (moved) {
                                 setRevelationHeight(anchorHeight + moved);
                             }, function () {
                                 setRevelationHeight(anchorHeight);

@@ -419,7 +419,7 @@ module Glyffin {
                     zone = audience.addZone(zonePerimeter, {
                         init: (spot : Spot) : Gesturing => {
                             return new VerticalGesturing(spot,
-                                metrics.tapHeight * (anchorHeight <= 0 ? 1 : -1),
+                                metrics.tapHeight / 2 * (anchorHeight <= 0 ? 1 : -1),
                                 (moved)=> {
                                     setRevelationHeight(anchorHeight + moved);
                                 }, ()=> {
