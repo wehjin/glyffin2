@@ -22,7 +22,7 @@ module Glyffin {
         }
 
         gridDistance(other : Spot) : number {
-            return Math.max(Math.abs(other.x - this.x), Math.abs(other.y - this.y));
+            return Math.max(Math.abs(this.x - other.x), Math.abs(this.y - other.y));
         }
 
         xDistance(origin : Spot) : number {
@@ -353,6 +353,75 @@ module Glyffin {
                 return distance2 / approximateDuration;
             }
             return (this.getVelocity1() + distance2 / duration2) / 2;
+        }
+    }
+
+    export class PagenGesturing implements Gesturing {
+        private drained : boolean = false;
+        private sliding : number = 0;
+        private speedometer : SpeedometerX;
+
+        constructor(private downSpot : Spot, private minCharging : number,
+                    private onStarted : (pixelsMoved : number)=>void,
+                    private onCanceled : ()=>void,
+                    private onFinished : (velocity : number) =>void) {
+            this.speedometer = new SpeedometerX(downSpot);
+        }
+
+        isDrained() : boolean {
+            return this.drained;
+        }
+
+        isPowered() : boolean {
+            return !this.drained && (this.sliding != 0);
+        }
+
+        move(spot : Spot) : GestureStatus {
+            if (this.drained) {
+                return GestureStatus.DRAINED;
+            }
+            this.speedometer.addSpot(spot);
+            if (this.sliding == 0) {
+                var crossOffset = spot.yDistance(this.downSpot);
+                if (Math.abs(crossOffset) > this.minCharging) {
+                    this.drained = true;
+                    return GestureStatus.DRAINED;
+                }
+                var grainOffset = spot.xDistance(this.downSpot);
+                if (Math.abs(grainOffset) < this.minCharging) {
+                    return GestureStatus.CHARGING;
+                }
+                this.sliding = grainOffset > 0 ? 1 : -1;
+            }
+            var grainOffset = spot.xDistance(this.downSpot);
+            var pixelsMoved;
+            if (this.sliding > 0) {
+                pixelsMoved = Math.max(0, grainOffset);
+            } else if (this.sliding < 0) {
+                pixelsMoved = Math.min(0, grainOffset);
+            } else {
+                pixelsMoved = grainOffset;
+            }
+            this.onStarted(pixelsMoved);
+            return GestureStatus.SUPERCHARGED;
+        }
+
+        release() {
+            if (this.drained || this.sliding == 0) {
+                return;
+            }
+            this.drained = true;
+            this.onFinished(this.speedometer.getVelocity());
+        }
+
+        cancel() {
+            if (this.drained) {
+                return;
+            }
+            this.drained = true;
+            if (this.sliding != 0) {
+                this.onCanceled();
+            }
         }
     }
 

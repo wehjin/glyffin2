@@ -42,7 +42,7 @@ function main() {
             presentation.end();
         }
         var pageGlyff = getPageGlyff(index);
-        var pagesGlyff = pageGlyff.pagen(index, getPageGlyff(index + 1), getPageGlyff(index - 1), pageGlyff);
+        var pagesGlyff = pageGlyff.pagen(index, getPageGlyff(index + 1), getPageGlyff(index - 1), Glyffin.WhiteGlyff);
         var app = Glyffin.BlackGlyff.addNearMajor(1, pagesGlyff);
         presentation = app.present(metrics, glAudience, function (symbol) {
             console.log("%s", symbol);

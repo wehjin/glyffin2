@@ -26,7 +26,7 @@ var Glyffin;
             this.y = y;
         }
         Spot.prototype.gridDistance = function (other) {
-            return Math.max(Math.abs(other.x - this.x), Math.abs(other.y - this.y));
+            return Math.max(Math.abs(this.x - other.x), Math.abs(this.y - other.y));
         };
         Spot.prototype.xDistance = function (origin) {
             return this.x - origin.x;
@@ -271,6 +271,73 @@ var Glyffin;
         return SpeedometerX;
     })();
     Glyffin.SpeedometerX = SpeedometerX;
+    var PagenGesturing = (function () {
+        function PagenGesturing(downSpot, minCharging, onStarted, onCanceled, onFinished) {
+            this.downSpot = downSpot;
+            this.minCharging = minCharging;
+            this.onStarted = onStarted;
+            this.onCanceled = onCanceled;
+            this.onFinished = onFinished;
+            this.drained = false;
+            this.sliding = 0;
+            this.speedometer = new SpeedometerX(downSpot);
+        }
+        PagenGesturing.prototype.isDrained = function () {
+            return this.drained;
+        };
+        PagenGesturing.prototype.isPowered = function () {
+            return !this.drained && (this.sliding != 0);
+        };
+        PagenGesturing.prototype.move = function (spot) {
+            if (this.drained) {
+                return 3 /* DRAINED */;
+            }
+            this.speedometer.addSpot(spot);
+            if (this.sliding == 0) {
+                var crossOffset = spot.yDistance(this.downSpot);
+                if (Math.abs(crossOffset) > this.minCharging) {
+                    this.drained = true;
+                    return 3 /* DRAINED */;
+                }
+                var grainOffset = spot.xDistance(this.downSpot);
+                if (Math.abs(grainOffset) < this.minCharging) {
+                    return 0 /* CHARGING */;
+                }
+                this.sliding = grainOffset > 0 ? 1 : -1;
+            }
+            var grainOffset = spot.xDistance(this.downSpot);
+            var pixelsMoved;
+            if (this.sliding > 0) {
+                pixelsMoved = Math.max(0, grainOffset);
+            }
+            else if (this.sliding < 0) {
+                pixelsMoved = Math.min(0, grainOffset);
+            }
+            else {
+                pixelsMoved = grainOffset;
+            }
+            this.onStarted(pixelsMoved);
+            return 2 /* SUPERCHARGED */;
+        };
+        PagenGesturing.prototype.release = function () {
+            if (this.drained || this.sliding == 0) {
+                return;
+            }
+            this.drained = true;
+            this.onFinished(this.speedometer.getVelocity());
+        };
+        PagenGesturing.prototype.cancel = function () {
+            if (this.drained) {
+                return;
+            }
+            this.drained = true;
+            if (this.sliding != 0) {
+                this.onCanceled();
+            }
+        };
+        return PagenGesturing;
+    })();
+    Glyffin.PagenGesturing = PagenGesturing;
     var HorizontalGesturing = (function () {
         function HorizontalGesturing(downSpot, chargingSize, chargingDirection, onStarted, onCanceled, onFinished) {
             this.downSpot = downSpot;

@@ -460,10 +460,9 @@ var Glyffin;
             var _this = this;
             return Glyff.create(function (metrics, audience, presenter) {
                 var perimeter = metrics.perimeter;
-                var unpressed = _this;
+                var unpressed = _this.clicken("drill", pressed);
                 var centerMetrics = metrics.withPerimeter(perimeter.withLevel(perimeter.level + 4));
                 var leftMetrics = metrics.withPerimeter(perimeter.withLevel(perimeter.level + 8));
-                var centerPresenter = new NoResultPresenter(presenter);
                 var rightPresenter = new NoResultPresenter(presenter);
                 var leftPresenter = new NoResultPresenter(presenter);
                 var slideRange = perimeter.right;
@@ -472,7 +471,7 @@ var Glyffin;
                     if (centerAdded) {
                         centerAdded.remove();
                     }
-                    centerAdded = presenter.addPresentation(glyff.present(centerMetrics, audience, centerPresenter));
+                    centerAdded = presenter.addPresentation(glyff.present(centerMetrics, audience, presenter));
                 }
                 var centerSlide;
                 function setCenterSlide(newSlide) {
@@ -573,88 +572,42 @@ var Glyffin;
                         if (stopAnimation) {
                             return null;
                         }
-                        var sliding = false;
-                        var drained = false;
                         var moveFrame;
                         var targetAge = age;
-                        var speedometer = new Glyffin.SpeedometerX(startSpot);
-                        return {
-                            isDrained: function () {
-                                return drained;
-                            },
-                            isPowered: function () {
-                                return !drained && sliding;
-                            },
-                            move: function (spot) {
-                                if (drained) {
-                                    return;
-                                }
-                                speedometer.addSpot(spot);
-                                if (!sliding) {
-                                    var gridDelta = spot.gridDistance(startSpot);
-                                    if (gridDelta < metrics.tapHeight * .75) {
-                                        return 0 /* CHARGING */;
-                                    }
-                                    sliding = true;
-                                }
-                                var xDelta = spot.xDistance(startSpot);
-                                targetAge = -xDelta / slideRange * 1.2;
-                                if ((targetAge < 0 && !prev) || (targetAge > 0 && !next)) {
-                                    targetAge = 0;
-                                }
-                                if (!moveFrame) {
-                                    moveFrame = setTimeout(function () {
-                                        if (!moveFrame) {
-                                            return;
-                                        }
-                                        moveFrame = 0;
-                                        setAge(targetAge);
-                                    }, 3);
-                                }
-                                return 2 /* SUPERCHARGED */;
-                            },
-                            release: function () {
-                                if (drained) {
-                                    return;
-                                }
-                                if (sliding) {
-                                    moveFrame = 0;
-                                    var ageVelocity = -speedometer.getVelocity() / slideRange;
-                                    if (Math.abs(targetAge) < triggerAge) {
-                                        animateAge(0, ageVelocity, null);
-                                    }
-                                    else if (targetAge > 0) {
-                                        animateAge(1, ageVelocity, function () {
-                                            presenter.onResult("next");
-                                        });
-                                    }
-                                    else {
-                                        animateAge(-1, ageVelocity, function () {
-                                            presenter.onResult("back");
-                                        });
-                                    }
-                                }
-                                else {
-                                    setCenter(pressed);
-                                    setTimeout(function () {
-                                        setCenter(unpressed);
-                                        setTimeout(function () {
-                                            presenter.onResult("drill");
-                                        }, 100);
-                                    }, 100);
-                                }
-                            },
-                            cancel: function () {
-                                if (drained) {
-                                    return;
-                                }
-                                drained = true;
-                                if (sliding) {
-                                    moveFrame = 0;
-                                    setAge(0);
-                                }
+                        return new Glyffin.PagenGesturing(startSpot, metrics.tapHeight * .75, function (pixelsMoved) {
+                            targetAge = -pixelsMoved / slideRange * 1.2;
+                            if ((targetAge < 0 && !prev) || (targetAge > 0 && !next)) {
+                                targetAge = 0;
                             }
-                        };
+                            if (!moveFrame) {
+                                moveFrame = setTimeout(function () {
+                                    if (!moveFrame) {
+                                        return;
+                                    }
+                                    moveFrame = 0;
+                                    setAge(targetAge);
+                                }, 3);
+                            }
+                        }, function () {
+                            moveFrame = 0;
+                            setAge(0);
+                        }, function (velocity) {
+                            moveFrame = 0;
+                            var ageVelocity = -velocity / slideRange;
+                            if (Math.abs(targetAge) < triggerAge) {
+                                animateAge(0, ageVelocity, null);
+                            }
+                            else if (targetAge > 0) {
+                                animateAge(1, ageVelocity, function () {
+                                    presenter.onResult("next");
+                                });
+                            }
+                            else {
+                                animateAge(-1, ageVelocity, function () {
+                                    presenter.onResult("back");
+                                });
+                            }
+                        });
                     }
                 });
                 presenter.addPresentation({

@@ -56,7 +56,7 @@ function main() {
 
         var pageGlyff = getPageGlyff(index);
         var pagesGlyff = pageGlyff.pagen(index, getPageGlyff(index + 1), getPageGlyff(index - 1),
-            pageGlyff);
+            Glyffin.WhiteGlyff);
 
         var app = Glyffin.BlackGlyff.addNearMajor(1, pagesGlyff);
         presentation = app.present(metrics, glAudience, (symbol)=> {
