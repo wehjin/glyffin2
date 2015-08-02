@@ -24,8 +24,12 @@ function main() {
         pageGlyffs.push(Glyff.color(color));
     });
 
-    function getPageGlyff(index : number) : Glyff<Void> {
-        return (index >= 0 && index < pageGlyffs.length) ? pageGlyffs[index] : null;
+    function getPageGlyff(index : number) : Glyff<string> {
+        var page = (index >= 0 && index < pageGlyffs.length) ? pageGlyffs[index] : null;
+        if (!page) {
+            return null;
+        }
+        return page.clicken("drill").revealDown(new Glyffin.Inset1(.3, 0), Glyffin.BlackGlyff);
     }
 
     var palette = new Glyffin.Palette();
@@ -55,8 +59,7 @@ function main() {
         }
 
         var pageGlyff = getPageGlyff(index);
-        var pagesGlyff = pageGlyff.pagen(index, getPageGlyff(index + 1), getPageGlyff(index - 1),
-            Glyffin.WhiteGlyff);
+        var pagesGlyff = pageGlyff.pagen(index, getPageGlyff(index + 1), getPageGlyff(index - 1));
 
         var app = Glyffin.BlackGlyff.addNearMajor(1, pagesGlyff);
         presentation = app.present(metrics, glAudience, (symbol)=> {

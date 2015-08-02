@@ -556,23 +556,23 @@ module Glyffin {
             });
         }
 
-        pagen<U>(index : number, next : Glyff<U>, prev : Glyff<U>,
-                 pressed : Glyff<U>) : Glyff<string> {
-            return Glyff.create<string>((metrics : Metrics, audience : Audience,
-                                         presenter : Presenter<Void>)=> {
+        pagen<U>(index : number, next : Glyff<U>, prev : Glyff<U>) : Glyff<string|T> {
+            return Glyff.create<string|T>((metrics : Metrics, audience : Audience,
+                                           presenter : Presenter<string|T>)=> {
                 var perimeter = metrics.perimeter;
-                var unpressed = this.clicken("drill", pressed);
+                var current = this;
+                // TODO Determine levels dynamically.
                 var centerMetrics = metrics.withPerimeter(perimeter.withLevel(perimeter.level +
                     4));
                 var leftMetrics = metrics.withPerimeter(perimeter.withLevel(perimeter.level +
-                    8));
+                    12));
                 var rightPresenter = new NoResultPresenter(presenter);
                 var leftPresenter = new NoResultPresenter(presenter);
 
                 var slideRange = perimeter.right;
                 var centerAdded : Removable, rightAdded : Removable, leftAdded : Removable;
 
-                function setCenter(glyff : Glyff<string>) {
+                function setCenter(glyff : Glyff<string|T>) {
                     if (centerAdded) {
                         centerAdded.remove();
                     }
@@ -586,7 +586,7 @@ module Glyffin {
                 function setCenterSlide(newSlide : number) {
                     if (newSlide !== centerSlide) {
                         centerSlide = newSlide;
-                        setCenter(newSlide === 0 ? unpressed : unpressed.move(newSlide));
+                        setCenter(newSlide === 0 ? current : current.move(newSlide));
                     }
                 }
 

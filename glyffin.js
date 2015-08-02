@@ -456,13 +456,14 @@ var Glyffin;
                 });
             });
         };
-        Glyff.prototype.pagen = function (index, next, prev, pressed) {
+        Glyff.prototype.pagen = function (index, next, prev) {
             var _this = this;
             return Glyff.create(function (metrics, audience, presenter) {
                 var perimeter = metrics.perimeter;
-                var unpressed = _this.clicken("drill", pressed);
+                var current = _this;
+                // TODO Determine levels dynamically.
                 var centerMetrics = metrics.withPerimeter(perimeter.withLevel(perimeter.level + 4));
-                var leftMetrics = metrics.withPerimeter(perimeter.withLevel(perimeter.level + 8));
+                var leftMetrics = metrics.withPerimeter(perimeter.withLevel(perimeter.level + 12));
                 var rightPresenter = new NoResultPresenter(presenter);
                 var leftPresenter = new NoResultPresenter(presenter);
                 var slideRange = perimeter.right;
@@ -477,7 +478,7 @@ var Glyffin;
                 function setCenterSlide(newSlide) {
                     if (newSlide !== centerSlide) {
                         centerSlide = newSlide;
-                        setCenter(newSlide === 0 ? unpressed : unpressed.move(newSlide));
+                        setCenter(newSlide === 0 ? current : current.move(newSlide));
                     }
                 }
                 function showRight(show) {

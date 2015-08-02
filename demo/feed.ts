@@ -2,12 +2,12 @@
  * Created by wehjin on 5/24/15.
  */
 
-/// <reference path="webglbook.d.ts" />
-/// <reference path="glyffin.ts" />
-/// <reference path="glyffin-ascii.ts" />
-/// <reference path="glyffin-gl.ts" />
-/// <reference path="glyffin-touch.ts" />
-/// <reference path="rx.ts" />
+/// <reference path="../webglbook.d.ts" />
+/// <reference path="../glyffin.ts" />
+/// <reference path="../glyffin-ascii.ts" />
+/// <reference path="../glyffin-gl.ts" />
+/// <reference path="../glyffin-touch.ts" />
+/// <reference path="../rx.ts" />
 
 import Void = Glyffin.Void;
 import Glyff = Glyffin.Glyff;
@@ -88,8 +88,10 @@ function main() {
 
             var unpressedBackground = Glyffin.colorPath(midgroundColorPath);
             var pressedBackground = Glyffin.colorPath(midgroundColorPath, .5, backgroundColorPath);
-            function getUnpressedCell(item) : Glyff<Void> {
-                return getCell(unpressedBackground, item['title'], item['link']);
+
+            function getUnpressedCell(item) : Glyff<string> {
+                return getCell(unpressedBackground, item['title'], item['link'])
+                    .clicken("drill", getCell(pressedBackground, item['title'], item['link']));
             }
 
             function getRightCell(item) : Glyff<Void> {
@@ -106,9 +108,8 @@ function main() {
             var item = items[itemIndex];
             var nextItem = items[(itemIndex + 1) % items.length];
             var prevItem = items[getPreviousItemIndex(itemIndex)];
-            var cell = getUnpressedCell(item).pagen(itemIndex,
-                getRightCell(nextItem), getLeftCell(prevItem),
-                getCell(pressedBackground, item['title'], item['link']));
+            var cell = getUnpressedCell(item).pagen(itemIndex, getRightCell(nextItem),
+                getLeftCell(prevItem));
 
             var app = Glyffin.colorPath(backgroundColorPath)
                 .addNearMajor(1, cell.splitHeightRetain(-tapHeight * 3, Glyffin.ClearGlyff));

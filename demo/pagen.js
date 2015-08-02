@@ -19,7 +19,11 @@ function main() {
         pageGlyffs.push(Glyff.color(color));
     });
     function getPageGlyff(index) {
-        return (index >= 0 && index < pageGlyffs.length) ? pageGlyffs[index] : null;
+        var page = (index >= 0 && index < pageGlyffs.length) ? pageGlyffs[index] : null;
+        if (!page) {
+            return null;
+        }
+        return page.clicken("drill").revealDown(new Glyffin.Inset1(.3, 0), Glyffin.BlackGlyff);
     }
     var palette = new Glyffin.Palette();
     var screenWidth = room.width;
@@ -42,7 +46,7 @@ function main() {
             presentation.end();
         }
         var pageGlyff = getPageGlyff(index);
-        var pagesGlyff = pageGlyff.pagen(index, getPageGlyff(index + 1), getPageGlyff(index - 1), Glyffin.WhiteGlyff);
+        var pagesGlyff = pageGlyff.pagen(index, getPageGlyff(index + 1), getPageGlyff(index - 1));
         var app = Glyffin.BlackGlyff.addNearMajor(1, pagesGlyff);
         presentation = app.present(metrics, glAudience, function (symbol) {
             console.log("%s", symbol);
