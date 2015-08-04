@@ -282,6 +282,27 @@ module Glyffin {
             });
         }
 
+        disappear(disappeared : boolean) : Glyff<T> {
+            return Glyff.create<T>((metrics : Metrics, audience : Audience,
+                                    presenter : Presenter<Void>)=> {
+                presenter.addPresentation(this.present(metrics, disappeared ? {
+                    addPatch(bounds : Perimeter, color : Color) : Patch {
+                        return {
+                            remove() {
+                            }
+                        };
+                    },
+                    addZone(bounds : Perimeter, touchProvider : Gesturable) : Zone {
+                        return audience.addZone(bounds, touchProvider);
+                    },
+                    present: <U>(glyff : Glyff<U>, reactionOrOnResult ? : Reaction<U>|OnResult<U>,
+                                 onError? : OnError) : Presentation => {
+                        return audience.present(glyff, reactionOrOnResult, onError);
+                    }
+                } : audience, presenter));
+            });
+        }
+
         isolate(isolated : boolean) : Glyff<T> {
             return Glyff.create<T>((metrics : Metrics, audience : Audience,
                                     presenter : Presenter<Void>)=> {

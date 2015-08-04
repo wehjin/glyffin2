@@ -155,6 +155,7 @@ module Glyffin {
         public static BLUE = new Color(0, 0, 1, 1);
         public static MAGENTA = new Color(.5, 0, .5, 1);
         public static BEIGE = new Color(245 / 255, 245 / 255, 220 / 255, 1);
+        public static GRAY = new Color(.5, .5, .5, 1);
 
         public static get(red : number, green : number, blue : number, alpha : number) : Color {
             return new Color(red, green, blue, alpha);

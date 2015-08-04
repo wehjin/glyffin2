@@ -153,6 +153,7 @@ var Glyffin;
         Color.BLUE = new Color(0, 0, 1, 1);
         Color.MAGENTA = new Color(.5, 0, .5, 1);
         Color.BEIGE = new Color(245 / 255, 245 / 255, 220 / 255, 1);
+        Color.GRAY = new Color(.5, .5, .5, 1);
         return Color;
     })();
     Glyffin.Color = Color;

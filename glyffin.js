@@ -229,6 +229,25 @@ var Glyffin;
                 presenter.addPresentation(upperGlyff.present(mogrifier.getMetrics(metrics, presenter), mogrifier.getUpperAudience(audience, presenter), mogrifier.getUpperReaction(audience, presenter)));
             });
         };
+        Glyff.prototype.disappear = function (disappeared) {
+            var _this = this;
+            return Glyff.create(function (metrics, audience, presenter) {
+                presenter.addPresentation(_this.present(metrics, disappeared ? {
+                    addPatch: function (bounds, color) {
+                        return {
+                            remove: function () {
+                            }
+                        };
+                    },
+                    addZone: function (bounds, touchProvider) {
+                        return audience.addZone(bounds, touchProvider);
+                    },
+                    present: function (glyff, reactionOrOnResult, onError) {
+                        return audience.present(glyff, reactionOrOnResult, onError);
+                    }
+                } : audience, presenter));
+            });
+        };
         Glyff.prototype.isolate = function (isolated) {
             var _this = this;
             return Glyff.create(function (metrics, audience, presenter) {
