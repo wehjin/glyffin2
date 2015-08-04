@@ -81,6 +81,11 @@ var Glyffin;
         Perimeter.prototype.inset = function (pixelsX, pixelsY) {
             return new Perimeter(this.left + pixelsX, this.top + pixelsY, this.right - pixelsX, this.bottom - pixelsY, this.age, this.level);
         };
+        Perimeter.prototype.inset2 = function (inset) {
+            var pixelsX = inset.x.getPixels(this.getWidth());
+            var pixelsY = inset.y.getPixels(this.getHeight());
+            return this.inset(pixelsX, pixelsY);
+        };
         Perimeter.prototype.downFromTop = function (pixelsY, pixelsHigh) {
             var insetTop = this.top + pixelsY;
             return new Perimeter(this.left, insetTop, this.right, insetTop + pixelsHigh, this.age, this.level);

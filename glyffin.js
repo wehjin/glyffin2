@@ -455,6 +455,29 @@ var Glyffin;
                 }
             });
         };
+        Glyff.prototype.pad2 = function (inset) {
+            return this.lift(function (lowerPresenter) {
+                var metrics = lowerPresenter.metrics;
+                var insetPerimeter = metrics.perimeter.inset2(inset);
+                var insetMetrics = metrics.withPerimeter(insetPerimeter);
+                return {
+                    metrics: insetMetrics,
+                    audience: lowerPresenter.audience,
+                    addPresentation: function (presentation) {
+                        return lowerPresenter.addPresentation(presentation);
+                    },
+                    onResult: function (result) {
+                        lowerPresenter.onResult(result);
+                    },
+                    onError: function (err) {
+                        lowerPresenter.onError(err);
+                    },
+                    end: function () {
+                        lowerPresenter.end();
+                    }
+                };
+            });
+        };
         Glyff.prototype.move = function (x) {
             var _this = this;
             return Glyff.create(function (presenter) {

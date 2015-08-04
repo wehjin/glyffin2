@@ -89,6 +89,12 @@ module Glyffin {
                 this.bottom - pixelsY, this.age, this.level);
         }
 
+        inset2(inset : Inset2) : Perimeter {
+            var pixelsX = inset.x.getPixels(this.getWidth());
+            var pixelsY = inset.y.getPixels(this.getHeight());
+            return this.inset(pixelsX, pixelsY);
+        }
+
         downFromTop(pixelsY : number, pixelsHigh : number) : Perimeter {
             var insetTop = this.top + pixelsY;
             return new Perimeter(this.left, insetTop, this.right, insetTop + pixelsHigh, this.age,

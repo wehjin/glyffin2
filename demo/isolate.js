@@ -20,7 +20,7 @@ function main() {
     var coverIndex = 0;
     var margin = metrics.readHeight;
     var makeButton = function (label, ink, back) {
-        var text = Glyffin.asciiEntireWord(label, ink).pad(margin, margin);
+        var text = Glyffin.asciiEntireWord(label, ink).pad2(new Glyffin.Inset2(0, margin, .25, 0));
         var unpressed = back.addNearMajor(1, text);
         var pressed = Glyffin.BlackGlyff.addNearMajor(1, text);
         return unpressed.clicken("click", pressed);

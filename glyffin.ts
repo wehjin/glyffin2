@@ -25,7 +25,7 @@ module Glyffin {
     }
 
     export interface Lifter<T, U> {
-        (input : Presenter<T>):Presenter<U>;
+        (lowerPresenter : Presenter<T>):Presenter<U>;
     }
 
     export class Insertion<T> {
@@ -542,6 +542,30 @@ module Glyffin {
                 getUpperReaction(audience : Audience, presenter : Presenter<T>) : Reaction<T> {
                     return presenter;
                 }
+            });
+        }
+
+        pad2(inset : Inset2) : Glyff<T> {
+            return this.lift((lowerPresenter : Presenter<T>) : Presenter<T>=> {
+                var metrics = lowerPresenter.metrics;
+                var insetPerimeter = metrics.perimeter.inset2(inset);
+                var insetMetrics = metrics.withPerimeter(insetPerimeter);
+                return {
+                    metrics: insetMetrics,
+                    audience: lowerPresenter.audience,
+                    addPresentation(presentation : Presentation) : Removable {
+                        return lowerPresenter.addPresentation(presentation);
+                    },
+                    onResult(result : T) {
+                        lowerPresenter.onResult(result);
+                    },
+                    onError(err : Error) {
+                        lowerPresenter.onError(err);
+                    },
+                    end() {
+                        lowerPresenter.end();
+                    }
+                };
             });
         }
 
