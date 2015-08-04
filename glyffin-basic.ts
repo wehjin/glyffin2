@@ -17,6 +17,16 @@ module Glyffin {
         }
     }
 
+    export class Inset2 {
+        public x : Inset1;
+        public y : Inset1;
+
+        constructor(fractionX : number, fixedX : number, fractionY : number, fixedY : number) {
+            this.x = new Inset1(fractionX, fixedX);
+            this.y = new Inset1(fractionY, fixedY);
+        }
+    }
+
     export class Spot {
         constructor(public x : number, public y : number) {
         }
@@ -261,11 +271,6 @@ module Glyffin {
         cancel();
     }
 
-    export interface Reaction<T> {
-        onResult(result : T);
-        onError(error : Error);
-    }
-
     export type ErrorCallback = (error : Error)=>void;
 
     export interface OnError {
@@ -276,17 +281,31 @@ module Glyffin {
         (result : T):void;
     }
 
+    export interface Reaction<T> {
+        onResult(result : T);
+        onError(error : Error);
+    }
 
     export interface Presentation {
         end();
     }
+
     export var EMPTY_PRESENTATION : Presentation = {
         end() {
         }
     };
 
-    export interface Presenter<T> extends Reaction<T> {
-        addPresentation(presentation : Presentation):Removable;
+    export class NoResultReaction<T,U> implements Reaction<T> {
+        constructor(private reaction : Reaction<U>) {
+        }
+
+        onResult(result : T) {
+            // Do nothing.  Send to null.
+        }
+
+        onError(error : Error) {
+            this.reaction.onError(error);
+        }
     }
 
     var maxDuration = 50;

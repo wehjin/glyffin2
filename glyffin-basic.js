@@ -20,6 +20,14 @@ var Glyffin;
         return Inset1;
     })();
     Glyffin.Inset1 = Inset1;
+    var Inset2 = (function () {
+        function Inset2(fractionX, fixedX, fractionY, fixedY) {
+            this.x = new Inset1(fractionX, fixedX);
+            this.y = new Inset1(fractionY, fixedY);
+        }
+        return Inset2;
+    })();
+    Glyffin.Inset2 = Inset2;
     var Spot = (function () {
         function Spot(x, y) {
             this.x = x;
@@ -210,6 +218,19 @@ var Glyffin;
         end: function () {
         }
     };
+    var NoResultReaction = (function () {
+        function NoResultReaction(reaction) {
+            this.reaction = reaction;
+        }
+        NoResultReaction.prototype.onResult = function (result) {
+            // Do nothing.  Send to null.
+        };
+        NoResultReaction.prototype.onError = function (error) {
+            this.reaction.onError(error);
+        };
+        return NoResultReaction;
+    })();
+    Glyffin.NoResultReaction = NoResultReaction;
     var maxDuration = 50;
     var approximateDuration = maxDuration / 2;
     var SpeedometerX = (function () {

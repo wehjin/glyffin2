@@ -40,7 +40,9 @@ function main() {
             .pad(readPixels, readPixels))
         .splitHeightRetain(fingerPixels, Glyffin.button());
 
-    var app = Glyff.create((metrics : Metrics, audience : Audience, presenter : Presenter<Void>)=> {
+    var app = Glyff.create((presenter : Presenter<Void>)=> {
+        var metrics = presenter.metrics;
+        var audience = presenter.audience;
         var page = Glyffin.BeigeGlyff.splitHeightRetain(fingerPixels, Glyffin.button());
 
         var presented;

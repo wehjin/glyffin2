@@ -21,7 +21,9 @@ function main() {
     var fingerPixels = metrics.tapHeight;
     var readPixels = metrics.readHeight;
     var demo = Glyffin.RedGlyff.splitHeightYield(100, Glyffin.BlueGlyff.splitHeightYield(readPixels * 8, Glyffin.asciiMultiLine(3, alphabet)).pad(10, 10)).splitHeightYield(readPixels * 5, Glyffin.BlueGlyff.splitHeightYield(readPixels * 3, Glyffin.asciiMultiLine(2, headline)).pad(readPixels, readPixels)).splitHeightYield(readPixels * 7, Glyffin.BlueGlyff.splitHeightYield(readPixels * 5, Glyffin.asciiMultiLine(3, headline2)).pad(readPixels, readPixels)).splitHeightRetain(fingerPixels, Glyffin.button());
-    var app = Glyff.create(function (metrics, audience, presenter) {
+    var app = Glyff.create(function (presenter) {
+        var metrics = presenter.metrics;
+        var audience = presenter.audience;
         var page = Glyffin.BeigeGlyff.splitHeightRetain(fingerPixels, Glyffin.button());
         var presented;
         function setPresented(glyff, next) {

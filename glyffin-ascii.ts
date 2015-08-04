@@ -52,8 +52,9 @@ module Glyffin {
 
     export function asciiMultiLine(lines : number, paragraph : string,
                                    base? : Glyff<Void>) : Glyff<Void> {
-        return Glyff.create((metrics : Metrics, audience : Audience,
-                             presenter : Presenter<Void>)=> {
+        return Glyff.create((presenter : Presenter<Void>)=> {
+            var metrics = presenter.metrics;
+            var audience = presenter.audience;
             var perimeter = metrics.perimeter;
             var linesAndLeadings = (lines * 2 - 1);
             var ascentPixels = perimeter.getHeight() / linesAndLeadings;
@@ -107,8 +108,9 @@ module Glyffin {
 
     export function asciiEntireWord(word : string, ink? : Glyff<Void>) : Glyff<Void> {
         var wordXWeight = getWordXWeight(word);
-        return Glyff.create((metrics : Metrics, audience : Audience,
-                             presenter : Presenter<Void>) => {
+        return Glyff.create((presenter : Presenter<Void>) => {
+            var metrics = presenter.metrics;
+            var audience = presenter.audience;
             var perimeter = metrics.perimeter;
             var wordXWeightPixels = perimeter.getWidth() / wordXWeight;
             var preferredWeightPixels = perimeter.getHeight() / 7;

@@ -5,21 +5,6 @@
 /// <reference path="glyffin-basic.ts" />
 var Glyffin;
 (function (Glyffin) {
-    var NoResultPresenter = (function () {
-        function NoResultPresenter(outerPresenter) {
-            this.outerPresenter = outerPresenter;
-        }
-        NoResultPresenter.prototype.addPresentation = function (presentation) {
-            return this.outerPresenter.addPresentation(presentation);
-        };
-        NoResultPresenter.prototype.onResult = function (result) {
-            // Do nothing.  Send to null.
-        };
-        NoResultPresenter.prototype.onError = function (error) {
-            this.outerPresenter.onError(error);
-        };
-        return NoResultPresenter;
-    })();
     var Insertion = (function () {
         function Insertion(amount, glyff) {
             this.amount = amount;
@@ -178,15 +163,25 @@ var Glyffin;
         };
         Glyff.prototype.present = function (metrics, audience, reactionOrOnResult, onError) {
             var presented = [];
+            function endPresented() {
+                var toEnd = presented.slice();
+                presented.length = 0;
+                toEnd.forEach(function (presentation) {
+                    presentation.end();
+                });
+            }
             var presenter = {
+                metrics: metrics,
+                audience: audience,
                 addPresentation: function (presentation) {
                     presented.push(presentation);
                     return {
                         remove: function () {
                             var index = presented.indexOf(presentation);
-                            if (index >= 0) {
-                                presented.splice(index, 1);
+                            if (index < 0) {
+                                return;
                             }
+                            presented.splice(index, 1);
                             presentation.end();
                         }
                     };
@@ -206,65 +201,68 @@ var Glyffin;
                     else if (onError) {
                         onError(error);
                     }
-                }
-            };
-            this.onPresent(metrics, audience, presenter);
-            return {
+                },
                 end: function () {
-                    while (presented.length) {
-                        presented.pop().end();
-                    }
+                    endPresented();
                 }
             };
+            this.onPresent(presenter);
+            return presenter;
+        };
+        Glyff.prototype.lift = function (lifter) {
+            var _this = this;
+            return Glyff.create(function (presenter) {
+                var lifted = lifter(presenter);
+                presenter.addPresentation(_this.present(lifted.metrics, lifted.audience, lifted));
+            });
         };
         Glyff.prototype.rebuild = function (builder) {
             var rebuilt = builder(this);
-            return Glyff.create(function (metrics, audience, presenter) {
-                presenter.addPresentation(rebuilt.present(metrics, audience, presenter));
+            return Glyff.create(function (presenter) {
+                presenter.addPresentation(rebuilt.present(presenter.metrics, presenter.audience, presenter));
             });
         };
         Glyff.prototype.compose = function (mogrifier) {
             var upperGlyff = this;
-            return Glyff.create(function (metrics, audience, presenter) {
-                presenter.addPresentation(upperGlyff.present(mogrifier.getMetrics(metrics, presenter), mogrifier.getUpperAudience(audience, presenter), mogrifier.getUpperReaction(audience, presenter)));
+            return Glyff.create(function (presenter) {
+                var metrics = mogrifier.getMetrics(presenter.metrics, presenter);
+                var audience = mogrifier.getUpperAudience(presenter.audience, presenter);
+                var reaction = mogrifier.getUpperReaction(presenter.audience, presenter);
+                presenter.addPresentation(upperGlyff.present(metrics, audience, reaction));
             });
         };
         Glyff.prototype.disappear = function (disappeared) {
             var _this = this;
-            return Glyff.create(function (metrics, audience, presenter) {
-                presenter.addPresentation(_this.present(metrics, disappeared ? {
+            return Glyff.create(function (presenter) {
+                var audience = disappeared ? {
                     addPatch: function (bounds, color) {
-                        return {
-                            remove: function () {
-                            }
-                        };
+                        return Glyffin.EMPTY_REMOVABLE;
                     },
                     addZone: function (bounds, touchProvider) {
-                        return audience.addZone(bounds, touchProvider);
+                        return presenter.audience.addZone(bounds, touchProvider);
                     },
                     present: function (glyff, reactionOrOnResult, onError) {
-                        return audience.present(glyff, reactionOrOnResult, onError);
+                        return presenter.audience.present(glyff, reactionOrOnResult, onError);
                     }
-                } : audience, presenter));
+                } : presenter.audience;
+                presenter.addPresentation(_this.present(presenter.metrics, audience, presenter));
             });
         };
         Glyff.prototype.isolate = function (isolated) {
             var _this = this;
-            return Glyff.create(function (metrics, audience, presenter) {
-                presenter.addPresentation(_this.present(metrics, isolated ? {
+            return Glyff.create(function (presenter) {
+                var audience = isolated ? {
                     addPatch: function (bounds, color) {
-                        return audience.addPatch(bounds, color);
+                        return presenter.audience.addPatch(bounds, color);
                     },
                     addZone: function (bounds, touchProvider) {
-                        return {
-                            remove: function () {
-                            }
-                        };
+                        return Glyffin.EMPTY_REMOVABLE;
                     },
                     present: function (glyff, reactionOrOnResult, onError) {
-                        return audience.present(glyff, reactionOrOnResult, onError);
+                        return presenter.audience.present(glyff, reactionOrOnResult, onError);
                     }
-                } : audience, presenter));
+                } : presenter.audience;
+                presenter.addPresentation(_this.present(presenter.metrics, audience, presenter));
             });
         };
         Glyff.prototype.addLefts = function (insertions) {
@@ -278,7 +276,9 @@ var Glyffin;
         };
         Glyff.prototype.splitWidthCombine = function (size, glyff) {
             var _this = this;
-            return Glyff.create(function (metrics, audience, presenter) {
+            return Glyff.create(function (presenter) {
+                var metrics = presenter.metrics;
+                var audience = presenter.audience;
                 var split = metrics.perimeter.splitWidth(size);
                 presenter.addPresentation(glyff.present(metrics.withPerimeter(split[0]), audience, presenter));
                 presenter.addPresentation(_this.present(metrics.withPerimeter(split[1]), audience, presenter));
@@ -286,7 +286,9 @@ var Glyffin;
         };
         Glyff.prototype.splitHeight = function (size, topGlyff) {
             var _this = this;
-            return Glyff.create(function (metrics, audience, presenter) {
+            return Glyff.create(function (presenter) {
+                var metrics = presenter.metrics;
+                var audience = presenter.audience;
                 var split = metrics.perimeter.splitHeight(size);
                 presenter.addPresentation(topGlyff.present(metrics.withPerimeter(split[0]), audience, presenter));
                 presenter.addPresentation(_this.present(metrics.withPerimeter(split[1]), audience, presenter));
@@ -294,24 +296,30 @@ var Glyffin;
         };
         Glyff.prototype.splitHeightYield = function (size, topGlyff) {
             var _this = this;
-            return Glyff.create(function (metrics, audience, presenter) {
+            return Glyff.create(function (presenter) {
+                var metrics = presenter.metrics;
+                var audience = presenter.audience;
                 var split = metrics.perimeter.splitHeight(size);
                 presenter.addPresentation(topGlyff.present(metrics.withPerimeter(split[0]), audience, presenter));
-                presenter.addPresentation(_this.present(metrics.withPerimeter(split[1]), audience, new NoResultPresenter(presenter)));
+                presenter.addPresentation(_this.present(metrics.withPerimeter(split[1]), audience, new Glyffin.NoResultReaction(presenter)));
             });
         };
         Glyff.prototype.splitHeightRetain = function (size, addGlyff) {
             var _this = this;
-            return Glyff.create(function (metrics, audience, presenter) {
+            return Glyff.create(function (presenter) {
+                var metrics = presenter.metrics;
+                var audience = presenter.audience;
                 var split = metrics.perimeter.splitHeight(size);
-                presenter.addPresentation(addGlyff.present(metrics.withPerimeter(split[0]), audience, new NoResultPresenter(presenter)));
+                presenter.addPresentation(addGlyff.present(metrics.withPerimeter(split[0]), audience, new Glyffin.NoResultReaction(presenter)));
                 presenter.addPresentation(_this.present(metrics.withPerimeter(split[1]), audience, presenter));
             });
         };
         Glyff.prototype.addNearMajor = function (level, nearGlyff) {
             var _this = this;
-            return Glyff.create(function (metrics, audience, presenter) {
-                presenter.addPresentation(_this.present(metrics, audience, new NoResultPresenter(presenter)));
+            return Glyff.create(function (presenter) {
+                var metrics = presenter.metrics;
+                var audience = presenter.audience;
+                presenter.addPresentation(_this.present(metrics, audience, new Glyffin.NoResultReaction(presenter)));
                 // TODO: Think through relative versus absolute level.
                 var nearPerimeter = metrics.perimeter.withLevel(metrics.perimeter.level + level);
                 presenter.addPresentation(nearGlyff.present(metrics.withPerimeter(nearPerimeter), audience, presenter));
@@ -319,7 +327,9 @@ var Glyffin;
         };
         Glyff.prototype.revealDown = function (inset, revelation) {
             var _this = this;
-            return Glyff.create(function (metrics, audience, presenter) {
+            return Glyff.create(function (presenter) {
+                var metrics = presenter.metrics;
+                var audience = presenter.audience;
                 var perimeter = metrics.perimeter;
                 var perimeterHeight = perimeter.getHeight();
                 var maxRevelationHeight = inset.getPixels(perimeterHeight);
@@ -382,7 +392,9 @@ var Glyffin;
         };
         Glyff.prototype.limitWidth = function (maxWidth, align) {
             var _this = this;
-            return Glyff.create(function (metrics, audience, presenter) {
+            return Glyff.create(function (presenter) {
+                var metrics = presenter.metrics;
+                var audience = presenter.audience;
                 var perimeter = metrics.perimeter;
                 var width = perimeter.getWidth();
                 if (width <= maxWidth) {
@@ -397,7 +409,9 @@ var Glyffin;
         };
         Glyff.prototype.limitHeight = function (maxHeight, align) {
             var _this = this;
-            return Glyff.create(function (metrics, audience, presenter) {
+            return Glyff.create(function (presenter) {
+                var metrics = presenter.metrics;
+                var audience = presenter.audience;
                 var perimeter = metrics.perimeter;
                 var height = perimeter.getHeight();
                 if (height <= maxHeight) {
@@ -412,7 +426,9 @@ var Glyffin;
         };
         Glyff.prototype.kaleid = function (columns, rows, spots) {
             var upperGlyff = this;
-            return Glyff.create(function (metrics, audience, presenter) {
+            return Glyff.create(function (presenter) {
+                var metrics = presenter.metrics;
+                var audience = presenter.audience;
                 var perimeter = metrics.perimeter;
                 var rowHeight = perimeter.getHeight() / rows;
                 var colWidth = perimeter.getWidth() / columns;
@@ -441,14 +457,18 @@ var Glyffin;
         };
         Glyff.prototype.move = function (x) {
             var _this = this;
-            return Glyff.create(function (metrics, audience, presenter) {
+            return Glyff.create(function (presenter) {
+                var metrics = presenter.metrics;
+                var audience = presenter.audience;
                 var perimeter = metrics.perimeter.translate(x);
                 presenter.addPresentation(_this.present(metrics.withPerimeter(perimeter), audience, presenter));
             });
         };
         Glyff.prototype.clicken = function (symbol, pressed) {
             var _this = this;
-            return Glyff.create(function (metrics, audience, presenter) {
+            return Glyff.create(function (presenter) {
+                var metrics = presenter.metrics;
+                var audience = presenter.audience;
                 var perimeter = metrics.perimeter;
                 var unpressed = _this;
                 var unpressedMetrics = metrics.withPerimeter(perimeter.withLevel(perimeter.level + 4));
@@ -477,14 +497,15 @@ var Glyffin;
         };
         Glyff.prototype.pagen = function (index, next, prev) {
             var _this = this;
-            return Glyff.create(function (metrics, audience, presenter) {
+            return Glyff.create(function (presenter) {
+                var metrics = presenter.metrics;
+                var audience = presenter.audience;
                 var perimeter = metrics.perimeter;
                 var current = _this;
                 // TODO Determine levels dynamically.
                 var centerMetrics = metrics.withPerimeter(perimeter.withLevel(perimeter.level + 4));
                 var leftMetrics = metrics.withPerimeter(perimeter.withLevel(perimeter.level + 12));
-                var rightPresenter = new NoResultPresenter(presenter);
-                var leftPresenter = new NoResultPresenter(presenter);
+                var noResultReaction = new Glyffin.NoResultReaction(presenter);
                 var slideRange = perimeter.right;
                 var centerAdded, rightAdded, leftAdded;
                 function setCenter(glyff) {
@@ -502,7 +523,7 @@ var Glyffin;
                 }
                 function showRight(show) {
                     if (show && !rightAdded && next) {
-                        rightAdded = presenter.addPresentation(next.present(metrics, audience, rightPresenter));
+                        rightAdded = presenter.addPresentation(next.present(metrics, audience, noResultReaction));
                     }
                     else if (!show && rightAdded) {
                         rightAdded.remove();
@@ -527,7 +548,7 @@ var Glyffin;
                         leftAdded.remove();
                     }
                     if (glyff) {
-                        leftAdded = presenter.addPresentation(glyff.present(leftMetrics, audience, leftPresenter));
+                        leftAdded = presenter.addPresentation(glyff.present(leftMetrics, audience, noResultReaction));
                     }
                 }
                 var triggerAge = (metrics.tapHeight * 1.5) / slideRange;
@@ -639,7 +660,9 @@ var Glyffin;
         };
         Glyff.prototype.animateWithPath = function (path) {
             var _this = this;
-            return Glyff.create(function (metrics, audience, presenter) {
+            return Glyff.create(function (presenter) {
+                var metrics = presenter.metrics;
+                var audience = presenter.audience;
                 path.start(Date.now());
                 var presentation;
                 var frame;
@@ -672,8 +695,9 @@ var Glyffin;
             return this.animateWithPath(new CycleAnimationPath(duration, count));
         };
         Glyff.color = function (color) {
-            return Glyff.create(function (metrics, audience, presenter) {
-                var patch = audience.addPatch(metrics.perimeter, color);
+            return Glyff.create(function (presenter) {
+                var audience = presenter.audience;
+                var patch = audience.addPatch(presenter.metrics.perimeter, color);
                 presenter.addPresentation({
                     end: function () {
                         patch.remove();
@@ -682,7 +706,9 @@ var Glyffin;
             });
         };
         Glyff.colorAnimation = function (first, last) {
-            return Glyff.create(function (metrics, audience, presenter) {
+            return Glyff.create(function (presenter) {
+                var metrics = presenter.metrics;
+                var audience = presenter.audience;
                 var colorGlyff = Glyff.color(first.mix(metrics.perimeter.age, last));
                 presenter.addPresentation(colorGlyff.present(metrics, audience, presenter));
             });
@@ -693,7 +719,9 @@ var Glyffin;
     Glyffin.ClearGlyff = Glyff.create(function () {
     });
     function colorPath(colorPath, mix, colorPath2) {
-        return Glyff.create(function (metrics, audience, presenter) {
+        return Glyff.create(function (presenter) {
+            var metrics = presenter.metrics;
+            var audience = presenter.audience;
             var color = metrics.palette.get(colorPath);
             if (mix) {
                 color = color.mix(mix, metrics.palette.get(colorPath2));

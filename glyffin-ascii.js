@@ -47,7 +47,9 @@ var Glyffin;
     }
     Glyffin.asciiByCode = asciiByCode;
     function asciiMultiLine(lines, paragraph, base) {
-        return Glyffin.Glyff.create(function (metrics, audience, presenter) {
+        return Glyffin.Glyff.create(function (presenter) {
+            var metrics = presenter.metrics;
+            var audience = presenter.audience;
             var perimeter = metrics.perimeter;
             var linesAndLeadings = (lines * 2 - 1);
             var ascentPixels = perimeter.getHeight() / linesAndLeadings;
@@ -93,7 +95,9 @@ var Glyffin;
     Glyffin.asciiMultiLine = asciiMultiLine;
     function asciiEntireWord(word, ink) {
         var wordXWeight = getWordXWeight(word);
-        return Glyffin.Glyff.create(function (metrics, audience, presenter) {
+        return Glyffin.Glyff.create(function (presenter) {
+            var metrics = presenter.metrics;
+            var audience = presenter.audience;
             var perimeter = metrics.perimeter;
             var wordXWeightPixels = perimeter.getWidth() / wordXWeight;
             var preferredWeightPixels = perimeter.getHeight() / 7;
