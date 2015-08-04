@@ -420,6 +420,7 @@ module Glyffin {
                         .present(coverMetrics, audience, presenter));
                     var revelationRemovable = presenter.addPresentation(revelation
                         .isolate(revelationHeight < maxRevelationHeight)
+                        .disappear(revelationHeight <= 0)
                         .present(revelationMetrics, audience, presenter));
                     unpresent = ()=> {
                         coverRemovable.remove();
