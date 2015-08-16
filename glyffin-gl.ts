@@ -27,6 +27,7 @@ var useShadow = true;
 
 var MAX_PATCH_COUNT = 10000;
 var VERTICES_PER_PATCH = 6;
+var MAX_VERTEX_COUNT = MAX_PATCH_COUNT * VERTICES_PER_PATCH;
 var FLOATS_PER_POSITION = 3;
 var FLOATS_PER_COLOR = 4;
 var FLOATS_PER_VERTEX = FLOATS_PER_POSITION + FLOATS_PER_COLOR;
@@ -132,32 +133,46 @@ class FrameBuffer {
     }
 }
 
-class VerticesAndColor {
+class Patches {
 
-    private nextPatchIndex = 0;
-    private freePatchIndices : number[] = [];
-    private clearedPatchIndices : number[] = [];
+    private freePatchList : number[] = [];
+    private freePatchHead : number;
+    private freePatchTail : number;
+    private freePatchCleared : number;
+    private freePatchCount : number;
+
     public totalFreed = 0;
     private emptyPatchVertices = new Float32Array(FLOATS_PER_PATCH);
     private patchVertices = new Float32Array(FLOATS_PER_PATCH);
 
-    getActiveVertexCount() : number {
-        return this.nextPatchIndex * VERTICES_PER_PATCH;
+
+    constructor() {
+        for (var i = 0, count = MAX_PATCH_COUNT - 1; i < count; i++) {
+            this.freePatchList[i] = i + 1;
+        }
+        this.freePatchList[MAX_PATCH_COUNT - 1] = -1;
+        this.freePatchHead = 0;
+        this.freePatchTail = MAX_PATCH_COUNT - 1;
+        this.freePatchCleared = this.freePatchTail;
+        this.freePatchCount = MAX_PATCH_COUNT;
     }
 
     getPatch(left : number, top : number, right : number, bottom : number, level : number,
              color : Glyffin.Color, room : MyRoom) : number {
         var patchIndex;
-        if (this.freePatchIndices.length > 0) {
-            patchIndex = this.freePatchIndices.pop();
-        } else if (this.clearedPatchIndices.length > 0) {
-            patchIndex = this.clearedPatchIndices.pop();
-        } else {
-            if (this.nextPatchIndex >= MAX_PATCH_COUNT) {
-                throw "Too many patches";
+        if (this.freePatchHead === this.freePatchCleared) {
+            if (this.freePatchCleared === this.freePatchTail) {
+                throw "Out of patches";
             }
-            patchIndex = this.nextPatchIndex++;
+            patchIndex = this.freePatchHead;
+            this.freePatchHead =
+                this.freePatchCleared = this.freePatchList[this.freePatchHead];
+        } else {
+            patchIndex = this.freePatchHead;
+            this.freePatchHead = this.freePatchList[this.freePatchHead];
         }
+        this.freePatchList[patchIndex] = -2;
+        this.freePatchCount--;
         this.patchVertices.set([left, top, level,
                                 color.red, color.green, color.blue, color.alpha,
                                 right, top, level,
@@ -176,19 +191,31 @@ class VerticesAndColor {
     }
 
     putPatch(patchIndex : number) {
-        this.freePatchIndices.push(patchIndex);
+        if (this.freePatchList[patchIndex] !== -2) {
+            throw "Invalid patch index";
+        }
+        this.freePatchList[this.freePatchTail] = patchIndex;
+        this.freePatchTail = patchIndex;
+        this.freePatchList[patchIndex] = -1;
+        this.freePatchCount++;
         this.totalFreed++;
     }
 
-    clearFreePatches(room : MyRoom) {
-        if (this.freePatchIndices.length > 0) {
-            for (var i = 0; i < this.freePatchIndices.length; i++) {
-                room.writePatch(this.freePatchIndices[i] * BYTES_PER_PATCH,
-                    this.emptyPatchVertices);
-            }
-            this.clearedPatchIndices = this.clearedPatchIndices.concat(this.freePatchIndices);
-            this.freePatchIndices = [];
+    clearFreedPatches(room : MyRoom) {
+        var next = this.freePatchCleared;
+        var last = this.freePatchTail;
+        if (next === last) {
+            return;
         }
+        var list = this.freePatchList;
+        for (; ;) {
+            room.writePatch(next * BYTES_PER_PATCH, this.emptyPatchVertices);
+            if (next === last) {
+                break;
+            }
+            next = list[next];
+        }
+        this.freePatchCleared = last;
     }
 }
 
@@ -475,7 +502,7 @@ module Glyffin {
     }
 
     export class GlAudience implements Audience {
-        private vertices : VerticesAndColor;
+        private vertices : Patches;
         private interactives : Interactive[] = [];
         private drawCount : number = 0;
         private editCount : number = 0;
@@ -483,7 +510,7 @@ module Glyffin {
         private redrawTime;
 
         constructor(private room : GlRoom) {
-            this.vertices = new VerticesAndColor();
+            this.vertices = new Patches();
             this.beginGestures(room.canvas);
         }
 
@@ -571,13 +598,13 @@ module Glyffin {
             }
             this.editCount++;
             requestAnimationFrame(()=> {
-                this.redraw();
+                this.clearAndRedraw();
             });
         }
 
-        private redraw() {
-            this.vertices.clearFreePatches(this.room);
-            this.room.redraw(this.vertices.getActiveVertexCount());
+        private clearAndRedraw() {
+            this.vertices.clearFreedPatches(this.room);
+            this.room.redraw(MAX_VERTEX_COUNT);
             this.drawCount = this.editCount;
             this.redrawTime = Date.now();
             /*

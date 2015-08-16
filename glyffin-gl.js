@@ -30,6 +30,7 @@ var redShadow = false;
 var useShadow = true;
 var MAX_PATCH_COUNT = 10000;
 var VERTICES_PER_PATCH = 6;
+var MAX_VERTEX_COUNT = MAX_PATCH_COUNT * VERTICES_PER_PATCH;
 var FLOATS_PER_POSITION = 3;
 var FLOATS_PER_COLOR = 4;
 var FLOATS_PER_VERTEX = FLOATS_PER_POSITION + FLOATS_PER_COLOR;
@@ -113,50 +114,67 @@ var FrameBuffer = (function () {
     }
     return FrameBuffer;
 })();
-var VerticesAndColor = (function () {
-    function VerticesAndColor() {
-        this.nextPatchIndex = 0;
-        this.freePatchIndices = [];
-        this.clearedPatchIndices = [];
+var Patches = (function () {
+    function Patches() {
+        this.freePatchList = [];
         this.totalFreed = 0;
         this.emptyPatchVertices = new Float32Array(FLOATS_PER_PATCH);
         this.patchVertices = new Float32Array(FLOATS_PER_PATCH);
-    }
-    VerticesAndColor.prototype.getActiveVertexCount = function () {
-        return this.nextPatchIndex * VERTICES_PER_PATCH;
-    };
-    VerticesAndColor.prototype.getPatch = function (left, top, right, bottom, level, color, room) {
-        var patchIndex;
-        if (this.freePatchIndices.length > 0) {
-            patchIndex = this.freePatchIndices.pop();
+        for (var i = 0, count = MAX_PATCH_COUNT - 1; i < count; i++) {
+            this.freePatchList[i] = i + 1;
         }
-        else if (this.clearedPatchIndices.length > 0) {
-            patchIndex = this.clearedPatchIndices.pop();
+        this.freePatchList[MAX_PATCH_COUNT - 1] = -1;
+        this.freePatchHead = 0;
+        this.freePatchTail = MAX_PATCH_COUNT - 1;
+        this.freePatchCleared = this.freePatchTail;
+        this.freePatchCount = MAX_PATCH_COUNT;
+    }
+    Patches.prototype.getPatch = function (left, top, right, bottom, level, color, room) {
+        var patchIndex;
+        if (this.freePatchHead === this.freePatchCleared) {
+            if (this.freePatchCleared === this.freePatchTail) {
+                throw "Out of patches";
+            }
+            patchIndex = this.freePatchHead;
+            this.freePatchHead = this.freePatchCleared = this.freePatchList[this.freePatchHead];
         }
         else {
-            if (this.nextPatchIndex >= MAX_PATCH_COUNT) {
-                throw "Too many patches";
-            }
-            patchIndex = this.nextPatchIndex++;
+            patchIndex = this.freePatchHead;
+            this.freePatchHead = this.freePatchList[this.freePatchHead];
         }
+        this.freePatchList[patchIndex] = -2;
+        this.freePatchCount--;
         this.patchVertices.set([left, top, level, color.red, color.green, color.blue, color.alpha, right, top, level, color.red, color.green, color.blue, color.alpha, left, bottom, level, color.red, color.green, color.blue, color.alpha, left, bottom, level, color.red, color.green, color.blue, color.alpha, right, top, level, color.red, color.green, color.blue, color.alpha, right, bottom, level, color.red, color.green, color.blue, color.alpha,]);
         room.writePatch(patchIndex * BYTES_PER_PATCH, this.patchVertices);
         return patchIndex;
     };
-    VerticesAndColor.prototype.putPatch = function (patchIndex) {
-        this.freePatchIndices.push(patchIndex);
+    Patches.prototype.putPatch = function (patchIndex) {
+        if (this.freePatchList[patchIndex] !== -2) {
+            throw "Invalid patch index";
+        }
+        this.freePatchList[this.freePatchTail] = patchIndex;
+        this.freePatchTail = patchIndex;
+        this.freePatchList[patchIndex] = -1;
+        this.freePatchCount++;
         this.totalFreed++;
     };
-    VerticesAndColor.prototype.clearFreePatches = function (room) {
-        if (this.freePatchIndices.length > 0) {
-            for (var i = 0; i < this.freePatchIndices.length; i++) {
-                room.writePatch(this.freePatchIndices[i] * BYTES_PER_PATCH, this.emptyPatchVertices);
-            }
-            this.clearedPatchIndices = this.clearedPatchIndices.concat(this.freePatchIndices);
-            this.freePatchIndices = [];
+    Patches.prototype.clearFreedPatches = function (room) {
+        var next = this.freePatchCleared;
+        var last = this.freePatchTail;
+        if (next === last) {
+            return;
         }
+        var list = this.freePatchList;
+        for (;;) {
+            room.writePatch(next * BYTES_PER_PATCH, this.emptyPatchVertices);
+            if (next === last) {
+                break;
+            }
+            next = list[next];
+        }
+        this.freePatchCleared = last;
     };
-    return VerticesAndColor;
+    return Patches;
 })();
 var ShadowProgram = (function () {
     function ShadowProgram(gl, mvpMatrix) {
@@ -314,7 +332,7 @@ var Glyffin;
             this.interactives = [];
             this.drawCount = 0;
             this.editCount = 0;
-            this.vertices = new VerticesAndColor();
+            this.vertices = new Patches();
             this.beginGestures(room.canvas);
         }
         GlAudience.prototype.beginGestures = function (element) {
@@ -401,12 +419,12 @@ var Glyffin;
             }
             this.editCount++;
             requestAnimationFrame(function () {
-                _this.redraw();
+                _this.clearAndRedraw();
             });
         };
-        GlAudience.prototype.redraw = function () {
-            this.vertices.clearFreePatches(this.room);
-            this.room.redraw(this.vertices.getActiveVertexCount());
+        GlAudience.prototype.clearAndRedraw = function () {
+            this.vertices.clearFreedPatches(this.room);
+            this.room.redraw(MAX_VERTEX_COUNT);
             this.drawCount = this.editCount;
             this.redrawTime = Date.now();
             /*
