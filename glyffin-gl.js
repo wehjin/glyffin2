@@ -118,8 +118,8 @@ var Patches = (function () {
     function Patches() {
         this.freePatchList = [];
         this.totalFreed = 0;
-        this.emptyPatchVertices = new Float32Array(FLOATS_PER_PATCH);
-        this.patchVertices = new Float32Array(FLOATS_PER_PATCH);
+        this.emptyPatch = [];
+        this.buffer = new Float32Array(MAX_PATCH_COUNT * FLOATS_PER_PATCH);
         for (var i = 0, count = MAX_PATCH_COUNT - 1; i < count; i++) {
             this.freePatchList[i] = i + 1;
         }
@@ -128,6 +128,11 @@ var Patches = (function () {
         this.freePatchTail = MAX_PATCH_COUNT - 1;
         this.freePatchCleared = this.freePatchTail;
         this.freePatchCount = MAX_PATCH_COUNT;
+        var emptyPatch = [];
+        for (var i = 0, count = FLOATS_PER_PATCH; i < count; i++) {
+            emptyPatch[i] = 0;
+        }
+        this.emptyPatch = emptyPatch;
     }
     Patches.prototype.getPatch = function (left, top, right, bottom, level, color, room) {
         var patchIndex;
@@ -144,8 +149,7 @@ var Patches = (function () {
         }
         this.freePatchList[patchIndex] = -2;
         this.freePatchCount--;
-        this.patchVertices.set([left, top, level, color.red, color.green, color.blue, color.alpha, right, top, level, color.red, color.green, color.blue, color.alpha, left, bottom, level, color.red, color.green, color.blue, color.alpha, left, bottom, level, color.red, color.green, color.blue, color.alpha, right, top, level, color.red, color.green, color.blue, color.alpha, right, bottom, level, color.red, color.green, color.blue, color.alpha,]);
-        room.writePatch(patchIndex * BYTES_PER_PATCH, this.patchVertices);
+        this.buffer.set([left, top, level, color.red, color.green, color.blue, color.alpha, right, top, level, color.red, color.green, color.blue, color.alpha, left, bottom, level, color.red, color.green, color.blue, color.alpha, left, bottom, level, color.red, color.green, color.blue, color.alpha, right, top, level, color.red, color.green, color.blue, color.alpha, right, bottom, level, color.red, color.green, color.blue, color.alpha,], patchIndex * FLOATS_PER_PATCH);
         return patchIndex;
     };
     Patches.prototype.putPatch = function (patchIndex) {
@@ -166,7 +170,7 @@ var Patches = (function () {
         }
         var list = this.freePatchList;
         for (;;) {
-            room.writePatch(next * BYTES_PER_PATCH, this.emptyPatchVertices);
+            this.buffer.set(this.emptyPatch, next * FLOATS_PER_PATCH);
             if (next === last) {
                 break;
             }
@@ -267,7 +271,7 @@ var MyRoom = (function () {
         mvpLightMatrix.multiply(modelMatrix);
         var gl = getWebGLContext(canvas, false);
         gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(MAX_PATCH_COUNT * FLOATS_PER_PATCH), gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(MAX_PATCH_COUNT * FLOATS_PER_PATCH), gl.STREAM_DRAW);
         this.gl = gl;
         this.lightProgram = new LightProgram(gl, modelMatrix, mvpMatrix);
         this.shadowProgram = new ShadowProgram(gl, mvpLightMatrix);
@@ -287,8 +291,10 @@ var MyRoom = (function () {
     MyRoom.prototype.writePatch = function (offset, bytes) {
         this.gl.bufferSubData(this.gl.ARRAY_BUFFER, offset, bytes);
     };
-    MyRoom.prototype.redraw = function (vertexCount) {
+    MyRoom.prototype.redraw = function (vertexCount, vertices) {
         var gl = this.gl;
+        gl.bufferData(gl.ARRAY_BUFFER, null, gl.STREAM_DRAW);
+        gl.bufferSubData(gl.ARRAY_BUFFER, 0, vertices);
         if (useShadow) {
             if (!showShadow) {
                 gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer.framebuffer);
@@ -424,7 +430,7 @@ var Glyffin;
         };
         GlAudience.prototype.clearAndRedraw = function () {
             this.vertices.clearFreedPatches(this.room);
-            this.room.redraw(MAX_VERTEX_COUNT);
+            this.room.redraw(MAX_VERTEX_COUNT, this.vertices.buffer);
             this.drawCount = this.editCount;
             this.redrawTime = Date.now();
             /*
