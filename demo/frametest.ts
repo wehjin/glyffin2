@@ -30,6 +30,7 @@ function main() {
     var supportedExtensions = gl.getSupportedExtensions();
     console.log("Supported extensions: ", supportedExtensions);
 
+    var perPixelX = 2.0 / canvas.clientWidth;
     gl.viewport(0, 0, canvas.clientWidth, canvas.clientHeight);
     gl.clearColor(0, 0, 0, 1);
     gl.enable(gl.DEPTH_TEST);
@@ -40,6 +41,7 @@ function main() {
         "attribute vec2 a_Position;\n" +
         "varying vec2 v_TexCoord;\n" +
         "void main(void) {\n" +
+        "  gl_PointSize = 2.0;\n" +
         "  gl_Position = vec4(a_Position, 0.0, 1.0);\n" +
         "  v_TexCoord = a_TexCoord;\n" +
         "}\n";
@@ -49,7 +51,7 @@ function main() {
         "uniform sampler2D u_Sampler;\n" +
         "varying vec2 v_TexCoord;\n" +
         "void main(void) {\n" +
-        "  gl_FragColor = texture2D(u_Sampler, v_TexCoord);\n" +
+        "  gl_FragColor = texture2D(u_Sampler, gl_PointCoord);\n" +
         "}\n";
 
     var shaderProgram = createProgram(gl, vertexShader, fragmentShader);
@@ -68,15 +70,15 @@ function main() {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 2, 2, 0, gl.RGBA, gl.FLOAT, data);
 
     gl.useProgram(shaderProgram);
-    var vertexCount = 6;
 
     var a_Position = gl.getAttribLocation(shaderProgram, "a_Position");
     gl.enableVertexAttribArray(a_Position);
     var positionsBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionsBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, -1, 1, 1, 1, 1, 1, 1, -1, -1, -1]),
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1 + perPixelX, 0, 1 - perPixelX, 0]),
         gl.STATIC_DRAW);
     gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
+    var vertexCount = 2;
 
     var a_TexCoord = gl.getAttribLocation(shaderProgram, "a_TexCoord");
     gl.enableVertexAttribArray(a_TexCoord);
@@ -92,7 +94,7 @@ function main() {
         var start = Date.now();
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0]),
             gl.STATIC_DRAW);
-        gl.drawArrays(gl.TRIANGLES, 0, vertexCount);
+        gl.drawArrays(gl.POINTS, 0, vertexCount);
         var end = Date.now();
         console.log("Time: %d", (end - start));
 
