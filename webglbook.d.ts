@@ -3,14 +3,15 @@
  */
 
 interface WebGLBookContext extends WebGLRenderingContext {
-    program : WebGLRenderingContext;
+    program : WebGLProgram;
 }
 
 declare function getWebGLContext(canvas : HTMLCanvasElement, debug? : boolean) : WebGLBookContext;
 
 declare function initShaders(gl : WebGLBookContext, vshader : string, fshader : string);
 
-declare function createProgram(gl : WebGLRenderingContext, vshader : string, fshader : string);
+declare function createProgram(gl : WebGLRenderingContext, vshader : string,
+                               fshader : string) : WebGLProgram;
 
 declare class Vector4 {
     elements : Float32Array;
