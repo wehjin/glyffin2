@@ -12,13 +12,21 @@ function main() {
     canvas.height = canvas.clientHeight;
     console.log(canvas.clientWidth + " " + canvas.clientHeight);
     var gl = getWebGLContext(canvas, false);
-    gl.viewport(0, 0, canvas.clientWidth, canvas.clientHeight);
-    gl.clearColor(0, 0, 0, 1);
-    gl.enable(gl.DEPTH_TEST);
+    var maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+    console.log("Max texture size: %d", maxTextureSize);
     var textureFloatExtension = gl.getExtension("OES_texture_float");
     if (!textureFloatExtension) {
         throw "Need texture float extension";
     }
+    var drawBuffersExtension = gl.getExtension("WEBGL_draw_buffers");
+    if (!drawBuffersExtension) {
+        console.log("No WEBGL_draw_buffers");
+    }
+    var supportedExtensions = gl.getSupportedExtensions();
+    console.log("Supported extensions: ", supportedExtensions);
+    gl.viewport(0, 0, canvas.clientWidth, canvas.clientHeight);
+    gl.clearColor(0, 0, 0, 1);
+    gl.enable(gl.DEPTH_TEST);
     var vertexShader = "" + "attribute vec2 a_TexCoord;\n" + "attribute vec2 a_Position;\n" + "varying vec2 v_TexCoord;\n" + "void main(void) {\n" + "  gl_Position = vec4(a_Position, 0.0, 1.0);\n" + "  v_TexCoord = a_TexCoord;\n" + "}\n";
     var fragmentShader = "" + "precision mediump float;\n" + "uniform sampler2D u_Sampler;\n" + "varying vec2 v_TexCoord;\n" + "void main(void) {\n" + "  gl_FragColor = texture2D(u_Sampler, v_TexCoord);\n" + "}\n";
     var shaderProgram = createProgram(gl, vertexShader, fragmentShader);
@@ -58,13 +66,16 @@ function main() {
     gl.enableVertexAttribArray(a_TexCoord);
     var texCoordsBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, texCoordsBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0]), gl.STATIC_DRAW);
     gl.vertexAttribPointer(a_TexCoord, 2, gl.FLOAT, false, 0, 0);
     var u_Sampler = gl.getUniformLocation(shaderProgram, "u_Sampler");
     gl.uniform1i(u_Sampler, 0);
     function drawScene() {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        var start = Date.now();
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0]), gl.STATIC_DRAW);
         gl.drawArrays(gl.TRIANGLES, 0, vertexCount);
+        var end = Date.now();
+        console.log("Time: %d", (end - start));
         // TODO Replace drawArrays with drawElements
         //        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, obj.ib);
         //        gl.drawElements(gl.TRIANGLES, obj.i.length, gl.UNSIGNED_SHORT, 0);
