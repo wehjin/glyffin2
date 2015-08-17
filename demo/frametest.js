@@ -32,7 +32,7 @@ function main() {
         [identity[0], identity[1], identity[2], identity[3], [.4, .25, 1, 0]],
         [identity[0], identity[1], identity[2], identity[3], [.5, .5, .5, .5]],
     ];
-    for (var i = 0; i < 5; i++) {
+    for (var i = 0; i < 8; i++) {
         questions = questions.concat(questions);
     }
     console.log("Question count: %d", questions.length);
@@ -131,10 +131,10 @@ function main() {
     function drawScene() {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         gl.drawArrays(gl.POINTS, 0, questions.length);
-        var end = Date.now();
-        console.log("Time: %d", (end - start));
         var answers = new Float32Array(ANSWER_WIDTH * ANSWER_HEIGHT * 4);
         gl.readPixels(0, 0, ANSWER_WIDTH, ANSWER_HEIGHT, gl.RGBA, gl.FLOAT, answers);
+        var end = Date.now();
+        console.log("Time: %d", (end - start));
         console.log("Answers: ", answers);
         // TODO Replace drawArrays with drawElements
         //        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, obj.ib);
