@@ -30,8 +30,6 @@ function main() {
     var supportedExtensions = gl.getSupportedExtensions();
     console.log("Supported extensions: ", supportedExtensions);
 
-    var perPixelX = 2.0 / canvas.clientWidth;
-    gl.viewport(0, 0, canvas.clientWidth, canvas.clientHeight);
     gl.clearColor(0, 0, 0, 1);
     gl.enable(gl.DEPTH_TEST);
 
@@ -72,13 +70,13 @@ function main() {
         "varying mat4 v_modelToWorld;\n" +
         "void main(void) {\n" +
         "  if (gl_PointCoord.x < 0.5) {\n" +
-        "    if (gl_PointCoord.y < 0.5) {\n" +
+        "    if (gl_PointCoord.y >0.5) {\n" +
         "      gl_FragColor = v_modelToWorld[0];\n" +
         "    } else {\n" +
         "      gl_FragColor = v_modelToWorld[2];\n" +
         "    }\n" +
         "  } else {\n" +
-        "    if (gl_PointCoord.y < 0.5) {\n" +
+        "    if (gl_PointCoord.y > 0.5) {\n" +
         "      gl_FragColor = v_modelToWorld[1];\n" +
         "    } else {\n" +
         "      gl_FragColor = v_modelToWorld[3];\n" +
@@ -88,37 +86,41 @@ function main() {
 
     var shaderProgram = createProgram(gl, vertexShader, fragmentShader);
 
-    function setupTexture(width : number, values : Float32Array) {
+    function setupTexture(width : number, height : number, values : Float32Array) {
         var texture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, texture);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, 1, 0, gl.RGBA, gl.FLOAT, values);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.FLOAT, values);
         return texture;
     }
 
     gl.activeTexture(gl.TEXTURE0);
-    setupTexture(1, new Float32Array([
+    setupTexture(1, 1, new Float32Array([
         1.0, 0.0, 0.0, 0.0,
     ]));
     gl.activeTexture(gl.TEXTURE1);
-    setupTexture(1, new Float32Array([
+    setupTexture(1, 1, new Float32Array([
         0.0, 1.0, 0.0, 0.0,
     ]));
     gl.activeTexture(gl.TEXTURE2);
-    setupTexture(1, new Float32Array([
+    setupTexture(1, 1, new Float32Array([
         0.0, 0.0, 1.0, 0.0
     ]));
     gl.activeTexture(gl.TEXTURE3);
-    setupTexture(1, new Float32Array([
+    setupTexture(1, 1, new Float32Array([
         0.0, 0.0, 0.0, 1.0,
     ]));
     gl.activeTexture(gl.TEXTURE4);
-    setupTexture(1, new Float32Array([
+    setupTexture(1, 1, new Float32Array([
         .5, .25, 0.0, 0.0,
     ]));
 
     gl.useProgram(shaderProgram);
+
+    var ANSWER_WIDTH = 2;
+    var ANSWER_HEIGHT = 2;
+    var perPixelX = 2.0 / ANSWER_WIDTH;
 
     var positionsBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionsBuffer);
@@ -140,6 +142,22 @@ function main() {
     gl.uniform1i(gl.getUniformLocation(shaderProgram, "u_parentMatrixD"), 3);
     gl.uniform1i(gl.getUniformLocation(shaderProgram, "u_fractionAndAlignment"), 4);
 
+    var framebuffer = gl.createFramebuffer();
+    gl.activeTexture(gl.TEXTURE5);
+    var answerTexture = setupTexture(ANSWER_WIDTH, ANSWER_HEIGHT, null);
+    var depthBuffer = gl.createRenderbuffer();
+    gl.bindRenderbuffer(gl.RENDERBUFFER, depthBuffer);
+    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, ANSWER_WIDTH, ANSWER_HEIGHT);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, answerTexture, 0);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depthBuffer);
+    var e = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+    if (e !== gl.FRAMEBUFFER_COMPLETE) {
+        console.error("Framebuffer object is incomplete: " + e.toString());
+        return;
+    }
+    gl.viewport(0, 0, ANSWER_WIDTH, ANSWER_HEIGHT);
+
     function drawScene() {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         var start = Date.now();
@@ -149,6 +167,9 @@ function main() {
         var end = Date.now();
         console.log("Time: %d", (end - start));
 
+        var answers = new Float32Array(ANSWER_WIDTH * ANSWER_HEIGHT * 4);
+        gl.readPixels(0, 0, ANSWER_HEIGHT, ANSWER_HEIGHT, gl.RGBA, gl.FLOAT, answers);
+        console.log("Answers: ", answers);
 // TODO Replace drawArrays with drawElements
 //        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, obj.ib);
 //        gl.drawElements(gl.TRIANGLES, obj.i.length, gl.UNSIGNED_SHORT, 0);
