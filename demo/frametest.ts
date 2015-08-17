@@ -37,12 +37,17 @@ function main() {
         [0.0, 1.0, 0.0, 0.0],
         [0.0, 0.0, 1.0, 0.0],
         [0.0, 0.0, 0.0, 1.0]];
+
     var questions = [
         [identity[0], identity[1], identity[2], identity[3], [.5, .25, 0, 1]],
         [identity[0], identity[1], identity[2], identity[3], [.4, .25, 1, 0]],
         [identity[0], identity[1], identity[2], identity[3], [.5, .5, .5, .5]],
-//        [identity[0], identity[1], identity[2], identity[3], [.5, .5, .5, .5]],
     ];
+    for (var i = 0; i < 5; i++) {
+        questions = questions.concat(questions);
+    }
+    console.log("Question count: %d", questions.length);
+    console.log("Answer size: %d", questions.length * 4);
 
     var vertexShader = "" +
         "precision mediump float;\n" +
@@ -138,6 +143,8 @@ function main() {
     var ANSWER_HEIGHT = 2;
     var perPixelX = 2.0 / ANSWER_WIDTH;
 
+    var start = Date.now();
+
     var positionsBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionsBuffer);
     var positions = [];
@@ -192,7 +199,6 @@ function main() {
 
     function drawScene() {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        var start = Date.now();
         gl.drawArrays(gl.POINTS, 0, questions.length);
         var end = Date.now();
         console.log("Time: %d", (end - start));
@@ -206,6 +212,6 @@ function main() {
     }
 
     console.log('error: ' + gl.getError());
-    requestAnimationFrame(drawScene);
+    drawScene();
 }
 
