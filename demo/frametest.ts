@@ -33,11 +33,16 @@ function main() {
     gl.clearColor(0, 0, 0, 1);
     gl.enable(gl.DEPTH_TEST);
 
-    var identity = [1, 0, 0, 0,
-                    0, 1, 0, 0,
-                    0, 0, 1, 0,
-                    0, 0, 0, 1];
-    var fractionAndAlignment = [.5, .5, .5, .5];
+    var identity = [[1.0, 0.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0, 0.0],
+        [0.0, 0.0, 1.0, 0.0],
+        [0.0, 0.0, 0.0, 1.0]];
+    var questions = [
+        [identity[0], identity[1], identity[2], identity[3], [.5, .25, 0, 1]],
+        [identity[0], identity[1], identity[2], identity[3], [.4, .25, 1, 0]],
+        [identity[0], identity[1], identity[2], identity[3], [.5, .5, .5, .5]],
+//        [identity[0], identity[1], identity[2], identity[3], [.5, .5, .5, .5]],
+    ];
 
     var vertexShader = "" +
         "precision mediump float;\n" +
@@ -92,47 +97,73 @@ function main() {
         gl.bindTexture(gl.TEXTURE_2D, texture);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.FLOAT, values);
         return texture;
     }
 
+    var QUESTIONS_WIDTH = questions.length;
+
+    function questionData(columnIndex : number) : Float32Array {
+        var textureDataIndex : number = 0;
+        var textureData = new Float32Array(questions.length * 4);
+        for (var qIndex = 0, qCount = questions.length; qIndex < qCount; qIndex++) {
+            var question = questions[qIndex];
+            var column = question[columnIndex];
+            textureData.set(column, textureDataIndex);
+            textureDataIndex += 4;
+        }
+        return textureData;
+    }
+
+    function setupQuestionTexture(width : number, values : Float32Array) {
+        return setupTexture(width, 1, values);
+    }
+
     gl.activeTexture(gl.TEXTURE0);
-    setupTexture(1, 1, new Float32Array([
-        1.0, 0.0, 0.0, 0.0,
-    ]));
+    setupQuestionTexture(QUESTIONS_WIDTH, questionData(0));
     gl.activeTexture(gl.TEXTURE1);
-    setupTexture(1, 1, new Float32Array([
-        0.0, 1.0, 0.0, 0.0,
-    ]));
+    setupQuestionTexture(QUESTIONS_WIDTH, questionData(1));
     gl.activeTexture(gl.TEXTURE2);
-    setupTexture(1, 1, new Float32Array([
-        0.0, 0.0, 1.0, 0.0
-    ]));
+    setupQuestionTexture(QUESTIONS_WIDTH, questionData(2));
     gl.activeTexture(gl.TEXTURE3);
-    setupTexture(1, 1, new Float32Array([
-        0.0, 0.0, 0.0, 1.0,
-    ]));
+    setupQuestionTexture(QUESTIONS_WIDTH, questionData(3));
     gl.activeTexture(gl.TEXTURE4);
-    setupTexture(1, 1, new Float32Array([
-        .5, .25, 0.0, 1.0,
-    ]));
+    setupQuestionTexture(QUESTIONS_WIDTH, questionData(4));
 
     gl.useProgram(shaderProgram);
 
-    var ANSWER_WIDTH = 2;
+    var ANSWER_WIDTH = QUESTIONS_WIDTH * 2;
     var ANSWER_HEIGHT = 2;
     var perPixelX = 2.0 / ANSWER_WIDTH;
 
     var positionsBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionsBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1 + perPixelX, 0]), gl.STATIC_DRAW);
-    var vertexCount = 1;
+    var positions = [];
+    var positionsStep = perPixelX * 2;
+    var positionsLeft = -1 + perPixelX;
+    for (var i = 0, count = questions.length; i < count; i++) {
+        positions.push(positionsLeft);
+        positions.push(0);
+        positionsLeft += positionsStep;
+    }
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
     var a_Position = gl.getAttribLocation(shaderProgram, "a_Position");
     gl.enableVertexAttribArray(a_Position);
     gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
 
     var texCoordsBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, texCoordsBuffer);
+    var texCoords = [];
+    var texCoordsStep = 1.0 / QUESTIONS_WIDTH;
+    var texCoordsLeft = 0;
+    for (var i = 0, count = questions.length; i < count; i++) {
+        texCoords.push(texCoordsLeft);
+        texCoords.push(0);
+        texCoordsLeft += texCoordsStep;
+    }
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoords), gl.STATIC_DRAW);
     var a_TexCoord = gl.getAttribLocation(shaderProgram, "a_TexCoord");
     gl.enableVertexAttribArray(a_TexCoord);
     gl.vertexAttribPointer(a_TexCoord, 2, gl.FLOAT, false, 0, 0);
@@ -162,9 +193,7 @@ function main() {
     function drawScene() {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         var start = Date.now();
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0]),
-            gl.STATIC_DRAW);
-        gl.drawArrays(gl.POINTS, 0, vertexCount);
+        gl.drawArrays(gl.POINTS, 0, questions.length);
         var end = Date.now();
         console.log("Time: %d", (end - start));
 
