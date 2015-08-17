@@ -60,7 +60,8 @@ function main() {
         "  vec4 fractionAndAlignment = texture2D(u_fractionAndAlignment, a_TexCoord);\n" +
         "  vec2 fraction = fractionAndAlignment.xy;\n" +
         "  vec2 alignment = fractionAndAlignment.zw;\n" +
-        "  v_modelToWorld = parentMatrix * mat4(ident[0]*fraction.x,ident[1]*fraction.y, ident[2], ident[3]);\n" +
+        "  vec4 col3 = vec4((1.0-fraction.x)*alignment.x, (1.0-fraction.y)*alignment.y, 0.0, 1.0);\n" +
+        "  v_modelToWorld = parentMatrix * mat4(ident[0]*fraction.x,ident[1]*fraction.y, ident[2], col3);\n" +
         "  gl_PointSize = 2.0;\n" +
         "  gl_Position = vec4(a_Position, 0.0, 1.0);\n" +
         "}\n";
@@ -113,7 +114,7 @@ function main() {
     ]));
     gl.activeTexture(gl.TEXTURE4);
     setupTexture(1, 1, new Float32Array([
-        .5, .25, 0.0, 0.0,
+        .5, .25, 0.0, 1.0,
     ]));
 
     gl.useProgram(shaderProgram);
@@ -168,7 +169,7 @@ function main() {
         console.log("Time: %d", (end - start));
 
         var answers = new Float32Array(ANSWER_WIDTH * ANSWER_HEIGHT * 4);
-        gl.readPixels(0, 0, ANSWER_HEIGHT, ANSWER_HEIGHT, gl.RGBA, gl.FLOAT, answers);
+        gl.readPixels(0, 0, ANSWER_WIDTH, ANSWER_HEIGHT, gl.RGBA, gl.FLOAT, answers);
         console.log("Answers: ", answers);
 // TODO Replace drawArrays with drawElements
 //        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, obj.ib);

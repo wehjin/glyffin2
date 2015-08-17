@@ -28,7 +28,7 @@ function main() {
     gl.enable(gl.DEPTH_TEST);
     var identity = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
     var fractionAndAlignment = [.5, .5, .5, .5];
-    var vertexShader = "" + "precision mediump float;\n" + "uniform sampler2D u_parentMatrixA;\n" + "uniform sampler2D u_parentMatrixB;\n" + "uniform sampler2D u_parentMatrixC;\n" + "uniform sampler2D u_parentMatrixD;\n" + "uniform sampler2D u_fractionAndAlignment;\n" + "attribute vec2 a_TexCoord;\n" + "attribute vec2 a_Position;\n" + "varying vec2 v_TexCoord;\n" + "varying mat4 v_modelToWorld;\n" + "const mat4 ident = mat4(1.0);\n" + "void main(void) {\n" + "  vec4 parentMatrixA = texture2D(u_parentMatrixA, a_TexCoord);\n" + "  vec4 parentMatrixB = texture2D(u_parentMatrixB, a_TexCoord);\n" + "  vec4 parentMatrixC = texture2D(u_parentMatrixC, a_TexCoord);\n" + "  vec4 parentMatrixD = texture2D(u_parentMatrixD, a_TexCoord);\n" + "  mat4 parentMatrix = mat4(parentMatrixA, parentMatrixB, parentMatrixC, parentMatrixD);\n" + "  vec4 fractionAndAlignment = texture2D(u_fractionAndAlignment, a_TexCoord);\n" + "  vec2 fraction = fractionAndAlignment.xy;\n" + "  vec2 alignment = fractionAndAlignment.zw;\n" + "  v_modelToWorld = parentMatrix * mat4(ident[0]*fraction.x,ident[1]*fraction.y, ident[2], ident[3]);\n" + "  gl_PointSize = 2.0;\n" + "  gl_Position = vec4(a_Position, 0.0, 1.0);\n" + "}\n";
+    var vertexShader = "" + "precision mediump float;\n" + "uniform sampler2D u_parentMatrixA;\n" + "uniform sampler2D u_parentMatrixB;\n" + "uniform sampler2D u_parentMatrixC;\n" + "uniform sampler2D u_parentMatrixD;\n" + "uniform sampler2D u_fractionAndAlignment;\n" + "attribute vec2 a_TexCoord;\n" + "attribute vec2 a_Position;\n" + "varying vec2 v_TexCoord;\n" + "varying mat4 v_modelToWorld;\n" + "const mat4 ident = mat4(1.0);\n" + "void main(void) {\n" + "  vec4 parentMatrixA = texture2D(u_parentMatrixA, a_TexCoord);\n" + "  vec4 parentMatrixB = texture2D(u_parentMatrixB, a_TexCoord);\n" + "  vec4 parentMatrixC = texture2D(u_parentMatrixC, a_TexCoord);\n" + "  vec4 parentMatrixD = texture2D(u_parentMatrixD, a_TexCoord);\n" + "  mat4 parentMatrix = mat4(parentMatrixA, parentMatrixB, parentMatrixC, parentMatrixD);\n" + "  vec4 fractionAndAlignment = texture2D(u_fractionAndAlignment, a_TexCoord);\n" + "  vec2 fraction = fractionAndAlignment.xy;\n" + "  vec2 alignment = fractionAndAlignment.zw;\n" + "  vec4 col3 = vec4((1.0-fraction.x)*alignment.x, (1.0-fraction.y)*alignment.y, 0.0, 1.0);\n" + "  v_modelToWorld = parentMatrix * mat4(ident[0]*fraction.x,ident[1]*fraction.y, ident[2], col3);\n" + "  gl_PointSize = 2.0;\n" + "  gl_Position = vec4(a_Position, 0.0, 1.0);\n" + "}\n";
     var fragmentShader = "" + "precision mediump float;\n" + "varying mat4 v_modelToWorld;\n" + "void main(void) {\n" + "  if (gl_PointCoord.x < 0.5) {\n" + "    if (gl_PointCoord.y >0.5) {\n" + "      gl_FragColor = v_modelToWorld[0];\n" + "    } else {\n" + "      gl_FragColor = v_modelToWorld[2];\n" + "    }\n" + "  } else {\n" + "    if (gl_PointCoord.y > 0.5) {\n" + "      gl_FragColor = v_modelToWorld[1];\n" + "    } else {\n" + "      gl_FragColor = v_modelToWorld[3];\n" + "    }\n" + "  }\n" + "}\n";
     var shaderProgram = createProgram(gl, vertexShader, fragmentShader);
     function setupTexture(width, height, values) {
@@ -72,7 +72,7 @@ function main() {
         .5,
         .25,
         0.0,
-        0.0,
+        1.0,
     ]));
     gl.useProgram(shaderProgram);
     var ANSWER_WIDTH = 2;
@@ -118,7 +118,7 @@ function main() {
         var end = Date.now();
         console.log("Time: %d", (end - start));
         var answers = new Float32Array(ANSWER_WIDTH * ANSWER_HEIGHT * 4);
-        gl.readPixels(0, 0, ANSWER_HEIGHT, ANSWER_HEIGHT, gl.RGBA, gl.FLOAT, answers);
+        gl.readPixels(0, 0, ANSWER_WIDTH, ANSWER_HEIGHT, gl.RGBA, gl.FLOAT, answers);
         console.log("Answers: ", answers);
         // TODO Replace drawArrays with drawElements
         //        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, obj.ib);
