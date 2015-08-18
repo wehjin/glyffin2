@@ -163,10 +163,14 @@ var Glyffin;
         };
         Glyff.prototype.present = function (metrics, audience, reactionOrOnResult, onError) {
             var presented = [];
+            var ended = false;
             var presenter = {
                 metrics: metrics,
                 audience: audience,
                 addPresentation: function (presentation) {
+                    if (ended) {
+                        throw "addPresentation called after end";
+                    }
                     var index = presented.length;
                     presented.push(presentation);
                     return {
@@ -196,6 +200,7 @@ var Glyffin;
                     }
                 },
                 end: function () {
+                    ended = true;
                     for (var i = 0; i < presented.length; i++) {
                         var presentation = presented[i];
                         if (presentation) {
