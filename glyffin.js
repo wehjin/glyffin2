@@ -163,26 +163,19 @@ var Glyffin;
         };
         Glyff.prototype.present = function (metrics, audience, reactionOrOnResult, onError) {
             var presented = [];
-            function endPresented() {
-                var toEnd = presented.slice();
-                presented.length = 0;
-                toEnd.forEach(function (presentation) {
-                    presentation.end();
-                });
-            }
             var presenter = {
                 metrics: metrics,
                 audience: audience,
                 addPresentation: function (presentation) {
+                    var index = presented.length;
                     presented.push(presentation);
                     return {
                         remove: function () {
-                            var index = presented.indexOf(presentation);
-                            if (index < 0) {
-                                return;
+                            var presentation = presented[index];
+                            if (presentation) {
+                                presented[index] = null;
+                                presentation.end();
                             }
-                            presented.splice(index, 1);
-                            presentation.end();
                         }
                     };
                 },
@@ -203,7 +196,13 @@ var Glyffin;
                     }
                 },
                 end: function () {
-                    endPresented();
+                    for (var i = 0; i < presented.length; i++) {
+                        var presentation = presented[i];
+                        if (presentation) {
+                            presented[i] = null;
+                            presentation.end();
+                        }
+                    }
                 }
             };
             this.onPresent(presenter);

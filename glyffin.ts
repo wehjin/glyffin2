@@ -218,27 +218,19 @@ module Glyffin {
 
             var presented : Presentation[] = [];
 
-            function endPresented() {
-                var toEnd = presented.slice();
-                presented.length = 0;
-                toEnd.forEach((presentation : Presentation)=> {
-                    presentation.end();
-                });
-            }
-
             var presenter : Presenter<T> = {
                 metrics: metrics,
                 audience: audience,
                 addPresentation(presentation : Presentation) : Removable {
+                    var index = presented.length;
                     presented.push(presentation);
                     return {
                         remove() {
-                            var index = presented.indexOf(presentation);
-                            if (index < 0) {
-                                return;
+                            var presentation = presented[index];
+                            if (presentation) {
+                                presented[index] = null;
+                                presentation.end();
                             }
-                            presented.splice(index, 1);
-                            presentation.end();
                         }
                     }
                 },
@@ -257,7 +249,13 @@ module Glyffin {
                     }
                 },
                 end() {
-                    endPresented();
+                    for (var i = 0; i < presented.length; i++) {
+                        var presentation = presented[i];
+                        if (presentation) {
+                            presented[i] = null;
+                            presentation.end();
+                        }
+                    }
                 }
             };
 
