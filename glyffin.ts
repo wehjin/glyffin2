@@ -217,11 +217,15 @@ module Glyffin {
                 onError? : ErrorCallback) : Presentation {
 
             var presented : Presentation[] = [];
+            var ended : boolean = false;
 
             var presenter : Presenter<T> = {
                 metrics: metrics,
                 audience: audience,
                 addPresentation(presentation : Presentation) : Removable {
+                    if (ended) {
+                        throw "addPresentation called after end";
+                    }
                     var index = presented.length;
                     presented.push(presentation);
                     return {
@@ -249,6 +253,7 @@ module Glyffin {
                     }
                 },
                 end() {
+                    ended = true;
                     for (var i = 0; i < presented.length; i++) {
                         var presentation = presented[i];
                         if (presentation) {
