@@ -468,8 +468,7 @@ class MyRoom {
     redraw(vertexCount : number, vertices : Float32Array) {
         var gl = this.gl;
 
-        gl.bufferData(gl.ARRAY_BUFFER, null, gl.STREAM_DRAW);
-        gl.bufferSubData(gl.ARRAY_BUFFER, 0, vertices);
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STREAM_DRAW);
         if (useShadow) {
             if (!showShadow) {
                 gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer.framebuffer);
@@ -607,7 +606,7 @@ module Glyffin {
             });
         }
 
-        private clearAndRedraw() {
+        clearAndRedraw() {
             this.vertices.clearFreedPatches(this.room);
             this.room.redraw(MAX_VERTEX_COUNT, this.vertices.buffer);
             this.drawCount = this.editCount;

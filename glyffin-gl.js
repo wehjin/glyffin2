@@ -293,8 +293,7 @@ var MyRoom = (function () {
     };
     MyRoom.prototype.redraw = function (vertexCount, vertices) {
         var gl = this.gl;
-        gl.bufferData(gl.ARRAY_BUFFER, null, gl.STREAM_DRAW);
-        gl.bufferSubData(gl.ARRAY_BUFFER, 0, vertices);
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STREAM_DRAW);
         if (useShadow) {
             if (!showShadow) {
                 gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer.framebuffer);
