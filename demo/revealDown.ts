@@ -15,14 +15,11 @@ import Presenter = Glyffin.Presenter;
 import Void = Glyffin.Void;
 import Reaction = Glyffin.Reaction;
 import Presentation = Glyffin.Presentation;
-import Metrics = Glyffin.Metrics;
 
 function main() {
     var room = new Glyffin.GlRoom(<HTMLCanvasElement>document.getElementById('webgl'));
     var audience = new Glyffin.GlAudience(room);
-    var perimeter = new Glyffin.Perimeter(0, 0, room.width, room.height, 1, 0);
-    var metrics = new Metrics(perimeter, 48, 10, new Glyffin.Palette());
-
+    var perimeter = room.perimeter;
     var covers : Glyff<Void>[] = [Glyffin.RedGlyff, Glyffin.GreenGlyff];
     var coverIndex = 0;
 
@@ -37,7 +34,7 @@ function main() {
         }
         var revelation = Glyffin.BlueGlyff.clicken("change", Glyff.color(Glyffin.Color.CYAN));
         var glyff = cover.revealDown(new Glyffin.Inset1(.33, 0), revelation);
-        presentation = glyff.present(metrics, audience, (symbol : string)=> {
+        presentation = glyff.present(perimeter, audience, (symbol : string)=> {
             console.log(symbol);
             if ("change" == symbol) {
                 represent();

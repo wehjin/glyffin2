@@ -9,13 +9,11 @@
 var Insertion = Glyffin.Insertion;
 var Glyff = Glyffin.Glyff;
 var Void = Glyffin.Void;
-var Metrics = Glyffin.Metrics;
 function main() {
     var room = new Glyffin.GlRoom(document.getElementById('webgl'));
     var audience = new Glyffin.GlAudience(room);
-    var perimeter = new Glyffin.Perimeter(0, 0, room.width, room.height, 1, 0);
-    var metrics = new Metrics(perimeter, 48, 10, new Glyffin.Palette());
+    var perimeter = room.perimeter;
     var alphabet = "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_" + " `abcdefghijklmnopqrstuvwxyz{|}~" + " !\"#$%&\'()*+,-.0123456789:;<=>?";
-    Glyffin.asciiMultiLine(3, alphabet).present(metrics, audience);
+    Glyffin.asciiMultiLine(3, alphabet).present(perimeter, audience);
 }
 //# sourceMappingURL=alphabet.js.map

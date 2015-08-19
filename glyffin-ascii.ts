@@ -53,9 +53,8 @@ module Glyffin {
     export function asciiMultiLine(lines : number, paragraph : string,
                                    base? : Glyff<Void>) : Glyff<Void> {
         return Glyff.create((presenter : Presenter<Void>)=> {
-            var metrics = presenter.metrics;
+            var perimeter = presenter.perimeter;
             var audience = presenter.audience;
-            var perimeter = metrics.perimeter;
             var linesAndLeadings = (lines * 2 - 1);
             var ascentPixels = perimeter.getHeight() / linesAndLeadings;
             var lineHeight = ascentPixels * 2;
@@ -97,10 +96,9 @@ module Glyffin {
 
             var lineNumber = 0;
             lineContents.forEach((lineContent : LineContent)=> {
-                var lineMetrics = metrics.withPerimeter(perimeter.downFromTop(lineNumber *
-                    lineHeight, ascentPixels));
+                var linePerimeter = perimeter.downFromTop(lineNumber * lineHeight, ascentPixels);
                 presenter.addPresentation(asciiEntireWord(lineContent.text, base)
-                    .present(lineMetrics, audience, presenter));
+                    .present(linePerimeter, audience, presenter));
                 lineNumber++;
             });
         });
@@ -109,14 +107,13 @@ module Glyffin {
     export function asciiEntireWord(word : string, ink? : Glyff<Void>) : Glyff<Void> {
         var wordXWeight = getWordXWeight(word);
         return Glyff.create((presenter : Presenter<Void>) => {
-            var metrics = presenter.metrics;
+            var perimeter = presenter.perimeter;
             var audience = presenter.audience;
-            var perimeter = metrics.perimeter;
             var wordXWeightPixels = perimeter.getWidth() / wordXWeight;
             var preferredWeightPixels = perimeter.getHeight() / 7;
             var fittedWeightPixels = Math.min(preferredWeightPixels, wordXWeightPixels);
             presenter.addPresentation(asciiWord(word, fittedWeightPixels, ink)
-                .present(metrics, audience, presenter));
+                .present(perimeter, audience, presenter));
         });
     }
 

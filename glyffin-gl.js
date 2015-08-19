@@ -241,6 +241,7 @@ var MyRoom = (function () {
         // TODO Respond to size changes.
         this.width = canvas.width = canvas.clientWidth;
         this.height = canvas.height = canvas.clientHeight;
+        this.perimeter = new Glyffin.Perimeter(0, 0, this.width, this.height, 1, 0, 48, 10, new Glyffin.Palette());
         var maxDimension = Math.max(canvas.width, canvas.height);
         var modelMatrix = new Matrix4();
         modelMatrix.setScale(STAGE_SIZE / canvas.width, -STAGE_SIZE / canvas.height, STAGE_SIZE / maxDimension);

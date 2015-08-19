@@ -15,19 +15,16 @@ import Presenter = Glyffin.Presenter;
 import Void = Glyffin.Void;
 import Reaction = Glyffin.Reaction;
 import Presentation = Glyffin.Presentation;
-import Metrics = Glyffin.Metrics;
 
 function main() {
     var room = new Glyffin.GlRoom(<HTMLCanvasElement>document.getElementById('webgl'));
     var glAudience = new Glyffin.GlAudience(room);
-    var perimeter = new Glyffin.Perimeter(0, 0, room.width, room.height,
-        1, 0);
-    var metrics = new Glyffin.Metrics(perimeter, 48, 10, new Glyffin.Palette());
+    var perimeter = room.perimeter;
     var headline = "Bidding for the 2026 World Cup is suspended by FIFA as Valcke denies wrongdoing";
     var headline2 = "Google didn’t lead the self-driving vehicle revolution. John Deere did";
     var alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz 0123456789 \"'(),.;:[]";
-    var fingerPixels = metrics.tapHeight;
-    var readPixels = metrics.readHeight;
+    var fingerPixels = perimeter.tapHeight;
+    var readPixels = perimeter.readHeight;
     var demo = Glyffin.RedGlyff
         .splitHeightYield(100, Glyffin.BlueGlyff
             .splitHeightYield(readPixels * 8, Glyffin.asciiMultiLine(3, alphabet))
@@ -41,7 +38,7 @@ function main() {
         .splitHeightRetain(fingerPixels, Glyffin.button());
 
     var app = Glyff.create((presenter : Presenter<Void>)=> {
-        var metrics = presenter.metrics;
+        var perimeter = presenter.perimeter;
         var audience = presenter.audience;
         var page = Glyffin.BeigeGlyff.splitHeightRetain(fingerPixels, Glyffin.button());
 
@@ -51,13 +48,13 @@ function main() {
             if (presented) {
                 presented.remove();
             }
-            presented = presenter.addPresentation(glyff.present(metrics, audience, ()=> {
+            presented = presenter.addPresentation(glyff.present(perimeter, audience, ()=> {
                 setPresented(next, glyff);
             }));
         }
 
         setPresented(page, demo);
     });
-    app.present(metrics, glAudience);
+    app.present(perimeter, glAudience);
 }
 

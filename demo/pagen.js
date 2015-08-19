@@ -25,10 +25,8 @@ function main() {
         }
         return page.clicken("drill").revealDown(new Glyffin.Inset1(.3, 0), Glyffin.BlackGlyff);
     }
-    var palette = new Glyffin.Palette();
-    var screenWidth = room.width;
-    var perimeter = new Glyffin.Perimeter(0, 0, screenWidth, room.height, 1, 0);
-    var metrics = new Glyffin.Metrics(perimeter, 48, 13, palette);
+    room.perimeter.readHeight = 13;
+    var perimeter = room.perimeter;
     var index = 0;
     function incrIndex() {
         if ((index + 1) < pageGlyffs.length) {
@@ -48,7 +46,7 @@ function main() {
         var pageGlyff = getPageGlyff(index);
         var pagesGlyff = pageGlyff.pagen(index, getPageGlyff(index + 1), getPageGlyff(index - 1));
         var app = Glyffin.BlackGlyff.addNearMajor(1, pagesGlyff);
-        presentation = app.present(metrics, glAudience, function (symbol) {
+        presentation = app.present(perimeter, glAudience, function (symbol) {
             console.log("%s", symbol);
             if (symbol === "next") {
                 incrIndex();
