@@ -55,7 +55,9 @@ module Glyffin {
     export class Perimeter {
 
         constructor(public left : number, public top : number, public right : number,
-                    public bottom : number, public age : number, public level : number) {
+                    public bottom : number, public age : number, public level : number,
+                    public tapHeight : number, public readHeight : number,
+                    public palette : Palette) {
         }
 
         getHeight() : number {
@@ -66,27 +68,35 @@ module Glyffin {
             return this.right - this.left;
         }
 
+        at(left : number, top : number, right : number, bottom : number) : Perimeter {
+            return new Perimeter(left, top, right,
+                bottom, this.age, this.level, this.tapHeight, this.readHeight, this.palette);
+        }
+
         withAge(age : number) : Perimeter {
-            return new Perimeter(this.left, this.top, this.right, this.bottom, age, this.level);
+            return new Perimeter(this.left, this.top, this.right, this.bottom, age, this.level,
+                this.tapHeight, this.readHeight, this.palette);
         }
 
         withLevel(level : number) : Perimeter {
-            return new Perimeter(this.left, this.top, this.right, this.bottom, this.age, level);
+            return new Perimeter(this.left, this.top, this.right, this.bottom, this.age, level,
+                this.tapHeight, this.readHeight, this.palette);
         }
 
         addLevel(add : number) : Perimeter {
             return new Perimeter(this.left, this.top, this.right, this.bottom, this.age,
-                this.level + add);
+                this.level + add, this.tapHeight, this.readHeight, this.palette);
         }
 
         translate(x : number) : Perimeter {
             return new Perimeter(this.left + x, this.top, this.right + x, this.bottom, this.age,
-                this.level);
+                this.level, this.tapHeight, this.readHeight, this.palette);
         }
 
         inset(pixelsX : number, pixelsY : number) : Perimeter {
             return new Perimeter(this.left + pixelsX, this.top + pixelsY, this.right - pixelsX,
-                this.bottom - pixelsY, this.age, this.level);
+                this.bottom - pixelsY, this.age, this.level, this.tapHeight, this.readHeight,
+                this.palette);
         }
 
         inset2(inset : Inset2) : Perimeter {
@@ -98,32 +108,34 @@ module Glyffin {
         downFromTop(pixelsY : number, pixelsHigh : number) : Perimeter {
             var insetTop = this.top + pixelsY;
             return new Perimeter(this.left, insetTop, this.right, insetTop + pixelsHigh, this.age,
-                this.level);
+                this.level, this.tapHeight, this.readHeight, this.palette);
         }
 
         rightFromLeft(pixelsX : number, pixelsWide : number) : Perimeter {
             var insetLeft = this.left + pixelsX;
             return new Perimeter(insetLeft, this.top, insetLeft + pixelsWide, this.bottom,
-                this.age, this.level);
+                this.age, this.level, this.tapHeight, this.readHeight, this.palette);
         }
 
         resizeFromTop(pixelsHigh : number) : Perimeter {
             return new Perimeter(this.left, this.top, this.right, this.top + pixelsHigh, this.age,
-                this.level);
+                this.level, this.tapHeight, this.readHeight, this.palette);
         }
 
         splitHeight(pixels : number) : Perimeter[] {
             if (pixels >= 0) {
                 var split = this.top + pixels;
-                return [new Perimeter(this.left, this.top, this.right, split, this.age, this.level),
+                return [new Perimeter(this.left, this.top, this.right, split, this.age, this.level,
+                    this.tapHeight, this.readHeight, this.palette),
                         new Perimeter(this.left, split, this.right, this.bottom, this.age,
-                            this.level)];
+                            this.level, this.tapHeight, this.readHeight, this.palette)];
             } else {
                 var split = this.bottom + pixels;
                 return [new Perimeter(this.left, split, this.right, this.bottom, this.age,
-                    this.level),
+                    this.level,
+                    this.tapHeight, this.readHeight, this.palette),
                         new Perimeter(this.left, this.top, this.right, split, this.age,
-                            this.level)];
+                            this.level, this.tapHeight, this.readHeight, this.palette)];
             }
         }
 
@@ -131,15 +143,15 @@ module Glyffin {
             if (pixels >= 0) {
                 var split = this.left + pixels;
                 return [new Perimeter(this.left, this.top, split, this.bottom, this.age,
-                    this.level),
+                    this.level, this.tapHeight, this.readHeight, this.palette),
                         new Perimeter(split, this.top, this.right, this.bottom, this.age,
-                            this.level)];
+                            this.level, this.tapHeight, this.readHeight, this.palette)];
             } else {
                 var split = this.right + pixels;
                 return [new Perimeter(split, this.top, this.right, this.bottom, this.age,
-                    this.level),
+                    this.level, this.tapHeight, this.readHeight, this.palette),
                         new Perimeter(this.left, this.top, split, this.bottom, this.age,
-                            this.level)];
+                            this.level, this.tapHeight, this.readHeight, this.palette)];
             }
         }
 
@@ -225,20 +237,9 @@ module Glyffin {
         }
     }
 
-    export class Metrics {
-
-        constructor(public perimeter : Perimeter, public tapHeight : number,
-                    public readHeight : number, public palette : Palette) {
-        }
-
-        withPerimeter(perimeter : Perimeter) : Metrics {
-            return new Metrics(perimeter, this.tapHeight, this.readHeight, this.palette);
-        }
-    }
-
     export class Stage {
 
-        constructor(public metrics : Metrics, public palette : Palette) {
+        constructor(public perimeter : Perimeter) {
         }
     }
 

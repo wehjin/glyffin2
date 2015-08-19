@@ -15,22 +15,19 @@ import Presenter = Glyffin.Presenter;
 import Void = Glyffin.Void;
 import Reaction = Glyffin.Reaction;
 import Presentation = Glyffin.Presentation;
-import Metrics = Glyffin.Metrics;
 import Color = Glyffin.Color;
 
 function main() {
     var room = new Glyffin.GlRoom(<HTMLCanvasElement>document.getElementById('webgl'));
     var audience = new Glyffin.GlAudience(room);
-    var perimeter = new Glyffin.Perimeter(0, 0, room.width, room.height, 1, 0);
-    var metrics = new Metrics(perimeter, 48, 10, new Glyffin.Palette());
-
+    var perimeter = room.perimeter;
     var covers : Glyff<Void>[] = [Glyffin.RedGlyff, Glyffin.GreenGlyff];
     var coverIndex = 0;
 
-    var margin = metrics.readHeight;
+    var margin = perimeter.readHeight;
     var makeButton = function (label : string, ink : Glyff<Void>, back : Glyff<Void>) {
         var text = Glyffin.asciiEntireWord(label, ink)
-            .pad2(new Glyffin.Inset2(0, margin, .25, 0))
+            .pad2(new Glyffin.Inset2(0, margin, .25, 0));
         var unpressed = back.addNearMajor(1, text);
         var pressed = Glyffin.BlackGlyff.addNearMajor(1, text);
         return unpressed.clicken("click", pressed);
@@ -53,7 +50,7 @@ function main() {
         if (presentation) {
             presentation.end();
         }
-        presentation = glyff.present(metrics, audience, (symbol : string)=> {
+        presentation = glyff.present(perimeter, audience, (symbol : string)=> {
             console.log(symbol);
             if ("click" == symbol) {
                 represent();

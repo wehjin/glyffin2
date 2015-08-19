@@ -15,7 +15,7 @@ module Glyffin {
     }
 
     export interface Presenter<T> extends Reaction<T>, Presentation {
-        metrics:Metrics;
+        perimeter:Perimeter;
         audience:Audience;
         addPresentation(presentation : Presentation):Removable;
     }
@@ -35,9 +35,9 @@ module Glyffin {
     }
 
     export interface Mogrifier<T,U> {
-        getMetrics(metrics : Metrics, presenter : Presenter<U>): Metrics;
-        getUpperAudience(audience : Audience, presenter : Presenter<U>): Audience;
-        getUpperReaction(audience : Audience, presenter : Presenter<U>): Reaction<T>;
+        getPerimeter(presenter : Presenter<U>): Perimeter;
+        getUpperAudience(presenter : Presenter<U>): Audience;
+        getUpperReaction(presenter : Presenter<U>): Reaction<T>;
     }
 
     class ClickGesturing implements Gesturing {
@@ -212,7 +212,7 @@ module Glyffin {
             return new Glyff<U>(onPresent);
         }
 
-        present(metrics : Metrics, audience : Audience,
+        present(perimeter : Perimeter, audience : Audience,
                 reactionOrOnResult ? : Reaction<T>|OnResult<T>,
                 onError? : ErrorCallback) : Presentation {
 
@@ -220,7 +220,7 @@ module Glyffin {
             var ended : boolean = false;
 
             var presenter : Presenter<T> = {
-                metrics: metrics,
+                perimeter: perimeter,
                 audience: audience,
                 addPresentation(presentation : Presentation) : Removable {
                     if (ended) {
@@ -271,14 +271,14 @@ module Glyffin {
         lift<U>(lifter : Lifter<U,T>) : Glyff<U> {
             return Glyff.create<U>((presenter : Presenter<U>)=> {
                 var lifted = lifter(presenter);
-                presenter.addPresentation(this.present(lifted.metrics, lifted.audience, lifted));
+                presenter.addPresentation(this.present(lifted.perimeter, lifted.audience, lifted));
             });
         }
 
         rebuild<U>(builder : (previous : Glyff<T>)=>Glyff<U>) : Glyff<U> {
             var rebuilt = builder(this);
             return Glyff.create<U>((presenter : Presenter<U>)=> {
-                presenter.addPresentation(rebuilt.present(presenter.metrics, presenter.audience,
+                presenter.addPresentation(rebuilt.present(presenter.perimeter, presenter.audience,
                     presenter));
             });
         }
@@ -286,10 +286,10 @@ module Glyffin {
         compose<U>(mogrifier : Mogrifier<T,U>) : Glyff<U> {
             var upperGlyff = this;
             return Glyff.create<U>((presenter : Presenter<U>)=> {
-                var metrics = mogrifier.getMetrics(presenter.metrics, presenter);
-                var audience = mogrifier.getUpperAudience(presenter.audience, presenter);
-                var reaction = mogrifier.getUpperReaction(presenter.audience, presenter);
-                presenter.addPresentation(upperGlyff.present(metrics, audience, reaction));
+                var perimeter = mogrifier.getPerimeter(presenter);
+                var audience = mogrifier.getUpperAudience(presenter);
+                var reaction = mogrifier.getUpperReaction(presenter);
+                presenter.addPresentation(upperGlyff.present(perimeter, audience, reaction));
             });
         }
 
@@ -307,7 +307,7 @@ module Glyffin {
                         return presenter.audience.present(glyff, reactionOrOnResult, onError);
                     }
                 } : presenter.audience;
-                presenter.addPresentation(this.present(presenter.metrics, audience, presenter));
+                presenter.addPresentation(this.present(presenter.perimeter, audience, presenter));
             });
         }
 
@@ -325,7 +325,7 @@ module Glyffin {
                         return presenter.audience.present(glyff, reactionOrOnResult, onError);
                     }
                 } : presenter.audience;
-                presenter.addPresentation(this.present(presenter.metrics, audience, presenter));
+                presenter.addPresentation(this.present(presenter.perimeter, audience, presenter));
             });
         }
 
@@ -341,74 +341,62 @@ module Glyffin {
 
         splitWidthCombine(size : number, glyff : Glyff<T>) : Glyff<T> {
             return Glyff.create((presenter : Presenter<T>)=> {
-                var metrics = presenter.metrics;
                 var audience = presenter.audience;
-                var split = metrics.perimeter.splitWidth(size);
-                presenter.addPresentation(glyff.present(metrics.withPerimeter(split[0]),
-                    audience, presenter));
-                presenter.addPresentation(this.present(metrics.withPerimeter(split[1]),
-                    audience, presenter));
+                var split = presenter.perimeter.splitWidth(size);
+                presenter.addPresentation(glyff.present(split[0], audience, presenter));
+                presenter.addPresentation(this.present(split[1], audience, presenter));
             });
         }
 
         splitHeight<U>(size : number, topGlyff : Glyff<U>) : Glyff<T|U> {
             return Glyff.create((presenter : Presenter<T|U>) => {
-                var metrics = presenter.metrics;
                 var audience = presenter.audience;
-                var split = metrics.perimeter.splitHeight(size);
-                presenter.addPresentation(topGlyff.present(metrics.withPerimeter(split[0]),
-                    audience, presenter));
-                presenter.addPresentation(this.present(metrics.withPerimeter(split[1]),
-                    audience, presenter));
+                var split = presenter.perimeter.splitHeight(size);
+                presenter.addPresentation(topGlyff.present(split[0], audience, presenter));
+                presenter.addPresentation(this.present(split[1], audience, presenter));
             });
         }
 
         splitHeightYield<U>(size : number, topGlyff : Glyff<U>) : Glyff<U> {
             return Glyff.create((presenter : Presenter<U>) => {
-                var metrics = presenter.metrics;
                 var audience = presenter.audience;
-                var split = metrics.perimeter.splitHeight(size);
-                presenter.addPresentation(topGlyff.present(metrics.withPerimeter(split[0]),
-                    audience, presenter));
-                presenter.addPresentation(this.present(metrics.withPerimeter(split[1]),
-                    audience, new NoResultReaction(presenter)));
+                var split = presenter.perimeter.splitHeight(size);
+                presenter.addPresentation(topGlyff.present(split[0], audience, presenter));
+                presenter.addPresentation(this.present(split[1], audience,
+                    new NoResultReaction(presenter)));
             });
         }
 
         splitHeightRetain<U>(size : number, addGlyff : Glyff<U>) : Glyff<T> {
             return Glyff.create((presenter : Presenter<T>) => {
-                var metrics = presenter.metrics;
                 var audience = presenter.audience;
-                var split = metrics.perimeter.splitHeight(size);
-                presenter.addPresentation(addGlyff.present(metrics.withPerimeter(split[0]),
-                    audience, new NoResultReaction(presenter)));
-                presenter.addPresentation(this.present(metrics.withPerimeter(split[1]),
-                    audience, presenter));
+                var split = presenter.perimeter.splitHeight(size);
+                presenter.addPresentation(addGlyff.present(split[0], audience,
+                    new NoResultReaction(presenter)));
+                presenter.addPresentation(this.present(split[1], audience, presenter));
             });
         }
 
         addNearMajor<U>(level : number, nearGlyff : Glyff<U>) : Glyff<U> {
             return Glyff.create((presenter : Presenter<U>) => {
-                var metrics = presenter.metrics;
+                var perimeter = presenter.perimeter;
                 var audience = presenter.audience;
-                presenter.addPresentation(this.present(metrics, audience,
+                presenter.addPresentation(this.present(perimeter, audience,
                     new NoResultReaction(presenter)));
                 // TODO: Think through relative versus absolute level.
-                var nearPerimeter = metrics.perimeter.withLevel(metrics.perimeter.level + level);
-                presenter.addPresentation(nearGlyff.present(metrics.withPerimeter(nearPerimeter),
-                    audience, presenter));
+                var nearPerimeter = perimeter.withLevel(perimeter.level + level);
+                presenter.addPresentation(nearGlyff.present(nearPerimeter, audience, presenter));
             });
         }
 
 
         revealDown<U>(inset : Inset1, revelation : Glyff<U>) : Glyff<T|U> {
             return Glyff.create<T|U>((presenter : Presenter<T|U>) => {
-                var metrics = presenter.metrics;
+                var perimeter = presenter.perimeter;
                 var audience = presenter.audience;
-                var perimeter = metrics.perimeter;
                 var perimeterHeight = perimeter.getHeight();
                 var maxRevelationHeight = inset.getPixels(perimeterHeight);
-                var revelationMetrics = metrics.withPerimeter(perimeter.resizeFromTop(maxRevelationHeight));
+                var revelationPerimeter = perimeter.resizeFromTop(maxRevelationHeight);
 
                 var revelationHeight;
                 var unpresent : ()=>void = null;
@@ -420,18 +408,18 @@ module Glyffin {
                     revelationHeight = Math.max(0, Math.min(height, maxRevelationHeight));
 
                     // TODO levels should depend on the maximum level of the revelation glyff.
-                    var coverMetrics = metrics.withPerimeter(
-                        perimeter.downFromTop(revelationHeight, perimeterHeight).addLevel(levels));
+                    var coverPerimeter = perimeter.downFromTop(revelationHeight,
+                        perimeterHeight).addLevel(levels);
 
                     if (unpresent) {
                         unpresent();
                     }
                     var coverRemovable = presenter.addPresentation(cover
-                        .present(coverMetrics, audience, presenter));
+                        .present(coverPerimeter, audience, presenter));
                     var revelationRemovable = presenter.addPresentation(revelation
                         .isolate(revelationHeight < maxRevelationHeight)
                         .disappear(revelationHeight <= 0)
-                        .present(revelationMetrics, audience, presenter));
+                        .present(revelationPerimeter, audience, presenter));
                     unpresent = ()=> {
                         coverRemovable.remove();
                         revelationRemovable.remove();
@@ -451,7 +439,7 @@ module Glyffin {
                     zone = audience.addZone(zonePerimeter, {
                         init: (spot : Spot) : Gesturing => {
                             return new VerticalGesturing(spot,
-                                metrics.tapHeight / 2 * (anchorHeight <= 0 ? 1 : -1),
+                                perimeter.tapHeight / 2 * (anchorHeight <= 0 ? 1 : -1),
                                 (moved)=> {
                                     setRevelationHeight(anchorHeight + moved);
                                 }, ()=> {
@@ -482,32 +470,28 @@ module Glyffin {
 
         limitWidth(maxWidth : number, align : number) : Glyff<T> {
             return Glyff.create((presenter : Presenter<T>) => {
-                var metrics = presenter.metrics;
+                var perimeter = presenter.perimeter;
                 var audience = presenter.audience;
-                var perimeter = metrics.perimeter;
                 var width = perimeter.getWidth();
                 if (width <= maxWidth) {
-                    presenter.addPresentation(this.present(metrics, audience, presenter));
+                    presenter.addPresentation(this.present(perimeter, audience, presenter));
                 } else {
                     var narrowPerimeter : Perimeter = perimeter.limitWidth(maxWidth, align);
-                    var narrowMetrics = metrics.withPerimeter(narrowPerimeter);
-                    presenter.addPresentation(this.present(narrowMetrics, audience, presenter));
+                    presenter.addPresentation(this.present(narrowPerimeter, audience, presenter));
                 }
             });
         }
 
         limitHeight(maxHeight : number, align : number) : Glyff<T> {
             return Glyff.create((presenter : Presenter<T>) => {
-                var metrics = presenter.metrics;
+                var perimeter = presenter.perimeter;
                 var audience = presenter.audience;
-                var perimeter = metrics.perimeter;
                 var height = perimeter.getHeight();
                 if (height <= maxHeight) {
-                    presenter.addPresentation(this.present(metrics, audience, presenter));
+                    presenter.addPresentation(this.present(perimeter, audience, presenter));
                 } else {
                     var shortPerimeter : Perimeter = perimeter.limitHeight(maxHeight, align);
-                    var shortMetrics = metrics.withPerimeter(shortPerimeter);
-                    presenter.addPresentation(this.present(shortMetrics, audience, presenter));
+                    presenter.addPresentation(this.present(shortPerimeter, audience, presenter));
                 }
             });
         }
@@ -515,34 +499,33 @@ module Glyffin {
         kaleid(columns : number, rows : number, spots : number[][]) : Glyff<Void> {
             var upperGlyff = this;
             return Glyff.create((presenter : Presenter<Void>)=> {
-                var metrics = presenter.metrics;
+                var perimeter = presenter.perimeter;
                 var audience = presenter.audience;
-                var perimeter = metrics.perimeter;
                 var rowHeight = perimeter.getHeight() / rows;
                 var colWidth = perimeter.getWidth() / columns;
                 for (var i = 0, count = spots.length; i < count; i++) {
                     var spot = spots[i];
                     var left = perimeter.left + colWidth * spot[0];
                     var top = perimeter.top + rowHeight * spot[1];
-                    var spotPerimeter = new Perimeter(left, top, left + colWidth, top + rowHeight,
-                        perimeter.age, perimeter.level);
-                    presenter.addPresentation(upperGlyff.present(
-                        metrics.withPerimeter(spotPerimeter), audience, presenter));
+                    var spotPerimeter = perimeter.at(left, top, left + colWidth, top + rowHeight);
+                    new Perimeter(left, top, left + colWidth, top + rowHeight,
+                        perimeter.age, perimeter.level, perimeter.tapHeight, perimeter.readHeight,
+                        perimeter.palette);
+                    presenter.addPresentation(upperGlyff.present(spotPerimeter, audience,
+                        presenter));
                 }
             });
         }
 
         pad(xPixels : number, yPixels : number) : Glyff<T> {
             return this.compose({
-                getMetrics(metrics : Metrics, presenter : Presenter<T>) : Metrics {
-                    var insetPerimeter = metrics.perimeter.inset(xPixels, yPixels);
-                    return metrics.withPerimeter(insetPerimeter);
-
+                getPerimeter(presenter : Presenter<T>) : Perimeter {
+                    return presenter.perimeter.inset(xPixels, yPixels);
                 },
-                getUpperAudience(audience : Audience, presenter : Presenter<T>) : Audience {
-                    return audience;
+                getUpperAudience(presenter : Presenter<T>) : Audience {
+                    return presenter.audience;
                 },
-                getUpperReaction(audience : Audience, presenter : Presenter<T>) : Reaction<T> {
+                getUpperReaction(presenter : Presenter<T>) : Reaction<T> {
                     return presenter;
                 }
             });
@@ -550,11 +533,10 @@ module Glyffin {
 
         pad2(inset : Inset2) : Glyff<T> {
             return this.lift((lowerPresenter : Presenter<T>) : Presenter<T>=> {
-                var metrics = lowerPresenter.metrics;
-                var insetPerimeter = metrics.perimeter.inset2(inset);
-                var insetMetrics = metrics.withPerimeter(insetPerimeter);
+                var perimeter = lowerPresenter.perimeter;
+                var insetPerimeter = perimeter.inset2(inset);
                 return {
-                    metrics: insetMetrics,
+                    perimeter: insetPerimeter,
                     audience: lowerPresenter.audience,
                     addPresentation(presentation : Presentation) : Removable {
                         return lowerPresenter.addPresentation(presentation);
@@ -574,37 +556,33 @@ module Glyffin {
 
         move(x : number) : Glyff<T> {
             return Glyff.create<T>((presenter : Presenter<Void>)=> {
-                var metrics = presenter.metrics;
                 var audience = presenter.audience;
-                var perimeter = metrics.perimeter.translate(x);
-                presenter.addPresentation(this.present(metrics.withPerimeter(perimeter), audience,
-                    presenter));
+                var perimeter = presenter.perimeter.translate(x);
+                presenter.addPresentation(this.present(perimeter, audience, presenter));
             });
         }
 
         clicken<U>(symbol : string, pressed? : Glyff<U>) : Glyff<string> {
             return Glyff.create<string>((presenter : Presenter<Void>)=> {
-                var metrics = presenter.metrics;
+                var perimeter = presenter.perimeter;
                 var audience = presenter.audience;
-                var perimeter = metrics.perimeter;
                 var unpressed = this;
-                var unpressedMetrics = metrics.withPerimeter(perimeter.withLevel(perimeter.level +
-                    4));
-                var removable = presenter.addPresentation(unpressed.present(unpressedMetrics,
+                var unpressedPerimeter = perimeter.withLevel(perimeter.level + 4);
+                var removable = presenter.addPresentation(unpressed.present(unpressedPerimeter,
                     audience));
                 var zone = audience.addZone(perimeter,
-                    new ClickGesturable(metrics.tapHeight / 2, ()=> {
+                    new ClickGesturable(perimeter.tapHeight / 2, ()=> {
                         if (!pressed) {
                             return;
                         }
                         removable.remove();
-                        removable = presenter.addPresentation(pressed.present(metrics, audience));
+                        removable = presenter.addPresentation(pressed.present(perimeter, audience));
                     }, ()=> {
                         if (!pressed) {
                             return;
                         }
                         removable.remove();
-                        removable = presenter.addPresentation(unpressed.present(unpressedMetrics,
+                        removable = presenter.addPresentation(unpressed.present(unpressedPerimeter,
                             audience));
                     }, ()=> {
                         presenter.onResult(symbol);
@@ -619,15 +597,12 @@ module Glyffin {
 
         pagen<U>(index : number, next : Glyff<U>, prev : Glyff<U>) : Glyff<string|T> {
             return Glyff.create<string|T>((presenter : Presenter<string|T>)=> {
-                var metrics = presenter.metrics;
+                var perimeter = presenter.perimeter;
                 var audience = presenter.audience;
-                var perimeter = metrics.perimeter;
                 var current = this;
                 // TODO Determine levels dynamically.
-                var centerMetrics = metrics.withPerimeter(perimeter.withLevel(perimeter.level +
-                    4));
-                var leftMetrics = metrics.withPerimeter(perimeter.withLevel(perimeter.level +
-                    12));
+                var centerPerimeter = perimeter.withLevel(perimeter.level + 4);
+                var leftPerimeter = perimeter.withLevel(perimeter.level + 12);
                 var noResultReaction = new NoResultReaction(presenter);
 
                 var slideRange = perimeter.right;
@@ -638,7 +613,7 @@ module Glyffin {
                         centerAdded.remove();
                     }
                     centerAdded =
-                        presenter.addPresentation(glyff.present(centerMetrics, audience,
+                        presenter.addPresentation(glyff.present(centerPerimeter, audience,
                             presenter));
                 }
 
@@ -653,7 +628,7 @@ module Glyffin {
 
                 function showRight(show : boolean) {
                     if (show && !rightAdded && next) {
-                        rightAdded = presenter.addPresentation(next.present(metrics, audience,
+                        rightAdded = presenter.addPresentation(next.present(perimeter, audience,
                             noResultReaction));
                     } else if (!show && rightAdded) {
                         rightAdded.remove();
@@ -681,12 +656,12 @@ module Glyffin {
                         leftAdded.remove();
                     }
                     if (glyff) {
-                        leftAdded = presenter.addPresentation(glyff.present(leftMetrics, audience,
+                        leftAdded = presenter.addPresentation(glyff.present(leftPerimeter, audience,
                             noResultReaction));
                     }
                 }
 
-                var triggerAge = (metrics.tapHeight * 1.5) / slideRange;
+                var triggerAge = (perimeter.tapHeight * 1.5) / slideRange;
                 var age = 0.0;
 
                 function setAge(newAge : number) {
@@ -760,7 +735,7 @@ module Glyffin {
 
                         var moveFrame;
                         var targetAge = age;
-                        return new PagenGesturing(startSpot, metrics.tapHeight * .75,
+                        return new PagenGesturing(startSpot, perimeter.tapHeight * .75,
                             (pixelsMoved : number)=> {
                                 targetAge = -pixelsMoved / slideRange * 1.2;
                                 if ((targetAge < 0 && !prev) || (targetAge > 0 && !next)) {
@@ -805,7 +780,7 @@ module Glyffin {
 
         private animateWithPath(path : AnimationPath) {
             return Glyff.create((presenter : Presenter<Void>)=> {
-                var metrics = presenter.metrics;
+                var perimeter = presenter.perimeter;
                 var audience = presenter.audience;
                 path.start(Date.now());
 
@@ -813,9 +788,8 @@ module Glyffin {
                 var frame;
                 var present = ()=> {
                     var now = Date.now();
-                    var perimeter = metrics.perimeter.withAge(path.getAge(now));
-                    presentation = this.present(metrics.withPerimeter(perimeter),
-                        audience, presenter);
+                    var agedPerimeter = perimeter.withAge(path.getAge(now));
+                    presentation = this.present(agedPerimeter, audience, presenter);
                     if (path.hasMore(now)) {
                         frame = requestAnimationFrame(()=> {
                             presentation.end();
@@ -846,7 +820,7 @@ module Glyffin {
         static color(color : Color) : Glyff<Void> {
             return Glyff.create<Void>((presenter : Presenter<Void>)=> {
                     var audience = presenter.audience;
-                    var patch = audience.addPatch(presenter.metrics.perimeter, color);
+                    var patch = audience.addPatch(presenter.perimeter, color);
                     presenter.addPresentation({
                         end() {
                             patch.remove();
@@ -858,10 +832,10 @@ module Glyffin {
 
         static colorAnimation(first : Color, last : Color) : Glyff<Void> {
             return Glyff.create((presenter : Presenter<Void>)=> {
-                var metrics = presenter.metrics;
+                var perimeter = presenter.perimeter;
                 var audience = presenter.audience;
-                var colorGlyff = Glyff.color(first.mix(metrics.perimeter.age, last));
-                presenter.addPresentation(colorGlyff.present(metrics, audience, presenter));
+                var colorGlyff = Glyff.color(first.mix(perimeter.age, last));
+                presenter.addPresentation(colorGlyff.present(perimeter, audience, presenter));
             });
         }
     }
@@ -876,14 +850,14 @@ module Glyffin {
     export function colorPath(colorPath : number[], mix? : number,
                               colorPath2? : number[]) : Glyff<Void> {
         return Glyff.create((presenter : Presenter<Void>)=> {
-            var metrics = presenter.metrics;
+            var perimeter = presenter.perimeter;
             var audience = presenter.audience;
-            var color = metrics.palette.get(colorPath);
+            var color = perimeter.palette.get(colorPath);
             if (mix) {
-                color = color.mix(mix, metrics.palette.get(colorPath2));
+                color = color.mix(mix, perimeter.palette.get(colorPath2));
             }
             var colorGlyff = Glyff.color(color);
-            presenter.addPresentation(colorGlyff.present(metrics, audience, null, null));
+            presenter.addPresentation(colorGlyff.present(perimeter, audience, null, null));
         });
     }
 

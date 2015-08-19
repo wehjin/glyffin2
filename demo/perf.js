@@ -9,12 +9,10 @@
 var Insertion = Glyffin.Insertion;
 var Glyff = Glyffin.Glyff;
 var Void = Glyffin.Void;
-var Metrics = Glyffin.Metrics;
 function main() {
     var room = new Glyffin.GlRoom(document.getElementById('webgl'));
     var audience = new Glyffin.GlAudience(room);
-    var perimeter = new Glyffin.Perimeter(0, 0, room.width, room.height, 1, 0);
-    var metrics = new Metrics(perimeter, 48, 10, new Glyffin.Palette());
+    var perimeter = room.perimeter;
     var word = "1234567890 ";
     for (var i = 0; i < 5; i++) {
         word = word.concat(word);
@@ -26,12 +24,12 @@ function main() {
         }
         var start = Date.now();
         for (var i = 0; i < 1; i++) {
-            presentation = Glyffin.asciiMultiLine(10, word).present(metrics, audience);
+            presentation = Glyffin.asciiMultiLine(10, word).present(perimeter, audience);
             audience.clearAndRedraw();
             presentation.end();
         }
         var elapsed = Date.now() - start;
-        presentation = Glyffin.asciiMultiLine(10, "Elapsed: " + elapsed.toString()).clicken("restart").present(metrics, audience, function (result) {
+        presentation = Glyffin.asciiMultiLine(10, "Elapsed: " + elapsed.toString()).clicken("restart").present(perimeter, audience, function (result) {
             if (result == "restart") {
                 measure();
             }

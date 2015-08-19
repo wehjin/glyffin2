@@ -48,9 +48,8 @@ var Glyffin;
     Glyffin.asciiByCode = asciiByCode;
     function asciiMultiLine(lines, paragraph, base) {
         return Glyffin.Glyff.create(function (presenter) {
-            var metrics = presenter.metrics;
+            var perimeter = presenter.perimeter;
             var audience = presenter.audience;
-            var perimeter = metrics.perimeter;
             var linesAndLeadings = (lines * 2 - 1);
             var ascentPixels = perimeter.getHeight() / linesAndLeadings;
             var lineHeight = ascentPixels * 2;
@@ -86,8 +85,8 @@ var Glyffin;
             });
             var lineNumber = 0;
             lineContents.forEach(function (lineContent) {
-                var lineMetrics = metrics.withPerimeter(perimeter.downFromTop(lineNumber * lineHeight, ascentPixels));
-                presenter.addPresentation(asciiEntireWord(lineContent.text, base).present(lineMetrics, audience, presenter));
+                var linePerimeter = perimeter.downFromTop(lineNumber * lineHeight, ascentPixels);
+                presenter.addPresentation(asciiEntireWord(lineContent.text, base).present(linePerimeter, audience, presenter));
                 lineNumber++;
             });
         });
@@ -96,13 +95,12 @@ var Glyffin;
     function asciiEntireWord(word, ink) {
         var wordXWeight = getWordXWeight(word);
         return Glyffin.Glyff.create(function (presenter) {
-            var metrics = presenter.metrics;
+            var perimeter = presenter.perimeter;
             var audience = presenter.audience;
-            var perimeter = metrics.perimeter;
             var wordXWeightPixels = perimeter.getWidth() / wordXWeight;
             var preferredWeightPixels = perimeter.getHeight() / 7;
             var fittedWeightPixels = Math.min(preferredWeightPixels, wordXWeightPixels);
-            presenter.addPresentation(asciiWord(word, fittedWeightPixels, ink).present(metrics, audience, presenter));
+            presenter.addPresentation(asciiWord(word, fittedWeightPixels, ink).present(perimeter, audience, presenter));
         });
     }
     Glyffin.asciiEntireWord = asciiEntireWord;
