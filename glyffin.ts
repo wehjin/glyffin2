@@ -204,6 +204,67 @@ module Glyffin {
         }
     }
 
+    class BasePresenter<T> implements Presenter<T> {
+        perimeter : Glyffin.Perimeter;
+        audience : Glyffin.Audience;
+        private reactionOrOnResult : Reaction<T>|OnResult<T>;
+        private _onError : ErrorCallback;
+        private presented : Presentation[] = [];
+        private ended : boolean = false;
+
+        constructor(perimeter : Glyffin.Perimeter, audience : Glyffin.Audience,
+                    reactionOrOnResult ? : Reaction<T>|OnResult<T>, onError? : ErrorCallback) {
+            this.perimeter = perimeter;
+            this.audience = audience;
+            this.reactionOrOnResult = reactionOrOnResult;
+            this._onError = onError;
+        }
+
+        addPresentation(presentation : Glyffin.Presentation) : Glyffin.Removable {
+            if (this.ended) {
+                throw "addPresentation called after end";
+            }
+            var index = this.presented.length;
+            this.presented.push(presentation);
+            return {
+                remove() {
+                    var presentation = this.presented[index];
+                    if (presentation) {
+                        this.presented[index] = null;
+                        presentation.end();
+                    }
+                }
+            }
+        }
+
+        onResult(result : T) {
+            if (typeof this.reactionOrOnResult === 'object') {
+                (<Reaction<T>>this.reactionOrOnResult).onResult(result);
+            } else if (typeof this.reactionOrOnResult === 'function') {
+                (<OnResult<T>>this.reactionOrOnResult)(result);
+            }
+        }
+
+        onError(error : Error) {
+            if (typeof this.reactionOrOnResult === 'object') {
+                (<Reaction<T>>this.reactionOrOnResult).onError(error);
+            } else if (this.onError) {
+                this.onError(error);
+            }
+        }
+
+        end() {
+            this.ended = true;
+            for (var i = 0; i < this.presented.length; i++) {
+                var presentation = this.presented[i];
+                if (presentation) {
+                    this.presented[i] = null;
+                    presentation.end();
+                }
+            }
+        }
+    }
+
     export class Glyff<T> {
         constructor(private onPresent : OnPresent<T>) {
         }
@@ -215,55 +276,8 @@ module Glyffin {
         present(perimeter : Perimeter, audience : Audience,
                 reactionOrOnResult ? : Reaction<T>|OnResult<T>,
                 onError? : ErrorCallback) : Presentation {
-
-            var presented : Presentation[] = [];
-            var ended : boolean = false;
-
-            var presenter : Presenter<T> = {
-                perimeter: perimeter,
-                audience: audience,
-                addPresentation(presentation : Presentation) : Removable {
-                    if (ended) {
-                        throw "addPresentation called after end";
-                    }
-                    var index = presented.length;
-                    presented.push(presentation);
-                    return {
-                        remove() {
-                            var presentation = presented[index];
-                            if (presentation) {
-                                presented[index] = null;
-                                presentation.end();
-                            }
-                        }
-                    }
-                },
-                onResult(result : T) {
-                    if (typeof reactionOrOnResult === 'object') {
-                        (<Reaction<T>>reactionOrOnResult).onResult(result);
-                    } else if (typeof reactionOrOnResult === 'function') {
-                        (<OnResult<T>>reactionOrOnResult)(result);
-                    }
-                },
-                onError(error : Error) {
-                    if (typeof reactionOrOnResult === 'object') {
-                        (<Reaction<T>>reactionOrOnResult).onError(error);
-                    } else if (onError) {
-                        onError(error);
-                    }
-                },
-                end() {
-                    ended = true;
-                    for (var i = 0; i < presented.length; i++) {
-                        var presentation = presented[i];
-                        if (presentation) {
-                            presented[i] = null;
-                            presentation.end();
-                        }
-                    }
-                }
-            };
-
+            var presenter : Presenter<T> = new BasePresenter<T>(perimeter, audience,
+                reactionOrOnResult, onError);
             this.onPresent(presenter);
             return presenter;
         }

@@ -154,6 +154,59 @@ var Glyffin;
         };
         return CycleAnimationPath;
     })();
+    var BasePresenter = (function () {
+        function BasePresenter(perimeter, audience, reactionOrOnResult, onError) {
+            this.presented = [];
+            this.ended = false;
+            this.perimeter = perimeter;
+            this.audience = audience;
+            this.reactionOrOnResult = reactionOrOnResult;
+            this._onError = onError;
+        }
+        BasePresenter.prototype.addPresentation = function (presentation) {
+            if (this.ended) {
+                throw "addPresentation called after end";
+            }
+            var index = this.presented.length;
+            this.presented.push(presentation);
+            return {
+                remove: function () {
+                    var presentation = this.presented[index];
+                    if (presentation) {
+                        this.presented[index] = null;
+                        presentation.end();
+                    }
+                }
+            };
+        };
+        BasePresenter.prototype.onResult = function (result) {
+            if (typeof this.reactionOrOnResult === 'object') {
+                this.reactionOrOnResult.onResult(result);
+            }
+            else if (typeof this.reactionOrOnResult === 'function') {
+                this.reactionOrOnResult(result);
+            }
+        };
+        BasePresenter.prototype.onError = function (error) {
+            if (typeof this.reactionOrOnResult === 'object') {
+                this.reactionOrOnResult.onError(error);
+            }
+            else if (this.onError) {
+                this.onError(error);
+            }
+        };
+        BasePresenter.prototype.end = function () {
+            this.ended = true;
+            for (var i = 0; i < this.presented.length; i++) {
+                var presentation = this.presented[i];
+                if (presentation) {
+                    this.presented[i] = null;
+                    presentation.end();
+                }
+            }
+        };
+        return BasePresenter;
+    })();
     var Glyff = (function () {
         function Glyff(onPresent) {
             this.onPresent = onPresent;
@@ -162,54 +215,7 @@ var Glyffin;
             return new Glyff(onPresent);
         };
         Glyff.prototype.present = function (perimeter, audience, reactionOrOnResult, onError) {
-            var presented = [];
-            var ended = false;
-            var presenter = {
-                perimeter: perimeter,
-                audience: audience,
-                addPresentation: function (presentation) {
-                    if (ended) {
-                        throw "addPresentation called after end";
-                    }
-                    var index = presented.length;
-                    presented.push(presentation);
-                    return {
-                        remove: function () {
-                            var presentation = presented[index];
-                            if (presentation) {
-                                presented[index] = null;
-                                presentation.end();
-                            }
-                        }
-                    };
-                },
-                onResult: function (result) {
-                    if (typeof reactionOrOnResult === 'object') {
-                        reactionOrOnResult.onResult(result);
-                    }
-                    else if (typeof reactionOrOnResult === 'function') {
-                        reactionOrOnResult(result);
-                    }
-                },
-                onError: function (error) {
-                    if (typeof reactionOrOnResult === 'object') {
-                        reactionOrOnResult.onError(error);
-                    }
-                    else if (onError) {
-                        onError(error);
-                    }
-                },
-                end: function () {
-                    ended = true;
-                    for (var i = 0; i < presented.length; i++) {
-                        var presentation = presented[i];
-                        if (presentation) {
-                            presented[i] = null;
-                            presentation.end();
-                        }
-                    }
-                }
-            };
+            var presenter = new BasePresenter(perimeter, audience, reactionOrOnResult, onError);
             this.onPresent(presenter);
             return presenter;
         };
