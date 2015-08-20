@@ -177,18 +177,18 @@ class Patches {
         }
         this.freePatchList[patchIndex] = -2;
         this.freePatchCount--;
-        this.buffer.set([left, top, level,
-                                color.red, color.green, color.blue, color.alpha,
-                                right, top, level,
-                                color.red, color.green, color.blue, color.alpha,
-                                left, bottom, level,
-                                color.red, color.green, color.blue, color.alpha,
-                                left, bottom, level,
-                                color.red, color.green, color.blue, color.alpha,
-                                right, top, level,
-                                color.red, color.green, color.blue, color.alpha,
-                                right, bottom, level,
-                                color.red, color.green, color.blue, color.alpha,
+        this.buffer.set(<number[]>[left, top, level, color.red, color.green, color.blue,
+                                   color.alpha,
+                                   right, top, level, color.red, color.green, color.blue,
+                                   color.alpha,
+                                   left, bottom, level, color.red, color.green, color.blue,
+                                   color.alpha,
+                                   left, bottom, level, color.red, color.green, color.blue,
+                                   color.alpha,
+                                   right, top, level, color.red, color.green, color.blue,
+                                   color.alpha,
+                                   right, bottom, level, color.red, color.green, color.blue,
+                                   color.alpha,
         ], patchIndex * FLOATS_PER_PATCH);
         return patchIndex;
     }

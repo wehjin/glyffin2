@@ -209,7 +209,7 @@ module Glyffin {
         audience : Glyffin.Audience;
         private reactionOrOnResult : Reaction<T>|OnResult<T>;
         private _onError : ErrorCallback;
-        private presented : Presentation[] = [];
+        private presentations : Presentation[] = [];
         private ended : boolean = false;
 
         constructor(perimeter : Glyffin.Perimeter, audience : Glyffin.Audience,
@@ -224,17 +224,17 @@ module Glyffin {
             if (this.ended) {
                 throw "addPresentation called after end";
             }
-            var index = this.presented.length;
-            this.presented.push(presentation);
+            var index = this.presentations.length;
+            this.presentations.push(presentation);
             return {
-                remove() {
-                    var presentation = this.presented[index];
+                remove: ()=> {
+                    var presentation = this.presentations[index];
                     if (presentation) {
-                        this.presented[index] = null;
+                        this.presentations[index] = null;
                         presentation.end();
                     }
                 }
-            }
+            };
         }
 
         onResult(result : T) {
@@ -255,10 +255,10 @@ module Glyffin {
 
         end() {
             this.ended = true;
-            for (var i = 0; i < this.presented.length; i++) {
-                var presentation = this.presented[i];
+            for (var i = 0; i < this.presentations.length; i++) {
+                var presentation = this.presentations[i];
                 if (presentation) {
-                    this.presented[i] = null;
+                    this.presentations[i] = null;
                     presentation.end();
                 }
             }

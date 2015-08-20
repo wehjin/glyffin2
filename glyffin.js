@@ -156,7 +156,7 @@ var Glyffin;
     })();
     var BasePresenter = (function () {
         function BasePresenter(perimeter, audience, reactionOrOnResult, onError) {
-            this.presented = [];
+            this.presentations = [];
             this.ended = false;
             this.perimeter = perimeter;
             this.audience = audience;
@@ -164,16 +164,17 @@ var Glyffin;
             this._onError = onError;
         }
         BasePresenter.prototype.addPresentation = function (presentation) {
+            var _this = this;
             if (this.ended) {
                 throw "addPresentation called after end";
             }
-            var index = this.presented.length;
-            this.presented.push(presentation);
+            var index = this.presentations.length;
+            this.presentations.push(presentation);
             return {
                 remove: function () {
-                    var presentation = this.presented[index];
+                    var presentation = _this.presentations[index];
                     if (presentation) {
-                        this.presented[index] = null;
+                        _this.presentations[index] = null;
                         presentation.end();
                     }
                 }
@@ -197,10 +198,10 @@ var Glyffin;
         };
         BasePresenter.prototype.end = function () {
             this.ended = true;
-            for (var i = 0; i < this.presented.length; i++) {
-                var presentation = this.presented[i];
+            for (var i = 0; i < this.presentations.length; i++) {
+                var presentation = this.presentations[i];
                 if (presentation) {
-                    this.presented[i] = null;
+                    this.presentations[i] = null;
                     presentation.end();
                 }
             }
