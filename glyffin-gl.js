@@ -118,7 +118,8 @@ var Patches = (function () {
     function Patches() {
         this.freePatchList = [];
         this.totalFreed = 0;
-        this.emptyPatch = [];
+        this.patch = new Float32Array(FLOATS_PER_PATCH);
+        this.emptyPatch = new Float32Array(FLOATS_PER_PATCH);
         this.buffer = new Float32Array(MAX_PATCH_COUNT * FLOATS_PER_PATCH);
         for (var i = 0, count = MAX_PATCH_COUNT - 1; i < count; i++) {
             this.freePatchList[i] = i + 1;
@@ -128,12 +129,13 @@ var Patches = (function () {
         this.freePatchTail = MAX_PATCH_COUNT - 1;
         this.freePatchCleared = this.freePatchTail;
         this.freePatchCount = MAX_PATCH_COUNT;
-        var emptyPatch = [];
-        for (var i = 0, count = FLOATS_PER_PATCH; i < count; i++) {
-            emptyPatch[i] = 0;
-        }
-        this.emptyPatch = emptyPatch;
     }
+    Patches.prototype.setVertex = function (n, values) {
+        var base = n * FLOATS_PER_VERTEX;
+        for (var i = 0; i < FLOATS_PER_VERTEX; i++, base++) {
+            this.patch[base] = values[i];
+        }
+    };
     Patches.prototype.getPatch = function (left, top, right, bottom, level, color, room) {
         var patchIndex;
         if (this.freePatchHead === this.freePatchCleared) {
@@ -149,7 +151,13 @@ var Patches = (function () {
         }
         this.freePatchList[patchIndex] = -2;
         this.freePatchCount--;
-        this.buffer.set([left, top, level, color.red, color.green, color.blue, color.alpha, right, top, level, color.red, color.green, color.blue, color.alpha, left, bottom, level, color.red, color.green, color.blue, color.alpha, left, bottom, level, color.red, color.green, color.blue, color.alpha, right, top, level, color.red, color.green, color.blue, color.alpha, right, bottom, level, color.red, color.green, color.blue, color.alpha,], patchIndex * FLOATS_PER_PATCH);
+        this.setVertex(0, [left, top, level, color.red, color.green, color.blue, color.alpha]);
+        this.setVertex(1, [right, top, level, color.red, color.green, color.blue, color.alpha]);
+        this.setVertex(2, [left, bottom, level, color.red, color.green, color.blue, color.alpha]);
+        this.setVertex(3, [left, bottom, level, color.red, color.green, color.blue, color.alpha]);
+        this.setVertex(4, [right, top, level, color.red, color.green, color.blue, color.alpha]);
+        this.setVertex(5, [right, bottom, level, color.red, color.green, color.blue, color.alpha]);
+        this.buffer.set(this.patch, patchIndex * FLOATS_PER_PATCH);
         return patchIndex;
     };
     Patches.prototype.putPatch = function (patchIndex) {
