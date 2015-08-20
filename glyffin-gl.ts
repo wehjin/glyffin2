@@ -141,9 +141,9 @@ class Patches {
     private freePatchCleared : number;
     private freePatchCount : number;
 
-    public totalFreed = 0;
-    private emptyPatch = [];
-    public buffer = new Float32Array(MAX_PATCH_COUNT * FLOATS_PER_PATCH);
+    public totalFreed : number = 0;
+    private emptyPatch : number[] = [];
+    public buffer : Float32Array = new Float32Array(MAX_PATCH_COUNT * FLOATS_PER_PATCH);
 
     constructor() {
         for (var i = 0, count = MAX_PATCH_COUNT - 1; i < count; i++) {
