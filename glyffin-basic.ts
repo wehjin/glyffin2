@@ -25,6 +25,9 @@ module Glyffin {
             this.x = new Inset1(fractionX, fixedX);
             this.y = new Inset1(fractionY, fixedY);
         }
+
+        public static QUARTER : Inset2 = new Inset2(.25, 0, .25, 0);
+        public static EIGHTH : Inset2 = new Inset2(.125, 0, .125, 0);
     }
 
     export class Spot {

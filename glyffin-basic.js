@@ -25,6 +25,8 @@ var Glyffin;
             this.x = new Inset1(fractionX, fixedX);
             this.y = new Inset1(fractionY, fixedY);
         }
+        Inset2.QUARTER = new Inset2(.25, 0, .25, 0);
+        Inset2.EIGHTH = new Inset2(.125, 0, .125, 0);
         return Inset2;
     })();
     Glyffin.Inset2 = Inset2;

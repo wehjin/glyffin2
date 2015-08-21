@@ -321,16 +321,28 @@ var Glyffin;
                 presenter.addPresentation(_this.present(split[1], audience, presenter));
             });
         };
+        Glyff.prototype.over = function (farGlyph, dz) {
+            var nearGlyff = this;
+            function onPresent(presenter) {
+                var audience = presenter.audience;
+                var farPerimeter = presenter.perimeter;
+                var nearPerimeter = farPerimeter.withLevel(farPerimeter.level + 1 + (dz ? dz : 0));
+                presenter.addPresentation(farGlyph.present(farPerimeter, audience, presenter));
+                presenter.addPresentation(nearGlyff.present(nearPerimeter, audience, presenter));
+            }
+            return Glyff.create(onPresent);
+        };
         Glyff.prototype.addNearMajor = function (level, nearGlyff) {
-            var _this = this;
-            return Glyff.create(function (presenter) {
+            var farGlyff = this;
+            function onPresent(presenter) {
                 var perimeter = presenter.perimeter;
                 var audience = presenter.audience;
-                presenter.addPresentation(_this.present(perimeter, audience, new Glyffin.NoResultReaction(presenter)));
+                presenter.addPresentation(farGlyff.present(perimeter, audience, new Glyffin.NoResultReaction(presenter)));
                 // TODO: Think through relative versus absolute level.
                 var nearPerimeter = perimeter.withLevel(perimeter.level + level);
                 presenter.addPresentation(nearGlyff.present(nearPerimeter, audience, presenter));
-            });
+            }
+            return Glyff.create(onPresent);
         };
         Glyff.prototype.revealDown = function (inset, revelation) {
             var _this = this;
@@ -443,6 +455,7 @@ var Glyffin;
                 }
             });
         };
+        // TODO: Integrate with pad2.
         Glyff.prototype.pad = function (xPixels, yPixels) {
             return this.compose({
                 getPerimeter: function (presenter) {

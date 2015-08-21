@@ -24,9 +24,10 @@ module Glyffin {
         (presenter : Presenter<T>);
     }
 
-    export interface Lifter<T, U> {
-        (lowerPresenter : Presenter<T>):Presenter<U>;
+    export interface Lifter<U, T> {
+        (lowerPresenter : Presenter<U>):Presenter<T>;
     }
+
 
     export class Insertion<T> {
 
@@ -391,16 +392,34 @@ module Glyffin {
             });
         }
 
+        over<U>(farGlyph : Glyff<U>, dz ? : number) : Glyff<T|U> {
+            var nearGlyff = this;
+
+            function onPresent(presenter : Presenter<T|U>) {
+                var audience = presenter.audience;
+                var farPerimeter = presenter.perimeter;
+                var nearPerimeter = farPerimeter.withLevel(farPerimeter.level + 1 + (dz ? dz : 0));
+                presenter.addPresentation(farGlyph.present(farPerimeter, audience, presenter));
+                presenter.addPresentation(nearGlyff.present(nearPerimeter, audience, presenter));
+            }
+
+            return Glyff.create(onPresent);
+        }
+
         addNearMajor<U>(level : number, nearGlyff : Glyff<U>) : Glyff<U> {
-            return Glyff.create((presenter : Presenter<U>) => {
+            var farGlyff = this;
+
+            function onPresent(presenter : Presenter<U>) {
                 var perimeter = presenter.perimeter;
                 var audience = presenter.audience;
-                presenter.addPresentation(this.present(perimeter, audience,
+                presenter.addPresentation(farGlyff.present(perimeter, audience,
                     new NoResultReaction(presenter)));
                 // TODO: Think through relative versus absolute level.
                 var nearPerimeter = perimeter.withLevel(perimeter.level + level);
                 presenter.addPresentation(nearGlyff.present(nearPerimeter, audience, presenter));
-            });
+            }
+
+            return Glyff.create(onPresent);
         }
 
 
@@ -531,6 +550,7 @@ module Glyffin {
             });
         }
 
+        // TODO: Integrate with pad2.
         pad(xPixels : number, yPixels : number) : Glyff<T> {
             return this.compose({
                 getPerimeter(presenter : Presenter<T>) : Perimeter {
