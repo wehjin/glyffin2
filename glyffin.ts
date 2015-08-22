@@ -273,8 +273,10 @@ module Glyffin {
         constructor(private onPresent : OnPresent<T>) {
         }
 
-        static create<U>(onPresent : OnPresent<U>) : Glyff<U> {
-            return new Glyff<U>(onPresent);
+        static create<U>(onPresent : OnPresent<U>, depth? : number) : Glyff<U> {
+            var glyff = new Glyff<U>(onPresent);
+            glyff.depth = depth || 0;
+            return glyff;
         }
 
         present(perimeter : Perimeter, audience : Audience,
@@ -326,7 +328,7 @@ module Glyffin {
                     }
                 } : presenter.audience;
                 presenter.addPresentation(this.present(presenter.perimeter, audience, presenter));
-            });
+            }, this.depth);
         }
 
         isolate(isolated : boolean) : Glyff<T> {
@@ -344,7 +346,7 @@ module Glyffin {
                     }
                 } : presenter.audience;
                 presenter.addPresentation(this.present(presenter.perimeter, audience, presenter));
-            });
+            }, this.depth);
         }
 
         addLefts(insertions : Insertion<T>[]) : Glyff<T> {
@@ -406,9 +408,7 @@ module Glyffin {
                 presenter.addPresentation(nearGlyff.present(nearPerimeter, audience, presenter));
             }
 
-            var glyff = Glyff.create(onPresent);
-            glyff.depth = gap + nearGlyff.depth;
-            return glyff;
+            return Glyff.create(onPresent, gap + nearGlyff.depth);
         }
 
         addNearMajor<U>(level : number, nearGlyff : Glyff<U>) : Glyff<U> {
@@ -429,6 +429,7 @@ module Glyffin {
 
 
         revealDown<U>(inset : Inset1, revelation : Glyff<U>) : Glyff<T|U> {
+            var gap = revelation.depth + 1;
             return Glyff.create<T|U>((presenter : Presenter<T|U>) => {
                 var perimeter = presenter.perimeter;
                 var audience = presenter.audience;
@@ -440,24 +441,19 @@ module Glyffin {
                 var unpresent : ()=>void = null;
                 var cover = this;
 
-                var levels = 5;
-
                 function setRevelationHeight(height : number) {
                     revelationHeight = Math.max(0, Math.min(height, maxRevelationHeight));
-
-                    // TODO levels should depend on the maximum level of the revelation glyff.
-                    var coverPerimeter = perimeter.downFromTop(revelationHeight,
-                        perimeterHeight).addLevel(levels);
-
+                    var coverPerimeter = perimeter.downFromTop(revelationHeight, perimeterHeight)
+                        .addLevel(gap);
                     if (unpresent) {
                         unpresent();
                     }
-                    var coverRemovable = presenter.addPresentation(cover
-                        .present(coverPerimeter, audience, presenter));
                     var revelationRemovable = presenter.addPresentation(revelation
                         .isolate(revelationHeight < maxRevelationHeight)
                         .disappear(revelationHeight <= 0)
                         .present(revelationPerimeter, audience, presenter));
+                    var coverRemovable = presenter.addPresentation(cover
+                        .present(coverPerimeter, audience, presenter));
                     unpresent = ()=> {
                         coverRemovable.remove();
                         revelationRemovable.remove();
@@ -466,7 +462,7 @@ module Glyffin {
 
                 var anchorHeight;
                 var zone : Removable;
-                var zonePerimeter = perimeter.addLevel(levels);
+                var zonePerimeter = perimeter.addLevel(gap);
 
                 function setAnchorHeight(height : number) {
                     if (zone) {
@@ -503,7 +499,7 @@ module Glyffin {
                         }
                     }
                 });
-            });
+            }, gap + this.depth);
         }
 
         limitWidth(maxWidth : number, align : number) : Glyff<T> {
@@ -517,7 +513,7 @@ module Glyffin {
                     var narrowPerimeter : Perimeter = perimeter.limitWidth(maxWidth, align);
                     presenter.addPresentation(this.present(narrowPerimeter, audience, presenter));
                 }
-            });
+            }, this.depth);
         }
 
         limitHeight(maxHeight : number, align : number) : Glyff<T> {
@@ -531,7 +527,7 @@ module Glyffin {
                     var shortPerimeter : Perimeter = perimeter.limitHeight(maxHeight, align);
                     presenter.addPresentation(this.present(shortPerimeter, audience, presenter));
                 }
-            });
+            }, this.depth);
         }
 
         kaleid(columns : number, rows : number, spots : number[][]) : Glyff<Void> {
@@ -552,7 +548,7 @@ module Glyffin {
                     presenter.addPresentation(upperGlyff.present(spotPerimeter, audience,
                         presenter));
                 }
-            });
+            }, this.depth);
         }
 
         // TODO: Integrate with pad2.
@@ -598,24 +594,26 @@ module Glyffin {
                 var audience = presenter.audience;
                 var perimeter = presenter.perimeter.translate(x);
                 presenter.addPresentation(this.present(perimeter, audience, presenter));
-            });
+            }, this.depth);
         }
 
         clicken<U>(symbol : string, pressed? : Glyff<U>) : Glyff<string> {
+            var unpressed = this;
+            var gap = 4;
             return Glyff.create<string>((presenter : Presenter<Void>)=> {
-                var perimeter = presenter.perimeter;
                 var audience = presenter.audience;
-                var unpressed = this;
-                var unpressedPerimeter = perimeter.withLevel(perimeter.level + 4);
+                var unpressedPerimeter = presenter.perimeter;
+                var unpressedPerimeter = unpressedPerimeter.addLevel(gap);
                 var removable = presenter.addPresentation(unpressed.present(unpressedPerimeter,
                     audience));
-                var zone = audience.addZone(perimeter,
-                    new ClickGesturable(perimeter.tapHeight / 2, ()=> {
+                var zone = audience.addZone(unpressedPerimeter,
+                    new ClickGesturable(unpressedPerimeter.tapHeight / 2, ()=> {
                         if (!pressed) {
                             return;
                         }
                         removable.remove();
-                        removable = presenter.addPresentation(pressed.present(perimeter, audience));
+                        removable = presenter.addPresentation(pressed.present(unpressedPerimeter,
+                            audience));
                     }, ()=> {
                         if (!pressed) {
                             return;
@@ -631,7 +629,7 @@ module Glyffin {
                         zone.remove();
                     }
                 });
-            });
+            }, gap + unpressed.depth);
         }
 
         pagen<U>(index : number, next : Glyff<U>, prev : Glyff<U>) : Glyff<string|T> {
@@ -845,7 +843,7 @@ module Glyffin {
                         presentation.end();
                     }
                 })
-            });
+            }, this.depth);
         }
 
         animate(duration : number) : Glyff<T> {
@@ -864,7 +862,7 @@ module Glyffin {
                         end() {
                             patch.remove();
                         }
-                    });
+                    }, 0);
                 }
             );
         }
@@ -875,7 +873,7 @@ module Glyffin {
                 var audience = presenter.audience;
                 var colorGlyff = Glyff.color(first.mix(perimeter.age, last));
                 presenter.addPresentation(colorGlyff.present(perimeter, audience, presenter));
-            });
+            }, 0);
         }
     }
 
@@ -897,7 +895,7 @@ module Glyffin {
             }
             var colorGlyff = Glyff.color(color);
             presenter.addPresentation(colorGlyff.present(perimeter, audience, null, null));
-        });
+        }, 0);
     }
 
     export var RedGlyff = Glyff.color(Color.RED);
