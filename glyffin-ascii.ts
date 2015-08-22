@@ -101,7 +101,7 @@ module Glyffin {
                     .present(linePerimeter, audience, presenter));
                 lineNumber++;
             });
-        });
+        }, 0);
     }
 
     export function asciiEntireWord(word : string, ink? : Glyff<Void>) : Glyff<Void> {
@@ -114,7 +114,7 @@ module Glyffin {
             var fittedWeightPixels = Math.min(preferredWeightPixels, wordXWeightPixels);
             presenter.addPresentation(asciiWord(word, fittedWeightPixels, ink)
                 .present(perimeter, audience, presenter));
-        });
+        }, 0);
     }
 
     export function asciiWord(word : string, xWeightPixels : number, base? : Glyff<Void>) {

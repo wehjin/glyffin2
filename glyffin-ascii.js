@@ -89,7 +89,7 @@ var Glyffin;
                 presenter.addPresentation(asciiEntireWord(lineContent.text, base).present(linePerimeter, audience, presenter));
                 lineNumber++;
             });
-        });
+        }, 0);
     }
     Glyffin.asciiMultiLine = asciiMultiLine;
     function asciiEntireWord(word, ink) {
@@ -101,7 +101,7 @@ var Glyffin;
             var preferredWeightPixels = perimeter.getHeight() / 7;
             var fittedWeightPixels = Math.min(preferredWeightPixels, wordXWeightPixels);
             presenter.addPresentation(asciiWord(word, fittedWeightPixels, ink).present(perimeter, audience, presenter));
-        });
+        }, 0);
     }
     Glyffin.asciiEntireWord = asciiEntireWord;
     function asciiWord(word, xWeightPixels, base) {

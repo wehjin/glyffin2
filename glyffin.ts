@@ -273,7 +273,7 @@ module Glyffin {
         constructor(private onPresent : OnPresent<T>) {
         }
 
-        static create<U>(onPresent : OnPresent<U>, depth? : number) : Glyff<U> {
+        static create<U>(onPresent : OnPresent<U>, depth : number) : Glyff<U> {
             var glyff = new Glyff<U>(onPresent);
             glyff.depth = depth || 0;
             return glyff;
@@ -288,11 +288,11 @@ module Glyffin {
             return presenter;
         }
 
-        lift<U>(lifter : Lifter<U,T>) : Glyff<U> {
+        lift<U>(lifter : Lifter<U,T>, depth? : number) : Glyff<U> {
             return Glyff.create<U>((presenter : Presenter<U>)=> {
                 var lifted = lifter(presenter);
                 presenter.addPresentation(this.present(lifted.perimeter, lifted.audience, lifted));
-            });
+            }, depth || 0);
         }
 
         rebuild<U>(builder : (previous : Glyff<T>)=>Glyff<U>) : Glyff<U> {
@@ -300,17 +300,17 @@ module Glyffin {
             return Glyff.create<U>((presenter : Presenter<U>)=> {
                 presenter.addPresentation(rebuilt.present(presenter.perimeter, presenter.audience,
                     presenter));
-            });
+            }, rebuilt.depth);
         }
 
-        compose<U>(mogrifier : Mogrifier<T,U>) : Glyff<U> {
+        compose<U>(mogrifier : Mogrifier<T,U>, depth? : number) : Glyff<U> {
             var upperGlyff = this;
             return Glyff.create<U>((presenter : Presenter<U>)=> {
                 var perimeter = mogrifier.getPerimeter(presenter);
                 var audience = mogrifier.getUpperAudience(presenter);
                 var reaction = mogrifier.getUpperReaction(presenter);
                 presenter.addPresentation(upperGlyff.present(perimeter, audience, reaction));
-            });
+            }, depth || 0);
         }
 
         disappear(disappeared : boolean) : Glyff<T> {
@@ -365,7 +365,7 @@ module Glyffin {
                 var split = presenter.perimeter.splitWidth(size);
                 presenter.addPresentation(glyff.present(split[0], audience, presenter));
                 presenter.addPresentation(this.present(split[1], audience, presenter));
-            });
+            }, Math.max(this.depth, glyff.depth));
         }
 
         splitHeight<U>(size : number, topGlyff : Glyff<U>) : Glyff<T|U> {
@@ -374,7 +374,7 @@ module Glyffin {
                 var split = presenter.perimeter.splitHeight(size);
                 presenter.addPresentation(topGlyff.present(split[0], audience, presenter));
                 presenter.addPresentation(this.present(split[1], audience, presenter));
-            });
+            }, Math.max(this.depth, topGlyff.depth));
         }
 
         splitHeightYield<U>(size : number, topGlyff : Glyff<U>) : Glyff<U> {
@@ -384,7 +384,7 @@ module Glyffin {
                 presenter.addPresentation(topGlyff.present(split[0], audience, presenter));
                 presenter.addPresentation(this.present(split[1], audience,
                     new NoResultReaction(presenter)));
-            });
+            }, Math.max(this.depth, topGlyff.depth));
         }
 
         splitHeightRetain<U>(size : number, addGlyff : Glyff<U>) : Glyff<T> {
@@ -394,42 +394,41 @@ module Glyffin {
                 presenter.addPresentation(addGlyff.present(split[0], audience,
                     new NoResultReaction(presenter)));
                 presenter.addPresentation(this.present(split[1], audience, presenter));
-            });
+            }, Math.max(this.depth, addGlyff.depth));
         }
 
         over<U>(farGlyph : Glyff<U>, dz ? : number) : Glyff<T|U> {
             var nearGlyff = this;
-            var gap = farGlyph.depth + (1 + (dz ? dz : 0));
+            var gapToNear = farGlyph.depth + (1 + (dz ? dz : 0));
             function onPresent(presenter : Presenter<T|U>) {
                 var audience = presenter.audience;
                 var farPerimeter = presenter.perimeter;
-                var nearPerimeter = farPerimeter.withLevel(farPerimeter.level + gap);
+                var nearPerimeter = farPerimeter.withLevel(farPerimeter.level + gapToNear);
                 presenter.addPresentation(farGlyph.present(farPerimeter, audience, presenter));
                 presenter.addPresentation(nearGlyff.present(nearPerimeter, audience, presenter));
             }
 
-            return Glyff.create(onPresent, gap + nearGlyff.depth);
+            return Glyff.create(onPresent, gapToNear + nearGlyff.depth);
         }
 
         addNearMajor<U>(level : number, nearGlyff : Glyff<U>) : Glyff<U> {
             var farGlyff = this;
-
+            var gapToNear = farGlyff.depth + level;
             function onPresent(presenter : Presenter<U>) {
                 var perimeter = presenter.perimeter;
                 var audience = presenter.audience;
                 presenter.addPresentation(farGlyff.present(perimeter, audience,
                     new NoResultReaction(presenter)));
-                // TODO: Think through relative versus absolute level.
-                var nearPerimeter = perimeter.withLevel(perimeter.level + level);
+                var nearPerimeter = perimeter.addLevel(gapToNear);
                 presenter.addPresentation(nearGlyff.present(nearPerimeter, audience, presenter));
             }
 
-            return Glyff.create(onPresent);
+            return Glyff.create(onPresent, gapToNear + nearGlyff.depth);
         }
 
 
         revealDown<U>(inset : Inset1, revelation : Glyff<U>) : Glyff<T|U> {
-            var gap = revelation.depth + 1;
+            var gapToCover = revelation.depth + 1;
             return Glyff.create<T|U>((presenter : Presenter<T|U>) => {
                 var perimeter = presenter.perimeter;
                 var audience = presenter.audience;
@@ -444,7 +443,7 @@ module Glyffin {
                 function setRevelationHeight(height : number) {
                     revelationHeight = Math.max(0, Math.min(height, maxRevelationHeight));
                     var coverPerimeter = perimeter.downFromTop(revelationHeight, perimeterHeight)
-                        .addLevel(gap);
+                        .addLevel(gapToCover);
                     if (unpresent) {
                         unpresent();
                     }
@@ -462,7 +461,7 @@ module Glyffin {
 
                 var anchorHeight;
                 var zone : Removable;
-                var zonePerimeter = perimeter.addLevel(gap);
+                var zonePerimeter = perimeter.addLevel(gapToCover);
 
                 function setAnchorHeight(height : number) {
                     if (zone) {
@@ -499,7 +498,7 @@ module Glyffin {
                         }
                     }
                 });
-            }, gap + this.depth);
+            }, gapToCover + this.depth);
         }
 
         limitWidth(maxWidth : number, align : number) : Glyff<T> {
@@ -599,11 +598,12 @@ module Glyffin {
 
         clicken<U>(symbol : string, pressed? : Glyff<U>) : Glyff<string> {
             var unpressed = this;
-            var gap = 4;
+            var gapToUnpressed = 4;  // No need to add pressed.depth.  The two are never draw at
+                                     // the same time.
             return Glyff.create<string>((presenter : Presenter<Void>)=> {
                 var audience = presenter.audience;
                 var unpressedPerimeter = presenter.perimeter;
-                var unpressedPerimeter = unpressedPerimeter.addLevel(gap);
+                var unpressedPerimeter = unpressedPerimeter.addLevel(gapToUnpressed);
                 var removable = presenter.addPresentation(unpressed.present(unpressedPerimeter,
                     audience));
                 var zone = audience.addZone(unpressedPerimeter,
@@ -629,17 +629,19 @@ module Glyffin {
                         zone.remove();
                     }
                 });
-            }, gap + unpressed.depth);
+            }, gapToUnpressed + unpressed.depth);
         }
 
         pagen<U>(index : number, next : Glyff<U>, prev : Glyff<U>) : Glyff<string|T> {
+            var gapToCenter = (next ? next.depth + 1 : 0);
+            var gapToLeft = gapToCenter + this.depth + 1;
+            var newDepth = gapToLeft + (prev ? prev.depth : 0);
             return Glyff.create<string|T>((presenter : Presenter<string|T>)=> {
                 var perimeter = presenter.perimeter;
                 var audience = presenter.audience;
                 var current = this;
-                // TODO Determine levels dynamically.
-                var centerPerimeter = perimeter.withLevel(perimeter.level + 4);
-                var leftPerimeter = perimeter.withLevel(perimeter.level + 12);
+                var centerPerimeter = perimeter.addLevel(gapToCenter);
+                var leftPerimeter = perimeter.addLevel(gapToLeft);
                 var noResultReaction = new NoResultReaction(presenter);
 
                 var slideRange = perimeter.right;
@@ -812,7 +814,7 @@ module Glyffin {
                         zone.remove();
                     }
                 });
-            });
+            }, newDepth);
         }
 
         private animateWithPath(path : AnimationPath) {
@@ -862,9 +864,8 @@ module Glyffin {
                         end() {
                             patch.remove();
                         }
-                    }, 0);
-                }
-            );
+                    });
+            }, 0);
         }
 
         static colorAnimation(first : Color, last : Color) : Glyff<Void> {
@@ -882,7 +883,7 @@ module Glyffin {
     }
 
     export var ClearGlyff = Glyff.create<Void>(()=> {
-    });
+    }, 0);
 
     export function colorPath(colorPath : number[], mix? : number,
                               colorPath2? : number[]) : Glyff<Void> {
