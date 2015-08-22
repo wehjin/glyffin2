@@ -7,10 +7,6 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-/// <reference path="webglbook.d.ts" />
-/// <reference path="glyffin.ts" />
-/// <reference path="glyffin-html.ts" />
-/// <reference path="glyffin-touch.ts" />
 var STAGE_SIZE = 256;
 var LIGHT_X = 0;
 var LIGHT_Y = STAGE_SIZE / 2;
@@ -20,14 +16,15 @@ var AUDIENCE_X = 0;
 var AUDIENCE_Y = 0;
 var AUDIENCE_Z = -STAGE_SIZE;
 var AUDIENCE = [AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z, 1.0];
-var SHADOWMAP_RES = 2048;
+var SHADOWMAP_RES = 128;
 var OFFSCREEN_WIDTH = SHADOWMAP_RES, OFFSCREEN_HEIGHT = SHADOWMAP_RES;
 var UP_X = 0;
 var UP_Y = 1;
 var UP_Z = 0;
-var showShadow = false;
+var includeShadow = true;
+var stopAfterShadow = false;
 var redShadow = false;
-var useShadow = true;
+var includeDepth = true;
 var MAX_PATCH_COUNT = 10000;
 var VERTICES_PER_PATCH = 6;
 var MAX_VERTEX_COUNT = MAX_PATCH_COUNT * VERTICES_PER_PATCH;
@@ -154,9 +151,9 @@ var Patches = (function () {
         this.setVertex(0, [left, top, level, color.red, color.green, color.blue, color.alpha]);
         this.setVertex(1, [right, top, level, color.red, color.green, color.blue, color.alpha]);
         this.setVertex(2, [left, bottom, level, color.red, color.green, color.blue, color.alpha]);
-        this.setVertex(3, [left, bottom, level, color.red, color.green, color.blue, color.alpha]);
-        this.setVertex(4, [right, top, level, color.red, color.green, color.blue, color.alpha]);
-        this.setVertex(5, [right, bottom, level, color.red, color.green, color.blue, color.alpha]);
+        this.setVertex(3, [right, top, level, color.red, color.green, color.blue, color.alpha]);
+        this.setVertex(4, [right, bottom, level, color.red, color.green, color.blue, color.alpha]);
+        this.setVertex(5, [left, bottom, level, color.red, color.green, color.blue, color.alpha]);
         this.buffer.set(this.patch, patchIndex * FLOATS_PER_PATCH);
         return patchIndex;
     };
@@ -191,7 +188,7 @@ var Patches = (function () {
 var ShadowProgram = (function () {
     function ShadowProgram(gl, mvpMatrix) {
         this.VSHADER_SOURCE = 'attribute vec4 a_Position;\n' + 'uniform mat4 u_MvpMatrix;\n' + 'void main() {\n' + '  gl_Position = u_MvpMatrix * a_Position;\n' + '}\n';
-        this.FSHADER_SOURCE = '#ifdef GL_ES\n' + 'precision mediump float;\n' + '#endif\n' + 'vec4 pack (float depth) {\n' + '  const vec4 bitShift = vec4(1.0, 256.0, 256.0 * 256.0, 256.0 * 256.0 * 256.0);\n' + '  const vec4 bitMask = vec4(1.0/256.0, 1.0/256.0, 1.0/256.0, 0.0);\n' + '  vec4 rgbaDepth = fract(gl_FragCoord.z * bitShift);\n' + '  rgbaDepth -= rgbaDepth.gbaa * bitMask;\n' + '  return rgbaDepth;\n' + '}\n' + 'void main() {\n' + (showShadow ? '  gl_FragColor = vec4(gl_FragCoord.z,0.0,0.0,1.0);\n' : '  gl_FragColor = pack(gl_FragCoord.z);\n') + '}\n';
+        this.FSHADER_SOURCE = '#ifdef GL_ES\n' + 'precision mediump float;\n' + '#endif\n' + 'vec4 pack (float depth) {\n' + '  const vec4 bitShift = vec4(1.0, 256.0, 256.0 * 256.0, 256.0 * 256.0 * 256.0);\n' + '  const vec4 bitMask = vec4(1.0/256.0, 1.0/256.0, 1.0/256.0, 0.0);\n' + '  vec4 rgbaDepth = fract(gl_FragCoord.z * bitShift);\n' + '  rgbaDepth -= rgbaDepth.gbaa * bitMask;\n' + '  return rgbaDepth;\n' + '}\n' + 'void main() {\n' + (stopAfterShadow ? '  gl_FragColor = vec4(gl_FragCoord.z,0.0,0.0,1.0);\n' : '  gl_FragColor = pack(gl_FragCoord.z);\n') + '}\n';
         var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
         this.glProgram = program;
         this.u_MvpMatrix = gl.getUniformLocation(program, 'u_MvpMatrix');
@@ -249,6 +246,7 @@ var MyRoom = (function () {
         // TODO Respond to size changes.
         this.width = canvas.width = canvas.clientWidth;
         this.height = canvas.height = canvas.clientHeight;
+        this.depthMap = new Uint8Array(this.width * this.height * 4);
         this.perimeter = new Glyffin.Perimeter(0, 0, this.width, this.height, 1, 0, 48, 10, new Glyffin.Palette());
         var maxDimension = Math.max(canvas.width, canvas.height);
         var modelMatrix = new Matrix4();
@@ -284,6 +282,7 @@ var MyRoom = (function () {
         this.gl = gl;
         this.lightProgram = new LightProgram(gl, modelMatrix, mvpMatrix);
         this.shadowProgram = new ShadowProgram(gl, mvpLightMatrix);
+        this.depthProgram = new DepthProgram(gl, modelMatrix, mvpMatrix);
         // Initialize framebuffer object (FBO)
         var fbo = new FrameBuffer(gl);
         if (!fbo.framebuffer) {
@@ -303,8 +302,8 @@ var MyRoom = (function () {
     MyRoom.prototype.redraw = function (vertexCount, vertices) {
         var gl = this.gl;
         gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STREAM_DRAW);
-        if (useShadow) {
-            if (!showShadow) {
+        if (includeShadow) {
+            if (!stopAfterShadow) {
                 gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer.framebuffer);
                 gl.viewport(0, 0, OFFSCREEN_WIDTH, OFFSCREEN_HEIGHT);
             }
@@ -315,18 +314,24 @@ var MyRoom = (function () {
             gl.frontFace(gl.CCW);
             gl.drawArrays(this.gl.TRIANGLES, 0, vertexCount);
         }
-        if (!useShadow || !showShadow) {
-            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-            gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-            gl.clearColor(0.0, 0.0, 0.0, 1.0);
-            gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-            gl.useProgram(this.lightProgram.glProgram);
-            gl.uniform1i(this.lightProgram.u_ShadowMap, 0);
-            gl.uniformMatrix4fv(this.lightProgram.u_MvpMatrixFromLight, false, this.shadowProgram.mvpMatrix.elements);
-            this.lightProgram.enableVertexAttributes(this.gl);
-            gl.frontFace(gl.CW);
-            gl.drawArrays(this.gl.TRIANGLES, 0, vertexCount);
+        if (stopAfterShadow) {
+            return;
         }
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.frontFace(gl.CW);
+        gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+        if (includeDepth) {
+            gl.useProgram(this.depthProgram.glProgram);
+            this.depthProgram.enableVertexAttributes(this.gl);
+            gl.drawArrays(this.gl.LINES, 0, vertexCount / 3);
+        }
+        gl.useProgram(this.lightProgram.glProgram);
+        gl.uniform1i(this.lightProgram.u_ShadowMap, 0);
+        gl.uniformMatrix4fv(this.lightProgram.u_MvpMatrixFromLight, false, this.shadowProgram.mvpMatrix.elements);
+        this.lightProgram.enableVertexAttributes(this.gl);
+        gl.drawArrays(this.gl.TRIANGLES, 0, vertexCount);
     };
     return MyRoom;
 })();
