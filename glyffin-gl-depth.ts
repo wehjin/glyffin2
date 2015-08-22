@@ -28,7 +28,7 @@ class DepthProgram implements Program {
         'varying vec4 v_Color;\n' +
         'const vec4 white = vec4(1,1,1,1);\n' +
         'void main(){\n' +
-        '  gl_FragColor = mix(v_Color, white, 0.9);\n' +
+        '  gl_FragColor = mix(v_Color, white, 1.0);\n' +
         '}\n';
 
     public glProgram : WebGLProgram;
