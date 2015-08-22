@@ -15,7 +15,7 @@ class DepthProgram implements Program {
         'attribute vec4 a_Position;\n' +
         'attribute vec4 a_Color;\n' +
         'varying vec4 v_Color;\n' +
-        'const vec4 offset = vec4(0,.5,.5,0);\n' +
+        'const vec4 offset = vec4(0,1,.5,0);\n' +
         'void main(){\n' +
         '  gl_Position = u_MvpMatrix * a_Position + offset;\n' +
         '  v_Color = a_Color;\n' +
@@ -28,7 +28,7 @@ class DepthProgram implements Program {
         'varying vec4 v_Color;\n' +
         'const vec4 white = vec4(1,1,1,1);\n' +
         'void main(){\n' +
-        '  gl_FragColor = mix(v_Color, white, 0.75);\n' +
+        '  gl_FragColor = mix(v_Color, white, 0.9);\n' +
         '}\n';
 
     public glProgram : WebGLProgram;
