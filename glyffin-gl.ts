@@ -6,6 +6,10 @@
 /// <reference path="glyffin.ts" />
 /// <reference path="glyffin-html.ts" />
 /// <reference path="glyffin-touch.ts" />
+/// <reference path="glyffin-gl-basic.ts" />
+/// <reference path="glyffin-gl-depth.ts" />
+
+import Program = Glu.Program;
 
 var STAGE_SIZE = 256;
 var LIGHT_X = 0;
@@ -16,14 +20,15 @@ var AUDIENCE_X = 0;
 var AUDIENCE_Y = 0;
 var AUDIENCE_Z = -STAGE_SIZE;
 var AUDIENCE = [AUDIENCE_X, AUDIENCE_Y, AUDIENCE_Z, 1.0];
-var SHADOWMAP_RES = 2048;
+var SHADOWMAP_RES = 128;
 var OFFSCREEN_WIDTH = SHADOWMAP_RES, OFFSCREEN_HEIGHT = SHADOWMAP_RES;
 var UP_X = 0;
 var UP_Y = 1;
 var UP_Z = 0;
-var showShadow = false;
+var includeShadow = true;
+var stopAfterShadow = false;
 var redShadow = false;
-var useShadow = true;
+var includeDepth = true;
 
 var MAX_PATCH_COUNT = 10000;
 var VERTICES_PER_PATCH = 6;
@@ -36,10 +41,6 @@ var BYTES_PER_FLOAT = 4;
 var BYTES_BEFORE_COLOR = FLOATS_PER_POSITION * BYTES_PER_FLOAT;
 var BYTES_PER_VERTEX = FLOATS_PER_VERTEX * BYTES_PER_FLOAT;
 var BYTES_PER_PATCH = FLOATS_PER_PATCH * BYTES_PER_FLOAT;
-
-interface Program {
-    glProgram: WebGLProgram;
-}
 
 function enableColorAttributes(program : Program, gl : WebGLRenderingContext) {
     // TODO Take a_Color as parameter.
@@ -183,9 +184,9 @@ class Patches {
         this.setVertex(0, [left, top, level, color.red, color.green, color.blue, color.alpha]);
         this.setVertex(1, [right, top, level, color.red, color.green, color.blue, color.alpha]);
         this.setVertex(2, [left, bottom, level, color.red, color.green, color.blue, color.alpha]);
-        this.setVertex(3, [left, bottom, level, color.red, color.green, color.blue, color.alpha]);
-        this.setVertex(4, [right, top, level, color.red, color.green, color.blue, color.alpha]);
-        this.setVertex(5, [right, bottom, level, color.red, color.green, color.blue, color.alpha]);
+        this.setVertex(3, [right, top, level, color.red, color.green, color.blue, color.alpha]);
+        this.setVertex(4, [right, bottom, level, color.red, color.green, color.blue, color.alpha]);
+        this.setVertex(5, [left, bottom, level, color.red, color.green, color.blue, color.alpha]);
         this.buffer.set(this.patch, patchIndex * FLOATS_PER_PATCH);
         return patchIndex;
     }
@@ -241,7 +242,7 @@ class ShadowProgram implements Program {
         '  return rgbaDepth;\n' +
         '}\n' +
         'void main() {\n' +
-        (showShadow ? '  gl_FragColor = vec4(gl_FragCoord.z,0.0,0.0,1.0);\n' :
+        (stopAfterShadow ? '  gl_FragColor = vec4(gl_FragCoord.z,0.0,0.0,1.0);\n' :
             '  gl_FragColor = pack(gl_FragCoord.z);\n') +
         '}\n';
 
@@ -383,10 +384,12 @@ class MyRoom {
     private gl : WebGLRenderingContext;
     private lightProgram : LightProgram;
     private shadowProgram : ShadowProgram;
+    private depthProgram : DepthProgram;
     private frameBuffer : FrameBuffer;
     width : number;
     height : number;
     perimeter : Glyffin.Perimeter;
+    depthMap : Uint8Array;
 
     constructor(public canvas : HTMLCanvasElement) {
         canvas.style.position = "absolute";
@@ -397,6 +400,7 @@ class MyRoom {
         // TODO Respond to size changes.
         this.width = canvas.width = canvas.clientWidth;
         this.height = canvas.height = canvas.clientHeight;
+        this.depthMap = new Uint8Array(this.width * this.height * 4);
         this.perimeter = new Glyffin.Perimeter(0, 0, this.width, this.height, 1, 0, 48, 10,
             new Glyffin.Palette());
 
@@ -445,6 +449,7 @@ class MyRoom {
 
         this.lightProgram = new LightProgram(gl, modelMatrix, mvpMatrix);
         this.shadowProgram = new ShadowProgram(gl, mvpLightMatrix);
+        this.depthProgram = new DepthProgram(gl, modelMatrix, mvpMatrix);
 
         // Initialize framebuffer object (FBO)
         var fbo = new FrameBuffer(gl);
@@ -469,8 +474,8 @@ class MyRoom {
         var gl = this.gl;
 
         gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STREAM_DRAW);
-        if (useShadow) {
-            if (!showShadow) {
+        if (includeShadow) {
+            if (!stopAfterShadow) {
                 gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer.framebuffer);
                 gl.viewport(0, 0, OFFSCREEN_WIDTH, OFFSCREEN_HEIGHT);
             }
@@ -482,21 +487,27 @@ class MyRoom {
             gl.frontFace(gl.CCW);
             gl.drawArrays(this.gl.TRIANGLES, 0, vertexCount);
         }
-
-        if (!useShadow || !showShadow) {
-            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-            gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-            gl.clearColor(0.0, 0.0, 0.0, 1.0);
-            gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-
-            gl.useProgram(this.lightProgram.glProgram);
-            gl.uniform1i(this.lightProgram.u_ShadowMap, 0);
-            gl.uniformMatrix4fv(this.lightProgram.u_MvpMatrixFromLight, false,
-                this.shadowProgram.mvpMatrix.elements);
-            this.lightProgram.enableVertexAttributes(this.gl);
-            gl.frontFace(gl.CW);
-            gl.drawArrays(this.gl.TRIANGLES, 0, vertexCount);
+        if (stopAfterShadow) {
+            return;
         }
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.frontFace(gl.CW);
+
+        gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+        if (includeDepth) {
+            gl.useProgram(this.depthProgram.glProgram);
+            this.depthProgram.enableVertexAttributes(this.gl);
+            gl.drawArrays(this.gl.LINES, 0, vertexCount / 3);
+        }
+        gl.useProgram(this.lightProgram.glProgram);
+        gl.uniform1i(this.lightProgram.u_ShadowMap, 0);
+        gl.uniformMatrix4fv(this.lightProgram.u_MvpMatrixFromLight, false,
+            this.shadowProgram.mvpMatrix.elements);
+        this.lightProgram.enableVertexAttributes(this.gl);
+        gl.drawArrays(this.gl.TRIANGLES, 0, vertexCount);
     }
 }
 
