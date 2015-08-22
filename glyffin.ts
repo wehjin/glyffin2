@@ -267,6 +267,9 @@ module Glyffin {
     }
 
     export class Glyff<T> {
+
+        depth : number = 0;
+
         constructor(private onPresent : OnPresent<T>) {
         }
 
@@ -394,16 +397,18 @@ module Glyffin {
 
         over<U>(farGlyph : Glyff<U>, dz ? : number) : Glyff<T|U> {
             var nearGlyff = this;
-
+            var gap = farGlyph.depth + (1 + (dz ? dz : 0));
             function onPresent(presenter : Presenter<T|U>) {
                 var audience = presenter.audience;
                 var farPerimeter = presenter.perimeter;
-                var nearPerimeter = farPerimeter.withLevel(farPerimeter.level + 1 + (dz ? dz : 0));
+                var nearPerimeter = farPerimeter.withLevel(farPerimeter.level + gap);
                 presenter.addPresentation(farGlyph.present(farPerimeter, audience, presenter));
                 presenter.addPresentation(nearGlyff.present(nearPerimeter, audience, presenter));
             }
 
-            return Glyff.create(onPresent);
+            var glyff = Glyff.create(onPresent);
+            glyff.depth = gap + nearGlyff.depth;
+            return glyff;
         }
 
         addNearMajor<U>(level : number, nearGlyff : Glyff<U>) : Glyff<U> {

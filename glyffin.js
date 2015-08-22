@@ -211,6 +211,7 @@ var Glyffin;
     var Glyff = (function () {
         function Glyff(onPresent) {
             this.onPresent = onPresent;
+            this.depth = 0;
         }
         Glyff.create = function (onPresent) {
             return new Glyff(onPresent);
@@ -323,14 +324,17 @@ var Glyffin;
         };
         Glyff.prototype.over = function (farGlyph, dz) {
             var nearGlyff = this;
+            var gap = farGlyph.depth + (1 + (dz ? dz : 0));
             function onPresent(presenter) {
                 var audience = presenter.audience;
                 var farPerimeter = presenter.perimeter;
-                var nearPerimeter = farPerimeter.withLevel(farPerimeter.level + 1 + (dz ? dz : 0));
+                var nearPerimeter = farPerimeter.withLevel(farPerimeter.level + gap);
                 presenter.addPresentation(farGlyph.present(farPerimeter, audience, presenter));
                 presenter.addPresentation(nearGlyff.present(nearPerimeter, audience, presenter));
             }
-            return Glyff.create(onPresent);
+            var glyff = Glyff.create(onPresent);
+            glyff.depth = gap + nearGlyff.depth;
+            return glyff;
         };
         Glyff.prototype.addNearMajor = function (level, nearGlyff) {
             var farGlyff = this;
