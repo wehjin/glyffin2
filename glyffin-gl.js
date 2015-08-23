@@ -524,6 +524,7 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
         function GlHall(canvas) {
             this.canvas = canvas;
             this.audiences = [];
+            console.log("Hey");
         }
         GlHall.prototype.present = function (glyff, onResult, onError) {
             var previousAudience = this.audiences.length == 0 ? null : this.audiences[this.audiences.length - 1];
