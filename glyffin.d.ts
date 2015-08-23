@@ -260,6 +260,9 @@ export declare class Glyff<T> {
     static divideWidth<T>(glyffs: Glyff<T>[], inset?: Inset1, gapGlyff?: Glyff<any>): Glyff<T>;
     static divideHeight<T>(glyffs: Glyff<T>[], inset?: Inset1, gapGlyff?: Glyff<any>): Glyff<T>;
 }
+export interface Hall {
+    present<U>(glyff: Glyff<U>, onResult?: OnResult<U>, onError?: OnError): Presentation;
+}
 export declare var ClearGlyff: Glyff<Void>;
 export declare function colorPath(colorPath: number[], mix?: number, colorPath2?: number[]): Glyff<Void>;
 export declare var RedGlyff: Glyff<Void>;

@@ -1554,6 +1554,10 @@ export class Glyff<T> {
     }
 }
 
+export interface Hall {
+    present<U>(glyff : Glyff<U>, onResult? : OnResult<U>, onError? : OnError): Presentation;
+}
+
 export var ClearGlyff = Glyff.create<Void>(()=> {
 }, 0);
 
