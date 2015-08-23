@@ -1284,6 +1284,34 @@ define(["require", "exports"], function (require, exports) {
                 }
             }, depth);
         };
+        Glyff.divideHeight = function (glyffs, inset, gapGlyff) {
+            var depth = gapGlyff ? gapGlyff.depth : 0;
+            for (var i = 0; i < glyffs.length; i++) {
+                var glyff = glyffs[i];
+                depth = Math.max(depth, glyff.depth);
+            }
+            return Glyff.create(function (presenter) {
+                var audience = presenter.audience;
+                var perimeter = presenter.perimeter;
+                var gapReaction = (gapGlyff ? new NoResultReaction(presenter) : null);
+                var sectionHeight = perimeter.getHeight() / glyffs.length;
+                var gapHeight = (inset ? inset.getPixels(sectionHeight) : 0);
+                var glyffHeight = sectionHeight - gapHeight + gapHeight / glyffs.length;
+                var stride = glyffHeight + gapHeight;
+                var left = perimeter.left, right = perimeter.right, top = perimeter.top;
+                for (var i = 0; i < glyffs.length; i++) {
+                    var glyff = glyffs[i];
+                    var bottom = top + glyffHeight;
+                    var glyffPerimeter = perimeter.at(left, top, right, bottom);
+                    presenter.addPresentation(glyff.present(glyffPerimeter, audience, presenter));
+                    if ((i + 1) < glyffs.length && gapGlyff) {
+                        var gapPerimeter = perimeter.at(left, bottom, right, bottom + gapHeight);
+                        presenter.addPresentation(gapGlyff.present(gapPerimeter, audience, gapReaction));
+                    }
+                    top += stride;
+                }
+            }, depth);
+        };
         return Glyff;
     })();
     exports.Glyff = Glyff;
@@ -1303,10 +1331,14 @@ define(["require", "exports"], function (require, exports) {
     }
     exports.colorPath = colorPath;
     exports.RedGlyff = Glyff.color(Color.RED);
+    exports.YellowGlyff = Glyff.color(Color.YELLOW);
     exports.GreenGlyff = Glyff.color(Color.GREEN);
+    exports.CyanGlyff = Glyff.color(Color.CYAN);
     exports.BlueGlyff = Glyff.color(Color.BLUE);
-    exports.BeigeGlyff = Glyff.color(Color.BEIGE);
+    exports.MagentaGlyff = Glyff.color(Color.MAGENTA);
     exports.WhiteGlyff = Glyff.color(Color.WHITE);
     exports.BlackGlyff = Glyff.color(Color.BLACK);
+    exports.GrayGlyff = Glyff.color(Color.GRAY);
+    exports.BeigeGlyff = Glyff.color(Color.BEIGE);
 });
 //# sourceMappingURL=glyffin.js.map

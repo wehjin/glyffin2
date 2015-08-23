@@ -1521,6 +1521,37 @@ export class Glyff<T> {
             }
         }, depth)
     }
+
+    static divideHeight<T>(glyffs : Glyff<T>[], inset? : Inset1,
+                           gapGlyff? : Glyff<any>) : Glyff<T> {
+        var depth = gapGlyff ? gapGlyff.depth : 0;
+        for (var i = 0; i < glyffs.length; i++) {
+            var glyff = glyffs[i];
+            depth = Math.max(depth, glyff.depth);
+        }
+        return Glyff.create((presenter : Presenter<T>)=> {
+            var audience = presenter.audience;
+            var perimeter = presenter.perimeter;
+            var gapReaction = (gapGlyff ? new NoResultReaction<any,T>(presenter) : <Reaction<any>>null);
+            var sectionHeight = perimeter.getHeight() / glyffs.length;
+            var gapHeight = (inset ? inset.getPixels(sectionHeight) : 0);
+            var glyffHeight = sectionHeight - gapHeight + gapHeight / glyffs.length;
+            var stride = glyffHeight + gapHeight;
+            var left = perimeter.left, right = perimeter.right, top = perimeter.top;
+            for (var i = 0; i < glyffs.length; i++) {
+                var glyff = glyffs[i];
+                var bottom = top + glyffHeight;
+                var glyffPerimeter = perimeter.at(left, top, right, bottom);
+                presenter.addPresentation(glyff.present(glyffPerimeter, audience, presenter));
+                if ((i + 1) < glyffs.length && gapGlyff) {
+                    var gapPerimeter = perimeter.at(left, bottom, right, bottom + gapHeight);
+                    presenter.addPresentation(gapGlyff.present(gapPerimeter, audience,
+                        gapReaction));
+                }
+                top += stride;
+            }
+        }, depth)
+    }
 }
 
 export var ClearGlyff = Glyff.create<Void>(()=> {
@@ -1541,8 +1572,13 @@ export function colorPath(colorPath : number[], mix? : number,
 }
 
 export var RedGlyff = Glyff.color(Color.RED);
+export var YellowGlyff = Glyff.color(Color.YELLOW);
 export var GreenGlyff = Glyff.color(Color.GREEN);
+export var CyanGlyff = Glyff.color(Color.CYAN);
 export var BlueGlyff = Glyff.color(Color.BLUE);
-export var BeigeGlyff = Glyff.color(Color.BEIGE);
+export var MagentaGlyff = Glyff.color(Color.MAGENTA);
 export var WhiteGlyff = Glyff.color(Color.WHITE);
 export var BlackGlyff = Glyff.color(Color.BLACK);
+export var GrayGlyff = Glyff.color(Color.GRAY);
+export var BeigeGlyff = Glyff.color(Color.BEIGE);
+

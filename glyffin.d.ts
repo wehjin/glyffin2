@@ -258,12 +258,17 @@ export declare class Glyff<T> {
     static color(color: Color): Glyff<Void>;
     static colorAnimation(first: Color, last: Color): Glyff<Void>;
     static divideWidth<T>(glyffs: Glyff<T>[], inset?: Inset1, gapGlyff?: Glyff<any>): Glyff<T>;
+    static divideHeight<T>(glyffs: Glyff<T>[], inset?: Inset1, gapGlyff?: Glyff<any>): Glyff<T>;
 }
 export declare var ClearGlyff: Glyff<Void>;
 export declare function colorPath(colorPath: number[], mix?: number, colorPath2?: number[]): Glyff<Void>;
 export declare var RedGlyff: Glyff<Void>;
+export declare var YellowGlyff: Glyff<Void>;
 export declare var GreenGlyff: Glyff<Void>;
+export declare var CyanGlyff: Glyff<Void>;
 export declare var BlueGlyff: Glyff<Void>;
-export declare var BeigeGlyff: Glyff<Void>;
+export declare var MagentaGlyff: Glyff<Void>;
 export declare var WhiteGlyff: Glyff<Void>;
 export declare var BlackGlyff: Glyff<Void>;
+export declare var GrayGlyff: Glyff<Void>;
+export declare var BeigeGlyff: Glyff<Void>;
