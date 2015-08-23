@@ -168,6 +168,9 @@ define(["require", "exports"], function (require, exports) {
         Color.prototype.lighten = function (mix) {
             return this.mix(mix, Color.WHITE);
         };
+        Color.prototype.neutralize = function (mix) {
+            return this.mix(mix, Color.GRAY);
+        };
         Color.WHITE = new Color(1, 1, 1, 1);
         Color.BLACK = new Color(0, 0, 0, 1);
         Color.RED = new Color(1, 0, 0, 1);

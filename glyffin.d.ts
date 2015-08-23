@@ -78,6 +78,7 @@ export declare class Color {
     mix(mix: number, endColor: Color): Color;
     darken(mix: number): Color;
     lighten(mix: number): Color;
+    neutralize(mix: number): Color;
 }
 export declare class Palette {
     private colors;
