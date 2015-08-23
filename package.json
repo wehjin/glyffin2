@@ -3,11 +3,11 @@
   "version": "0.0.1",
   "description": "Draw rectangles on a screen",
   "jam": {
-    "main": "glyffin.js"
+    "main": "src/glyffin-all.js"
   },
   "jspm": {
     "format": "amd",
-    "main": "glyffin"
+    "main": "src/glyffin-all"
   },
   "licenses": [
     {
