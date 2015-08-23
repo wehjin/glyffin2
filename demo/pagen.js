@@ -1,18 +1,11 @@
 /**
  * Created by wehjin on 5/24/15.
  */
-/// <reference path="../webglbook.d.ts" />
-/// <reference path="../glyffin.ts" />
-/// <reference path="../glyffin-ascii.ts" />
-/// <reference path="../glyffin-gl.ts" />
-/// <reference path="../glyffin-touch.ts" />
-/// <reference path="../rx.ts" />
-var Void = Glyffin.Void;
-var Glyff = Glyffin.Glyff;
-var Color = Glyffin.Color;
-function main() {
-    var room = new Glyffin.GlRoom(document.getElementById('webgl'));
-    var glAudience = new Glyffin.GlAudience(room);
+define(["require", "exports", "../glyffin", "../glyffin-gl"], function (require, exports, Glyffin, GlyffinGl) {
+    var Glyff = Glyffin.Glyff;
+    var Color = Glyffin.Color;
+    var room = new GlyffinGl.GlRoom(document.getElementById('webgl'));
+    var glAudience = new GlyffinGl.GlAudience(room);
     var backColors = [Color.RED, Color.GREEN, Color.BLUE];
     var pageGlyffs = [];
     backColors.forEach(function (color) {
@@ -59,5 +52,5 @@ function main() {
         });
     }
     refresh();
-}
+});
 //# sourceMappingURL=pagen.js.map

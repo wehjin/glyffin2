@@ -1,24 +1,17 @@
 /**
  * Created by wehjin on 5/24/15.
  */
-/// <reference path="../webglbook.d.ts" />
-/// <reference path="../glyffin.ts" />
-/// <reference path="../glyffin-ascii.ts" />
-/// <reference path="../glyffin-gl.ts" />
-/// <reference path="../glyffin-touch.ts" />
-var Insertion = Glyffin.Insertion;
-var Glyff = Glyffin.Glyff;
-var Void = Glyffin.Void;
-var Color = Glyffin.Color;
-function main() {
-    var room = new Glyffin.GlRoom(document.getElementById('webgl'));
-    var audience = new Glyffin.GlAudience(room);
+define(["require", "exports", "../glyffin", "../glyffin-gl", "../glyffin-ascii"], function (require, exports, Glyffin, GlyffinGl, GlyffinText) {
+    var Glyff = Glyffin.Glyff;
+    var Color = Glyffin.Color;
+    var room = new GlyffinGl.GlRoom(document.getElementById('webgl'));
+    var audience = new GlyffinGl.GlAudience(room);
     var perimeter = room.perimeter;
     var covers = [Glyffin.RedGlyff, Glyffin.GreenGlyff];
     var coverIndex = 0;
     var margin = perimeter.readHeight;
     var makeButton = function (label, ink, back) {
-        var text = Glyffin.asciiEntireWord(label, ink).pad2(new Glyffin.Inset2(0, margin, .25, 0));
+        var text = GlyffinText.asciiEntireWord(label, ink).pad2(new Glyffin.Inset2(0, margin, .25, 0));
         var unpressed = back.addNearMajor(1, text);
         var pressed = Glyffin.BlackGlyff.addNearMajor(1, text);
         return unpressed.clicken("click", pressed);
@@ -42,5 +35,5 @@ function main() {
         });
     }
     represent();
-}
+});
 //# sourceMappingURL=isolate.js.map

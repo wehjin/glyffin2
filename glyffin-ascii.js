@@ -1,9 +1,10 @@
 /**
  * Created by wehjin on 5/24/15.
  */
-/// <reference path="glyffin.ts" />
-var Glyffin;
-(function (Glyffin) {
+define(["require", "exports", "./glyffin"], function (require, exports, Glyffin) {
+    var Glyff = Glyffin.Glyff;
+    var Insertion = Glyffin.Insertion;
+    var ClearGlyff = Glyffin.ClearGlyff;
     // TODO: Add horizontal alignment
     var LineContent = (function () {
         function LineContent(weight, text) {
@@ -45,7 +46,7 @@ var Glyffin;
         var xWeight = getCharXWeight(code);
         return (base ? base : Glyffin.BeigeGlyff).kaleid(xWeight, 7, spots);
     }
-    Glyffin.asciiByCode = asciiByCode;
+    exports.asciiByCode = asciiByCode;
     function asciiMultiLine(lines, paragraph, base) {
         return Glyffin.Glyff.create(function (presenter) {
             var perimeter = presenter.perimeter;
@@ -91,10 +92,10 @@ var Glyffin;
             });
         }, 0);
     }
-    Glyffin.asciiMultiLine = asciiMultiLine;
+    exports.asciiMultiLine = asciiMultiLine;
     function asciiEntireWord(word, ink) {
         var wordXWeight = getWordXWeight(word);
-        return Glyffin.Glyff.create(function (presenter) {
+        return Glyff.create(function (presenter) {
             var perimeter = presenter.perimeter;
             var audience = presenter.audience;
             var wordXWeightPixels = perimeter.getWidth() / wordXWeight;
@@ -103,24 +104,24 @@ var Glyffin;
             presenter.addPresentation(asciiWord(word, fittedWeightPixels, ink).present(perimeter, audience, presenter));
         }, 0);
     }
-    Glyffin.asciiEntireWord = asciiEntireWord;
+    exports.asciiEntireWord = asciiEntireWord;
     function asciiWord(word, xWeightPixels, base) {
         var insertions = [];
         for (var i = 0; i < word.length; i++) {
             var code = word.charCodeAt(i);
             var charWidth = xWeightPixels * getCharXWeight(code);
             if (i > 0) {
-                insertions.push(new Glyffin.Insertion(xWeightPixels, Glyffin.ClearGlyff));
+                insertions.push(new Insertion(xWeightPixels, Glyffin.ClearGlyff));
             }
-            insertions.push(new Glyffin.Insertion(charWidth, Glyffin.asciiByCode(code, base)));
+            insertions.push(new Insertion(charWidth, asciiByCode(code, base)));
         }
-        return Glyffin.ClearGlyff.addLefts(insertions);
+        return ClearGlyff.addLefts(insertions);
     }
-    Glyffin.asciiWord = asciiWord;
+    exports.asciiWord = asciiWord;
     function asciiChar(ch, base) {
         return asciiByCode(ch.charCodeAt(0), base);
     }
-    Glyffin.asciiChar = asciiChar;
+    exports.asciiChar = asciiChar;
     var no_spots = [];
     var A_spots = [
         [1, 0],
@@ -1594,5 +1595,5 @@ var Glyffin;
         5,
     ];
     var spaceWeight = getWordXWeight(' ');
-})(Glyffin || (Glyffin = {}));
+});
 //# sourceMappingURL=glyffin-ascii.js.map

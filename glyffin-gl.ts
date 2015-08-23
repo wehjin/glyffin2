@@ -3,13 +3,16 @@
  */
 
 /// <reference path="webglbook.d.ts" />
-/// <reference path="glyffin.ts" />
-/// <reference path="glyffin-html.ts" />
-/// <reference path="glyffin-touch.ts" />
-/// <reference path="glyffin-gl-basic.ts" />
-/// <reference path="glyffin-gl-depth.ts" />
 
-import Program = Glu.Program;
+import Glyffin = require("./glyffin");
+import GlyffinHtml = require("./glyffin-html");
+import GlyffinTouch = require("./glyffin-touch");
+
+import Interactive = GlyffinTouch.Interactive;
+import SpotObservable = GlyffinHtml.SpotObservable;
+import Spot = Glyffin.Spot;
+import Gesturing = Glyffin.Gesturing;
+import GestureStatus = Glyffin.GestureStatus;
 
 var STAGE_SIZE = 256;
 var LIGHT_X = 0;
@@ -41,6 +44,10 @@ var BYTES_PER_FLOAT = 4;
 var BYTES_BEFORE_COLOR = FLOATS_PER_POSITION * BYTES_PER_FLOAT;
 var BYTES_PER_VERTEX = FLOATS_PER_VERTEX * BYTES_PER_FLOAT;
 var BYTES_PER_PATCH = FLOATS_PER_PATCH * BYTES_PER_FLOAT;
+
+interface Program {
+    glProgram: WebGLProgram;
+}
 
 function enableColorAttributes(program : Program, gl : WebGLRenderingContext) {
     // TODO Take a_Color as parameter.
@@ -379,6 +386,68 @@ class LightProgram implements Program {
     }
 }
 
+class DepthProgram implements Program {
+    private VSHADER_SOURCE : string =
+        'uniform mat4 u_MvpMatrix;\n' +
+        'attribute vec4 a_Position;\n' +
+        'attribute vec4 a_Color;\n' +
+        'varying vec4 v_Color;\n' +
+        'const vec4 offset = vec4(0,0.5,.5,0);\n' +
+        'void main(){\n' +
+        '  gl_Position = u_MvpMatrix * a_Position + offset;\n' +
+        '  v_Color = a_Color;\n' +
+        '}\n';
+
+    private FSHADER_SOURCE : string =
+        '#ifdef GL_ES\n' +
+        'precision mediump float;\n' +
+        '#endif\n' +
+        'varying vec4 v_Color;\n' +
+        'const vec4 white = vec4(1,1,1,1);\n' +
+        'void main(){\n' +
+        '  gl_FragColor = mix(v_Color, white, 0.85);\n' +
+        '}\n';
+
+    public glProgram : WebGLProgram;
+    private u_MvpMatrix : WebGLUniformLocation;
+    private a_Position : number;
+    private a_Color : number;
+
+    constructor(private gl : WebGLRenderingContext, modelMatrix : Matrix4, mvpMatrix : Matrix4) {
+        gl.lineWidth(2.0);
+        var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
+        this.glProgram = program;
+
+        this.u_MvpMatrix = this.getUniformLocation('u_MvpMatrix');
+        this.a_Position = gl.getAttribLocation(program, 'a_Position');
+        this.a_Color = gl.getAttribLocation(program, 'a_Color');
+
+        gl.useProgram(program);
+        gl.uniformMatrix4fv(this.u_MvpMatrix, false, mvpMatrix.elements);
+    }
+
+    public getUniformLocation(name : string) : WebGLUniformLocation {
+        var uniformLocation = this.gl.getUniformLocation(this.glProgram, name);
+        if (!uniformLocation) {
+            console.log('Failed to get uniform storage location: ' + name);
+        }
+        return uniformLocation;
+    }
+
+    public enableVertexAttributes(gl : WebGLRenderingContext) {
+        var stride = BYTES_PER_VERTEX * 3;
+
+        var a_Position = this.a_Position;
+        gl.vertexAttribPointer(a_Position, FLOATS_PER_POSITION, gl.FLOAT, false, stride, 0);
+        gl.enableVertexAttribArray(a_Position);
+
+        var a_Color = this.a_Color;
+        gl.vertexAttribPointer(a_Color, FLOATS_PER_COLOR, gl.FLOAT, false, stride,
+            BYTES_BEFORE_COLOR);
+        gl.enableVertexAttribArray(a_Color);
+    }
+}
+
 class MyRoom {
 
     private gl : WebGLRenderingContext;
@@ -511,202 +580,201 @@ class MyRoom {
     }
 }
 
-module Glyffin {
+export class GlRoom extends MyRoom {
+}
 
-    export class GlRoom extends MyRoom {
+export class GlAudience implements Glyffin.Audience {
+    private vertices : Patches;
+    private interactives : Interactive[] = [];
+    private drawCount : number = 0;
+    private editCount : number = 0;
+    private unsubscribeSpots : ()=>void;
+    private redrawTime;
+
+    constructor(private room : GlRoom) {
+        this.vertices = new Patches();
+        this.beginGestures(room.canvas);
     }
 
-    export class GlAudience implements Audience {
-        private vertices : Patches;
-        private interactives : Interactive[] = [];
-        private drawCount : number = 0;
-        private editCount : number = 0;
-        private unsubscribeSpots : ()=>void;
-        private redrawTime;
-
-        constructor(private room : GlRoom) {
-            this.vertices = new Patches();
-            this.beginGestures(room.canvas);
+    beginGestures(element : HTMLElement) {
+        if (this.unsubscribeSpots) {
+            this.unsubscribeSpots();
         }
 
-        beginGestures(element : HTMLElement) {
-            if (this.unsubscribeSpots) {
-                this.unsubscribeSpots();
-            }
-
-            var gesturings : Gesturing[] = [];
-            this.unsubscribeSpots = new SpotObservable(element).subscribe({
-                onStart: (spot : Spot) : boolean => {
-                    console.log("Interactives:", this.interactives);
-                    var hits = Interactive.findHits(this.interactives, spot.x, spot.y);
-                    if (hits.length < 1) {
-                        return false;
-                    }
-                    console.log("Hits:", hits);
-
-                    gesturings = [];
-                    hits.forEach((hit : Interactive)=> {
-                        var gesturing = hit.touchProvider.init(spot);
-                        if (!gesturing) {
-                            return;
-                        }
-                        gesturings.push(gesturing);
-                    });
-                    return gesturings.length != 0;
-                },
-                onMove: (spot : Spot) : boolean=> {
-                    var shouldDrain : boolean = false;
-                    for (var i = 0, count = gesturings.length; i < count; i++) {
-                        var gesturing : Gesturing = gesturings[i];
-                        if (gesturing.isDrained()) {
-                            continue;
-                        }
-                        if (shouldDrain) {
-                            gesturing.cancel();
-                            continue;
-                        }
-                        var status = gesturing.move(spot);
-                        if (status === GestureStatus.SUPERCHARGED) {
-                            shouldDrain = true;
-                        }
-                    }
-                    return true;
-                },
-                onCancel: ()=> {
-                    for (var i = 0, count = gesturings.length; i < count; i++) {
-                        var gesturing : Gesturing = gesturings[i];
-                        if (gesturing.isDrained()) {
-                            continue;
-                        }
-                        gesturing.cancel();
-                    }
-                    this.beginGestures(element);
-                },
-                onEnd: ()=> {
-                    var powered : Gesturing;
-                    for (var i = 0, count = gesturings.length; i < count; i++) {
-                        var gesturing : Gesturing = gesturings[i];
-                        if (gesturing.isDrained()) {
-                            continue;
-                        }
-                        if (powered) {
-                            gesturing.cancel();
-                            continue;
-                        }
-                        if (gesturing.isPowered()) {
-                            powered = gesturing;
-                        } else {
-                            gesturing.cancel();
-                        }
-                    }
-                    if (powered) {
-                        powered.release();
-                    }
-                    this.beginGestures(element);
+        var gesturings : Glyffin.Gesturing[] = [];
+        this.unsubscribeSpots = new SpotObservable(element).subscribe({
+            onStart: (spot : Spot) : boolean => {
+                console.log("Interactives:", this.interactives);
+                var hits = Interactive.findHits(this.interactives, spot.x, spot.y);
+                if (hits.length < 1) {
+                    return false;
                 }
-            });
-        }
+                console.log("Hits:", hits);
 
-        scheduleRedraw() {
-            if (this.editCount > this.drawCount) {
-                return;
-            }
-            this.editCount++;
-            requestAnimationFrame(()=> {
-                this.clearAndRedraw();
-            });
-        }
-
-        clearAndRedraw() {
-            this.vertices.clearFreedPatches(this.room);
-            this.room.redraw(MAX_VERTEX_COUNT, this.vertices.buffer);
-            this.drawCount = this.editCount;
-            this.redrawTime = Date.now();
-            /*
-             console.log("Active %i, Free %i, TotalFreed %",
-             this.vertices.getActiveVertexCount(),
-             this.vertices.getFreeVertexCount(), this.vertices.getTotalFreedVertices());
-             */
-        }
-
-        addPatch(bounds : Perimeter, color : Color) : Patch {
-            if (bounds.left >= bounds.right || bounds.top >= bounds.bottom || color.alpha == 0) {
-                return EMPTY_PATCH;
-            }
-
-            var patch = this.vertices.getPatch(bounds.left, bounds.top, bounds.right,
-                bounds.bottom, bounds.level, color, this.room);
-            this.scheduleRedraw();
-            return <Patch>{
-                remove: ()=> {
-                    this.vertices.putPatch(patch);
-                }
-            };
-        }
-
-        addZone(bounds : Glyffin.Perimeter,
-                touchProvider : Glyffin.Gesturable) : Glyffin.Zone {
-            var interactive = new Interactive(bounds, touchProvider);
-            this.interactives.push(interactive);
-            var interactives = this.interactives;
-            return {
-                remove: ()=> {
-                    interactives.splice(interactives.indexOf(interactive), 1);
-                }
-            };
-        }
-
-        present<U>(glyff : Glyff<U>, reactionOrOnResult : Reaction<U>|OnResult<U>,
-                   onError : OnError) : Presentation {
-            return EMPTY_PRESENTATION;
-        }
-    }
-
-    export class GlHall implements Hall {
-
-        audience : GlAudience;
-        audiences : GlAudience[] = [];
-
-        constructor(private canvas : HTMLCanvasElement) {
-        }
-
-
-        present<U>(glyff : Glyff<U>, onResult? : OnResult<U>, onError? : OnError) : Presentation {
-            var previousAudience : GlAudience = this.audiences.length == 0 ?
-                null : this.audiences[this.audiences.length - 1];
-            /*
-            var nextCanvas = previousAudience ? this.createCanvas(previousAudience.canvas) : this.canvas;
-
-            var nextAudience = new GlAudience(nextCanvas);
-            this.audiences.push(nextAudience);
-            this.audience = nextAudience;
-            return {
-                end: ()=> {
-                    var index = this.audiences.indexOf(nextAudience);
-                    if (index < 0) {
+                gesturings = [];
+                hits.forEach((hit : Interactive)=> {
+                    var gesturing = hit.touchProvider.init(spot);
+                    if (!gesturing) {
                         return;
                     }
-                    var laterAudiences : GlAudience[] = this.audiences.slice(index);
-                    this.audiences.length = index;
-                    this.audience = this.audience[index - 1];
-                    for (var i = 0, count = laterAudiences.length; i < count; i++) {
-                        laterAudiences[i].disperse();
+                    gesturings.push(gesturing);
+                });
+                return gesturings.length != 0;
+            },
+            onMove: (spot : Spot) : boolean=> {
+                var shouldDrain : boolean = false;
+                for (var i = 0, count = gesturings.length; i < count; i++) {
+                    var gesturing : Gesturing = gesturings[i];
+                    if (gesturing.isDrained()) {
+                        continue;
                     }
-                    this.audience.engage()
+                    if (shouldDrain) {
+                        gesturing.cancel();
+                        continue;
+                    }
+                    var status = gesturing.move(spot);
+                    if (status === GestureStatus.SUPERCHARGED) {
+                        shouldDrain = true;
+                    }
                 }
-            };
-             */
-            return null;
+                return true;
+            },
+            onCancel: ()=> {
+                for (var i = 0, count = gesturings.length; i < count; i++) {
+                    var gesturing : Gesturing = gesturings[i];
+                    if (gesturing.isDrained()) {
+                        continue;
+                    }
+                    gesturing.cancel();
+                }
+                this.beginGestures(element);
+            },
+            onEnd: ()=> {
+                var powered : Gesturing;
+                for (var i = 0, count = gesturings.length; i < count; i++) {
+                    var gesturing : Gesturing = gesturings[i];
+                    if (gesturing.isDrained()) {
+                        continue;
+                    }
+                    if (powered) {
+                        gesturing.cancel();
+                        continue;
+                    }
+                    if (gesturing.isPowered()) {
+                        powered = gesturing;
+                    } else {
+                        gesturing.cancel();
+                    }
+                }
+                if (powered) {
+                    powered.release();
+                }
+                this.beginGestures(element);
+            }
+        });
+    }
+
+    scheduleRedraw() {
+        if (this.editCount > this.drawCount) {
+            return;
+        }
+        this.editCount++;
+        requestAnimationFrame(()=> {
+            this.clearAndRedraw();
+        });
+    }
+
+    clearAndRedraw() {
+        this.vertices.clearFreedPatches(this.room);
+        this.room.redraw(MAX_VERTEX_COUNT, this.vertices.buffer);
+        this.drawCount = this.editCount;
+        this.redrawTime = Date.now();
+        /*
+         console.log("Active %i, Free %i, TotalFreed %",
+         this.vertices.getActiveVertexCount(),
+         this.vertices.getFreeVertexCount(), this.vertices.getTotalFreedVertices());
+         */
+    }
+
+    addPatch(bounds : Glyffin.Perimeter, color : Glyffin.Color) : Glyffin.Patch {
+        if (bounds.left >= bounds.right || bounds.top >= bounds.bottom || color.alpha == 0) {
+            return Glyffin.EMPTY_PATCH;
         }
 
-        private createCanvas(previousCanvas : HTMLCanvasElement) : HTMLCanvasElement {
-            var nextCanvas = new HTMLCanvasElement();
-            if (previousCanvas) {
-                nextCanvas.width = previousCanvas.width;
-                nextCanvas.height = previousCanvas.height;
-            } else {
+        var patch = this.vertices.getPatch(bounds.left, bounds.top, bounds.right,
+            bounds.bottom, bounds.level, color, this.room);
+        this.scheduleRedraw();
+        return <Glyffin.Patch>{
+            remove: ()=> {
+                this.vertices.putPatch(patch);
             }
-            return nextCanvas;
+        };
+    }
+
+    addZone(bounds : Glyffin.Perimeter,
+            touchProvider : Glyffin.Gesturable) : Glyffin.Zone {
+        var interactive = new Interactive(bounds, touchProvider);
+        this.interactives.push(interactive);
+        var interactives = this.interactives;
+        return {
+            remove: ()=> {
+                interactives.splice(interactives.indexOf(interactive), 1);
+            }
+        };
+    }
+
+    present<U>(glyff : Glyffin.Glyff<U>,
+               reactionOrOnResult : Glyffin.Reaction<U>|Glyffin.OnResult<U>,
+               onError : Glyffin.OnError) : Glyffin.Presentation {
+        return Glyffin.EMPTY_PRESENTATION;
+    }
+}
+
+export class GlHall implements Glyffin.Hall {
+
+    audience : GlAudience;
+    audiences : GlAudience[] = [];
+
+    constructor(private canvas : HTMLCanvasElement) {
+    }
+
+
+    present<U>(glyff : Glyffin.Glyff<U>, onResult? : Glyffin.OnResult<U>,
+               onError? : Glyffin.OnError) : Glyffin.Presentation {
+        var previousAudience : GlAudience = this.audiences.length == 0 ?
+            null : this.audiences[this.audiences.length - 1];
+        /*
+         var nextCanvas = previousAudience ? this.createCanvas(previousAudience.canvas) : this.canvas;
+
+         var nextAudience = new GlAudience(nextCanvas);
+         this.audiences.push(nextAudience);
+         this.audience = nextAudience;
+         return {
+         end: ()=> {
+         var index = this.audiences.indexOf(nextAudience);
+         if (index < 0) {
+         return;
+         }
+         var laterAudiences : GlAudience[] = this.audiences.slice(index);
+         this.audiences.length = index;
+         this.audience = this.audience[index - 1];
+         for (var i = 0, count = laterAudiences.length; i < count; i++) {
+         laterAudiences[i].disperse();
+         }
+         this.audience.engage()
+         }
+         };
+         */
+        return null;
+    }
+
+    private createCanvas(previousCanvas : HTMLCanvasElement) : HTMLCanvasElement {
+        var nextCanvas = new HTMLCanvasElement();
+        if (previousCanvas) {
+            nextCanvas.width = previousCanvas.width;
+            nextCanvas.height = previousCanvas.height;
+        } else {
         }
+        return nextCanvas;
     }
 }

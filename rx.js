@@ -2,8 +2,7 @@
  * @author  wehjin
  * @since   6/21/15
  */
-var Rx;
-(function (Rx) {
+define(["require", "exports"], function (require, exports) {
     var SubscriptionSubscriber = (function () {
         function SubscriptionSubscriber(_onNext, _onError, _onCompleted) {
             this._onNext = _onNext;
@@ -81,14 +80,14 @@ var Rx;
     function create(onSubscribe) {
         return new CoreObservable(onSubscribe);
     }
-    Rx.create = create;
+    exports.create = create;
     var HttpResponse = (function () {
         function HttpResponse(request) {
             this.json = JSON.parse(request.responseText);
         }
         return HttpResponse;
     })();
-    Rx.HttpResponse = HttpResponse;
+    exports.HttpResponse = HttpResponse;
     function httpGet(url) {
         return create(function (subscriber) {
             var request = new XMLHttpRequest();
@@ -115,6 +114,6 @@ var Rx;
             request.send();
         });
     }
-    Rx.httpGet = httpGet;
-})(Rx || (Rx = {}));
+    exports.httpGet = httpGet;
+});
 //# sourceMappingURL=rx.js.map

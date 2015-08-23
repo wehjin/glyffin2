@@ -1,9 +1,7 @@
 /**
  * Created by wehjin on 6/6/15.
  */
-/// <reference path="glyffin.ts" />
-var Glyffin;
-(function (Glyffin) {
+define(["require", "exports", "./glyffin"], function (require, exports, Glyffin) {
     var Interactive = (function () {
         function Interactive(bounds, touchProvider) {
             this.bounds = bounds;
@@ -27,11 +25,11 @@ var Glyffin;
         };
         return Interactive;
     })();
-    Glyffin.Interactive = Interactive;
+    exports.Interactive = Interactive;
     function button(symbol) {
         symbol = symbol || "button";
         return Glyffin.GreenGlyff.clicken(symbol, Glyffin.BlueGlyff);
     }
-    Glyffin.button = button;
-})(Glyffin || (Glyffin = {}));
+    exports.button = button;
+});
 //# sourceMappingURL=glyffin-touch.js.map

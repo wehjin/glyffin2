@@ -1,9 +1,8 @@
 /**
  * Created by wehjin on 7/2/15.
  */
-/// <reference path="glyffin-basic.ts" />
-var Glyffin;
-(function (Glyffin) {
+define(["require", "exports", "./glyffin"], function (require, exports, Glyffin) {
+    var Spot = Glyffin.Spot;
     var TouchEvents = (function () {
         function TouchEvents(element) {
             this.element = element;
@@ -63,7 +62,7 @@ var Glyffin;
             var jsTouch = touches.item(0);
             var canvasX = jsTouch.pageX - this.element.offsetLeft;
             var canvasY = jsTouch.pageY - this.element.offsetTop;
-            return new Glyffin.Spot(canvasX, canvasY);
+            return new Spot(canvasX, canvasY);
         };
         return TouchEvents;
     })();
@@ -139,10 +138,10 @@ var Glyffin;
             return unsubscribe;
         };
         SpotObservable.prototype.getMouseSpot = function (ev) {
-            return new Glyffin.Spot(ev.pageX - this.element.offsetLeft, ev.pageY - this.element.offsetTop);
+            return new Spot(ev.pageX - this.element.offsetLeft, ev.pageY - this.element.offsetTop);
         };
         return SpotObservable;
     })();
-    Glyffin.SpotObservable = SpotObservable;
-})(Glyffin || (Glyffin = {}));
+    exports.SpotObservable = SpotObservable;
+});
 //# sourceMappingURL=glyffin-html.js.map

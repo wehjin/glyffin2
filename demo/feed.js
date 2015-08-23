@@ -1,29 +1,14 @@
 /**
  * Created by wehjin on 5/24/15.
  */
-/// <reference path="../webglbook.d.ts" />
-/// <reference path="../glyffin.ts" />
-/// <reference path="../glyffin-ascii.ts" />
-/// <reference path="../glyffin-gl.ts" />
-/// <reference path="../glyffin-touch.ts" />
-/// <reference path="../rx.ts" />
-var Void = Glyffin.Void;
-var Glyff = Glyffin.Glyff;
-var Color = Glyffin.Color;
-function getPreviousIndex(index, count) {
-    return index == 0 ? (count - 1) : (index - 1);
-}
-// TODO Add last page with refresh button.
-function main() {
-    /*
-     document.addEventListener('touchmove', function (e) {
-     e.preventDefault();
-     window.scroll(0, 0);
-     return false;
-     }, false);
-     */
-    var room = new Glyffin.GlRoom(document.getElementById('webgl'));
-    var glAudience = new Glyffin.GlAudience(room);
+define(["require", "exports", "../glyffin", "../glyffin-gl", "../glyffin-ascii", "../rx"], function (require, exports, Glyffin, GlyffinGl, GlyffinText, Rx) {
+    var Glyff = Glyffin.Glyff;
+    var Color = Glyffin.Color;
+    function getPreviousIndex(index, count) {
+        return index == 0 ? (count - 1) : (index - 1);
+    }
+    var room = new GlyffinGl.GlRoom(document.getElementById('webgl'));
+    var glAudience = new GlyffinGl.GlAudience(room);
     var background = [0xbb, 0xbb, 0xbb, 0xff];
     var midground = [0x55, 0x055, 0x55, 0xff];
     room.perimeter.palette = new Glyffin.Palette().withLevel(0, [background, midground]);
@@ -57,7 +42,7 @@ function main() {
             var textBase = Glyff.color(Color.CYAN);
             function getCell(background, text, subtext) {
                 function addTitle(background) {
-                    return background.addNearMajor(0.5, Glyffin.asciiMultiLine(2, text).splitHeightYield(-textSize, Glyffin.ClearGlyff).splitHeightYield(-textSize, Glyffin.asciiEntireWord(subtext, textBase)).pad(readSize * 2, readSize * 2).limitHeight(readSize * 4 + textSize * 5, .4));
+                    return background.addNearMajor(0.5, GlyffinText.asciiMultiLine(2, text).splitHeightYield(-textSize, Glyffin.ClearGlyff).splitHeightYield(-textSize, GlyffinText.asciiEntireWord(subtext, textBase)).pad(readSize * 2, readSize * 2).limitHeight(readSize * 4 + textSize * 5, .4));
                 }
                 return background.rebuild(addTitle);
             }
@@ -106,5 +91,5 @@ function main() {
         }
         refresh();
     });
-}
+});
 //# sourceMappingURL=feed.js.map
