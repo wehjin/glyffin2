@@ -1491,10 +1491,36 @@ export class Glyff<T> {
             presenter.addPresentation(colorGlyff.present(perimeter, audience, presenter));
         }, 0);
     }
-}
 
-export interface Hall {
-    present<U>(glyff : Glyff<U>, onResult? : OnResult<U>, onError? : OnError): Presentation;
+    static divideWidth<T>(glyffs : Glyff<T>[], inset? : Inset1, gapGlyff? : Glyff<any>) : Glyff<T> {
+        var depth = gapGlyff ? gapGlyff.depth : 0;
+        for (var i = 0; i < glyffs.length; i++) {
+            var glyff = glyffs[i];
+            depth = Math.max(depth, glyff.depth);
+        }
+        return Glyff.create((presenter : Presenter<T>)=> {
+            var audience = presenter.audience;
+            var perimeter = presenter.perimeter;
+            var gapReaction = (gapGlyff ? new NoResultReaction<any,T>(presenter) : <Reaction<any>>null);
+            var sectionWidth = perimeter.getWidth() / glyffs.length;
+            var gapWidth = (inset ? inset.getPixels(sectionWidth) : 0);
+            var glyffWidth = sectionWidth - gapWidth + gapWidth / glyffs.length;
+            var stride = glyffWidth + gapWidth;
+            var left = perimeter.left, top = perimeter.top, bottom = perimeter.bottom;
+            for (var i = 0; i < glyffs.length; i++) {
+                var glyff = glyffs[i];
+                var right = left + glyffWidth;
+                var glyffPerimeter = perimeter.at(left, top, right, bottom);
+                presenter.addPresentation(glyff.present(glyffPerimeter, audience, presenter));
+                if ((i + 1) < glyffs.length && gapGlyff) {
+                    var gapPerimeter = perimeter.at(right, top, right + gapWidth, bottom);
+                    presenter.addPresentation(gapGlyff.present(gapPerimeter, audience,
+                        gapReaction));
+                }
+                left += stride;
+            }
+        }, depth)
+    }
 }
 
 export var ClearGlyff = Glyff.create<Void>(()=> {

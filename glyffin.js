@@ -1256,6 +1256,34 @@ define(["require", "exports"], function (require, exports) {
                 presenter.addPresentation(colorGlyff.present(perimeter, audience, presenter));
             }, 0);
         };
+        Glyff.divideWidth = function (glyffs, inset, gapGlyff) {
+            var depth = gapGlyff ? gapGlyff.depth : 0;
+            for (var i = 0; i < glyffs.length; i++) {
+                var glyff = glyffs[i];
+                depth = Math.max(depth, glyff.depth);
+            }
+            return Glyff.create(function (presenter) {
+                var audience = presenter.audience;
+                var perimeter = presenter.perimeter;
+                var gapReaction = (gapGlyff ? new NoResultReaction(presenter) : null);
+                var sectionWidth = perimeter.getWidth() / glyffs.length;
+                var gapWidth = (inset ? inset.getPixels(sectionWidth) : 0);
+                var glyffWidth = sectionWidth - gapWidth + gapWidth / glyffs.length;
+                var stride = glyffWidth + gapWidth;
+                var left = perimeter.left, top = perimeter.top, bottom = perimeter.bottom;
+                for (var i = 0; i < glyffs.length; i++) {
+                    var glyff = glyffs[i];
+                    var right = left + glyffWidth;
+                    var glyffPerimeter = perimeter.at(left, top, right, bottom);
+                    presenter.addPresentation(glyff.present(glyffPerimeter, audience, presenter));
+                    if ((i + 1) < glyffs.length && gapGlyff) {
+                        var gapPerimeter = perimeter.at(right, top, right + gapWidth, bottom);
+                        presenter.addPresentation(gapGlyff.present(gapPerimeter, audience, gapReaction));
+                    }
+                    left += stride;
+                }
+            }, depth);
+        };
         return Glyff;
     })();
     exports.Glyff = Glyff;

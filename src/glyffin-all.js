@@ -8,6 +8,7 @@ define(["require", "exports", "../glyffin", "../glyffin-gl", "../glyffin-ascii"]
     exports.Core = Core;
     exports.Gl = Gl;
     exports.Text = Text;
+    exports.Glyff = exports.Core.Glyff;
     exports.Void = exports.Core.Void;
     exports.Inset2 = exports.Core.Inset2;
     exports.RedGlyff = exports.Core.RedGlyff;

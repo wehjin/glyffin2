@@ -257,9 +257,7 @@ export declare class Glyff<T> {
     pulseAnimate(duration: number, count: number): Glyff<T>;
     static color(color: Color): Glyff<Void>;
     static colorAnimation(first: Color, last: Color): Glyff<Void>;
-}
-export interface Hall {
-    present<U>(glyff: Glyff<U>, onResult?: OnResult<U>, onError?: OnError): Presentation;
+    static divideWidth<T>(glyffs: Glyff<T>[], inset?: Inset1, gapGlyff?: Glyff<any>): Glyff<T>;
 }
 export declare var ClearGlyff: Glyff<Void>;
 export declare function colorPath(colorPath: number[], mix?: number, colorPath2?: number[]): Glyff<Void>;
