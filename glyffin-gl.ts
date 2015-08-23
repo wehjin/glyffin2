@@ -28,7 +28,7 @@ var OFFSCREEN_WIDTH = SHADOWMAP_RES, OFFSCREEN_HEIGHT = SHADOWMAP_RES;
 var UP_X = 0;
 var UP_Y = 1;
 var UP_Z = 0;
-var includeShadow = true;
+var includeShadow = false;
 var stopAfterShadow = false;
 var redShadow = false;
 var includeDepth = true;
@@ -403,9 +403,9 @@ class DepthProgram implements Program {
         'precision mediump float;\n' +
         '#endif\n' +
         'varying vec4 v_Color;\n' +
-        'const vec4 white = vec4(1,1,1,1);\n' +
         'void main(){\n' +
-        '  gl_FragColor = mix(v_Color, white, 0.85);\n' +
+        '  float amount = 1.0 - (v_Color.r + v_Color.g + v_Color.b)/3.0;\n' +
+        '  gl_FragColor = vec4(.9,.9,.9,amount);\n' +
         '}\n';
 
     public glProgram : WebGLProgram;
@@ -541,8 +541,10 @@ class MyRoom {
 
     redraw(vertexCount : number, vertices : Float32Array) {
         var gl = this.gl;
-
         gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STREAM_DRAW);
+        gl.depthFunc(gl.LEQUAL);
+        gl.disable(gl.BLEND);
+
         if (includeShadow) {
             if (!stopAfterShadow) {
                 gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer.framebuffer);
@@ -566,17 +568,21 @@ class MyRoom {
         gl.frontFace(gl.CW);
 
         gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-        if (includeDepth) {
-            gl.useProgram(this.depthProgram.glProgram);
-            this.depthProgram.enableVertexAttributes(this.gl);
-            gl.drawArrays(this.gl.LINES, 0, vertexCount / 3);
-        }
         gl.useProgram(this.lightProgram.glProgram);
         gl.uniform1i(this.lightProgram.u_ShadowMap, 0);
         gl.uniformMatrix4fv(this.lightProgram.u_MvpMatrixFromLight, false,
             this.shadowProgram.mvpMatrix.elements);
         this.lightProgram.enableVertexAttributes(this.gl);
         gl.drawArrays(this.gl.TRIANGLES, 0, vertexCount);
+
+        if (includeDepth) {
+            gl.useProgram(this.depthProgram.glProgram);
+            this.depthProgram.enableVertexAttributes(this.gl);
+            gl.depthFunc(gl.LESS);
+            gl.enable(gl.BLEND);
+            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+            gl.drawArrays(this.gl.LINES, 0, vertexCount / 3);
+        }
     }
 }
 

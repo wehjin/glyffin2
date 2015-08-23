@@ -25,7 +25,7 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
     var UP_X = 0;
     var UP_Y = 1;
     var UP_Z = 0;
-    var includeShadow = true;
+    var includeShadow = false;
     var stopAfterShadow = false;
     var redShadow = false;
     var includeDepth = true;
@@ -243,7 +243,7 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
         function DepthProgram(gl, modelMatrix, mvpMatrix) {
             this.gl = gl;
             this.VSHADER_SOURCE = 'uniform mat4 u_MvpMatrix;\n' + 'attribute vec4 a_Position;\n' + 'attribute vec4 a_Color;\n' + 'varying vec4 v_Color;\n' + 'const vec4 offset = vec4(0,0.5,.5,0);\n' + 'void main(){\n' + '  gl_Position = u_MvpMatrix * a_Position + offset;\n' + '  v_Color = a_Color;\n' + '}\n';
-            this.FSHADER_SOURCE = '#ifdef GL_ES\n' + 'precision mediump float;\n' + '#endif\n' + 'varying vec4 v_Color;\n' + 'const vec4 white = vec4(1,1,1,1);\n' + 'void main(){\n' + '  gl_FragColor = mix(v_Color, white, 0.85);\n' + '}\n';
+            this.FSHADER_SOURCE = '#ifdef GL_ES\n' + 'precision mediump float;\n' + '#endif\n' + 'varying vec4 v_Color;\n' + 'void main(){\n' + '  float amount = 1.0 - (v_Color.r + v_Color.g + v_Color.b)/3.0;\n' + '  gl_FragColor = vec4(.9,.9,.9,amount);\n' + '}\n';
             gl.lineWidth(2.0);
             var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
             this.glProgram = program;
@@ -338,6 +338,8 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
         MyRoom.prototype.redraw = function (vertexCount, vertices) {
             var gl = this.gl;
             gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STREAM_DRAW);
+            gl.depthFunc(gl.LEQUAL);
+            gl.disable(gl.BLEND);
             if (includeShadow) {
                 if (!stopAfterShadow) {
                     gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer.framebuffer);
@@ -358,16 +360,19 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
             gl.frontFace(gl.CW);
             gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-            if (includeDepth) {
-                gl.useProgram(this.depthProgram.glProgram);
-                this.depthProgram.enableVertexAttributes(this.gl);
-                gl.drawArrays(this.gl.LINES, 0, vertexCount / 3);
-            }
             gl.useProgram(this.lightProgram.glProgram);
             gl.uniform1i(this.lightProgram.u_ShadowMap, 0);
             gl.uniformMatrix4fv(this.lightProgram.u_MvpMatrixFromLight, false, this.shadowProgram.mvpMatrix.elements);
             this.lightProgram.enableVertexAttributes(this.gl);
             gl.drawArrays(this.gl.TRIANGLES, 0, vertexCount);
+            if (includeDepth) {
+                gl.useProgram(this.depthProgram.glProgram);
+                this.depthProgram.enableVertexAttributes(this.gl);
+                gl.depthFunc(gl.LESS);
+                gl.enable(gl.BLEND);
+                gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+                gl.drawArrays(this.gl.LINES, 0, vertexCount / 3);
+            }
         };
         return MyRoom;
     })();

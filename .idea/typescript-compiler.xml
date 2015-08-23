@@ -3,6 +3,5 @@
   <component name="TypeScriptCompiler">
     <option name="isCompilerEnabled" value="true" />
     <option name="typeScriptCompilerParams" value="--declaration --module amd" />
-    <option name="hasOutDirectory" value="true" />
   </component>
 </project>

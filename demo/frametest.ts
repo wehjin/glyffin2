@@ -3,11 +3,6 @@
  */
 
 /// <reference path="../webglbook.d.ts" />
-/// <reference path="../glyffin.ts" />
-/// <reference path="../glyffin-ascii.ts" />
-/// <reference path="../glyffin-gl.ts" />
-/// <reference path="../glyffin-touch.ts" />
-
 
 function main() {
     var canvas = <HTMLCanvasElement> document.getElementById('webgl');
@@ -215,4 +210,5 @@ function main() {
     console.log('error: ' + gl.getError());
     drawScene();
 }
+main();
 

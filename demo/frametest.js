@@ -2,10 +2,6 @@
  * Created by wehjin on 5/24/15.
  */
 /// <reference path="../webglbook.d.ts" />
-/// <reference path="../glyffin.ts" />
-/// <reference path="../glyffin-ascii.ts" />
-/// <reference path="../glyffin-gl.ts" />
-/// <reference path="../glyffin-touch.ts" />
 function main() {
     var canvas = document.getElementById('webgl');
     canvas.width = canvas.clientWidth;
@@ -143,4 +139,5 @@ function main() {
     console.log('error: ' + gl.getError());
     drawScene();
 }
+main();
 //# sourceMappingURL=frametest.js.map

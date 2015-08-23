@@ -83,8 +83,11 @@ define(["require", "exports"], function (require, exports) {
         Perimeter.prototype.addLevel = function (add) {
             return new Perimeter(this.left, this.top, this.right, this.bottom, this.age, this.level + add, this.tapHeight, this.readHeight, this.palette);
         };
-        Perimeter.prototype.translate = function (x) {
+        Perimeter.prototype.translateX = function (x) {
             return new Perimeter(this.left + x, this.top, this.right + x, this.bottom, this.age, this.level, this.tapHeight, this.readHeight, this.palette);
+        };
+        Perimeter.prototype.translateY = function (y) {
+            return new Perimeter(this.left, this.top + y, this.right, this.bottom + y, this.age, this.level, this.tapHeight, this.readHeight, this.palette);
         };
         Perimeter.prototype.inset = function (pixelsX, pixelsY) {
             return new Perimeter(this.left + pixelsX, this.top + pixelsY, this.right - pixelsX, this.bottom - pixelsY, this.age, this.level, this.tapHeight, this.readHeight, this.palette);
@@ -984,18 +987,26 @@ define(["require", "exports"], function (require, exports) {
                 };
             });
         };
-        Glyff.prototype.move = function (x) {
+        Glyff.prototype.moveX = function (x) {
             var _this = this;
             return Glyff.create(function (presenter) {
                 var audience = presenter.audience;
-                var perimeter = presenter.perimeter.translate(x);
+                var perimeter = presenter.perimeter.translateX(x);
+                presenter.addPresentation(_this.present(perimeter, audience, presenter));
+            }, this.depth);
+        };
+        Glyff.prototype.moveY = function (y) {
+            var _this = this;
+            return Glyff.create(function (presenter) {
+                var audience = presenter.audience;
+                var perimeter = presenter.perimeter.translateY(y);
                 presenter.addPresentation(_this.present(perimeter, audience, presenter));
             }, this.depth);
         };
         Glyff.prototype.clicken = function (symbol, pressed) {
             var unpressed = this;
-            var gapToUnpressed = 4; // No need to add pressed.depth.  The two are never draw at
-            // the same time.
+            // No need to add pressed.depth.  The two are never draw at the same time.
+            var gapToUnpressed = pressed ? 4 : 0;
             return Glyff.create(function (presenter) {
                 var audience = presenter.audience;
                 var unpressedPerimeter = presenter.perimeter;
@@ -1047,7 +1058,7 @@ define(["require", "exports"], function (require, exports) {
                 function setCenterSlide(newSlide) {
                     if (newSlide !== centerSlide) {
                         centerSlide = newSlide;
-                        setCenter(newSlide === 0 ? current : current.move(newSlide));
+                        setCenter(newSlide === 0 ? current : current.moveX(newSlide));
                     }
                 }
                 function showRight(show) {
@@ -1069,7 +1080,7 @@ define(["require", "exports"], function (require, exports) {
                     }
                     if (newSlide !== leftSlide) {
                         leftSlide = newSlide;
-                        setLeft((newSlide <= -slideRange || !prev) ? null : prev.move(newSlide));
+                        setLeft((newSlide <= -slideRange || !prev) ? null : prev.moveX(newSlide));
                     }
                 }
                 function setLeft(glyff) {

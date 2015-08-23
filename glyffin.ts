@@ -91,8 +91,13 @@ export class Perimeter {
             this.level + add, this.tapHeight, this.readHeight, this.palette);
     }
 
-    translate(x : number) : Perimeter {
+    translateX(x : number) : Perimeter {
         return new Perimeter(this.left + x, this.top, this.right + x, this.bottom, this.age,
+            this.level, this.tapHeight, this.readHeight, this.palette);
+    }
+
+    translateY(y : number) : Perimeter {
+        return new Perimeter(this.left, this.top + y, this.right, this.bottom + y, this.age,
             this.level, this.tapHeight, this.readHeight, this.palette);
     }
 
@@ -1186,18 +1191,26 @@ export class Glyff<T> {
         });
     }
 
-    move(x : number) : Glyff<T> {
+    moveX(x : number) : Glyff<T> {
         return Glyff.create<T>((presenter : Presenter<Void>)=> {
             var audience = presenter.audience;
-            var perimeter = presenter.perimeter.translate(x);
+            var perimeter = presenter.perimeter.translateX(x);
+            presenter.addPresentation(this.present(perimeter, audience, presenter));
+        }, this.depth);
+    }
+
+    moveY(y : number) : Glyff<T> {
+        return Glyff.create<T>((presenter : Presenter<Void>)=> {
+            var audience = presenter.audience;
+            var perimeter = presenter.perimeter.translateY(y);
             presenter.addPresentation(this.present(perimeter, audience, presenter));
         }, this.depth);
     }
 
     clicken<U>(symbol : string, pressed? : Glyff<U>) : Glyff<string> {
         var unpressed = this;
-        var gapToUnpressed = 4;  // No need to add pressed.depth.  The two are never draw at
-                                 // the same time.
+        // No need to add pressed.depth.  The two are never draw at the same time.
+        var gapToUnpressed = pressed ? 4 : 0;
         return Glyff.create<string>((presenter : Presenter<Void>)=> {
             var audience = presenter.audience;
             var unpressedPerimeter = presenter.perimeter;
@@ -1259,7 +1272,7 @@ export class Glyff<T> {
             function setCenterSlide(newSlide : number) {
                 if (newSlide !== centerSlide) {
                     centerSlide = newSlide;
-                    setCenter(newSlide === 0 ? current : current.move(newSlide));
+                    setCenter(newSlide === 0 ? current : current.moveX(newSlide));
                 }
             }
 
@@ -1284,7 +1297,7 @@ export class Glyff<T> {
                 }
                 if (newSlide !== leftSlide) {
                     leftSlide = newSlide;
-                    setLeft((newSlide <= -slideRange || !prev) ? null : prev.move(newSlide));
+                    setLeft((newSlide <= -slideRange || !prev) ? null : prev.moveX(newSlide));
                 }
             }
 

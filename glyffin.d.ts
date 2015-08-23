@@ -44,7 +44,8 @@ export declare class Perimeter {
     withAge(age: number): Perimeter;
     withLevel(level: number): Perimeter;
     addLevel(add: number): Perimeter;
-    translate(x: number): Perimeter;
+    translateX(x: number): Perimeter;
+    translateY(y: number): Perimeter;
     inset(pixelsX: number, pixelsY: number): Perimeter;
     inset2(inset: Inset2): Perimeter;
     downFromTop(pixelsY: number, pixelsHigh: number): Perimeter;
@@ -246,7 +247,8 @@ export declare class Glyff<T> {
     kaleid(columns: number, rows: number, spots: number[][]): Glyff<Void>;
     pad(xPixels: number, yPixels: number): Glyff<T>;
     pad2(inset: Inset2): Glyff<T>;
-    move(x: number): Glyff<T>;
+    moveX(x: number): Glyff<T>;
+    moveY(y: number): Glyff<T>;
     clicken<U>(symbol: string, pressed?: Glyff<U>): Glyff<string>;
     pagen<U>(index: number, next: Glyff<U>, prev: Glyff<U>): Glyff<string | T>;
     private animateWithPath(path);
