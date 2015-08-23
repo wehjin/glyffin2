@@ -5,6 +5,10 @@
   "jam": {
     "main": "glyffin.js"
   },
+  "jspm": {
+    "format": "amd",
+    "main": "glyffin"
+  },
   "licenses": [
     {
       "type": "MIT",
