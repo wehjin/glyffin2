@@ -1,3 +1,5 @@
+/// <reference path="../glyffin.d.ts" />
+/// <reference path="../glyffin-ascii.d.ts" />
 /**
  * @author  wehjin
  * @since   8/23/15

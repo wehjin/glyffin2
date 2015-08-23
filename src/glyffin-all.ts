@@ -3,6 +3,9 @@
  * @since   8/23/15
  */
 
+///<reference path="../glyffin.d.ts"/>
+///<reference path="../glyffin-ascii.d.ts"/>
+
 export import Core = require("../glyffin");
 export import Gl = require("../glyffin-gl");
 export import Text = require("../glyffin-ascii");
