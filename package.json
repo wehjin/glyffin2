@@ -18,8 +18,8 @@
   "repositories": [
     {
       "type": "git",
-      "url": "http://github.com/wehjin/glyffin2.git"
+      "url": "https://github.com/wehjin/glyffin2.git"
     }
   ],
-  "github": "http://github.com/wehjin/glyffin2"
+  "github": "https://github.com/wehjin/glyffin2"
 }
