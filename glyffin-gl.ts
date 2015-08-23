@@ -742,8 +742,8 @@ export class GlHall implements Glyffin.Hall {
     audiences : GlAudience[] = [];
 
     constructor(private canvas : HTMLCanvasElement) {
+        console.log("Hey");
     }
-
 
     present<U>(glyff : Glyffin.Glyff<U>, onResult? : Glyffin.OnResult<U>,
                onError? : Glyffin.OnError) : Glyffin.Presentation {
@@ -771,6 +771,7 @@ export class GlHall implements Glyffin.Hall {
          }
          };
          */
+
         return null;
     }
 
