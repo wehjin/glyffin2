@@ -1333,6 +1333,36 @@ define(["require", "exports", "./glyffin"], function (require, exports, Glyffin)
         [0, 2],
         [3, 2]
     ];
+    var lt_spots = [
+        [3, 0],
+        [2, 1],
+        [1, 2],
+        [0, 3],
+        [1, 4],
+        [2, 5],
+        [3, 6]
+    ];
+    var eq_spots = [
+        [0, 2],
+        [1, 2],
+        [2, 2],
+        [3, 2],
+        [4, 2],
+        [0, 5],
+        [1, 5],
+        [2, 5],
+        [3, 5],
+        [4, 5]
+    ];
+    var gt_spots = [
+        [0, 0],
+        [1, 1],
+        [2, 2],
+        [3, 3],
+        [2, 4],
+        [1, 5],
+        [0, 6]
+    ];
     var ascii_spots = [
         no_spots,
         no_spots,
@@ -1394,9 +1424,9 @@ define(["require", "exports", "./glyffin"], function (require, exports, Glyffin)
         d9_spots,
         colon_spots,
         smcolon_spots,
-        no_spots,
-        no_spots,
-        no_spots,
+        lt_spots,
+        eq_spots,
+        gt_spots,
         qmark_spots,
         at_spots,
         A_spots,
@@ -1525,9 +1555,9 @@ define(["require", "exports", "./glyffin"], function (require, exports, Glyffin)
         5,
         1,
         1,
+        4,
         5,
-        5,
-        5,
+        4,
         5,
         6,
         5,

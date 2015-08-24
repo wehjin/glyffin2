@@ -815,18 +815,41 @@ var star_spots = [
     [1, 1], [2, 1],
     [0, 2], [3, 2]
 ];
+var lt_spots = [
+    [3, 0],
+    [2, 1],
+    [1, 2],
+    [0, 3],
+    [1, 4],
+    [2, 5],
+    [3, 6]
+];
+var eq_spots = [
+    [0, 2], [1, 2], [2, 2], [3, 2], [4, 2],
+    [0, 5], [1, 5], [2, 5], [3, 5], [4, 5]
+];
+var gt_spots = [
+    [0, 0],
+    [1, 1],
+    [2, 2],
+    [3, 3],
+    [2, 4],
+    [1, 5],
+    [0, 6]
+];
 var ascii_spots = [
+    // 0-31
     no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
     no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
     no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
     no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
-
+    // 32-63
     no_spots, bang_spots, dquote_spots, hash_spots, dollar_spots, prcnt_spots, amper_spots,
     quote_spots,
     lparen_spots, rparen_spots, star_spots, plus_spots, comma_spots, minus_spots, period_spots,
     slash_spots,
     d0_spots, d1_spots, d2_spots, d3_spots, d4_spots, d5_spots, d6_spots, d7_spots,
-    d8_spots, d9_spots, colon_spots, smcolon_spots, no_spots, no_spots, no_spots, qmark_spots,
+    d8_spots, d9_spots, colon_spots, smcolon_spots, lt_spots, eq_spots, gt_spots, qmark_spots,
 
     at_spots, A_spots, B_spots, C_spots, D_spots, E_spots, F_spots, G_spots,
     H_spots, I_spots, J_spots, K_spots, L_spots, M_spots, N_spots, O_spots,
@@ -841,15 +864,16 @@ var ascii_spots = [
 
 var x_weight_default : number = 5;
 var x_weights : number[] = [
+    // 0-31
     5, 5, 5, 5, 5, 5, 5, 5,
     5, 5, 5, 5, 5, 5, 5, 5,
     5, 5, 5, 5, 5, 5, 5, 5,
     5, 5, 5, 5, 5, 5, 5, 5,
-
+    // 32-63
     5, 1, 3, 5, 5, 5, 5, 1,
     4, 4, 4, 5, 1, 5, 1, 5,
     5, 5, 5, 5, 5, 5, 5, 5,
-    5, 5, 1, 1, 5, 5, 5, 5,
+    5, 5, 1, 1, 4, 5, 4, 5,
 
     6, 5, 5, 5, 5, 5, 5, 5,
     5, 3, 5, 5, 5, 5, 5, 5,
