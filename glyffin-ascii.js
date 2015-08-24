@@ -1363,6 +1363,16 @@ define(["require", "exports", "./glyffin"], function (require, exports, Glyffin)
         [1, 5],
         [0, 6]
     ];
+    var pipe_spots = [
+        [0, 0],
+        [0, 1],
+        [0, 2],
+        [0, 3],
+        [0, 4],
+        [0, 5],
+        [0, 6],
+        [0, 7]
+    ];
     var ascii_spots = [
         no_spots,
         no_spots,
@@ -1488,7 +1498,7 @@ define(["require", "exports", "./glyffin"], function (require, exports, Glyffin)
         y_spots,
         z_spots,
         no_spots,
-        no_spots,
+        pipe_spots,
         no_spots,
         no_spots,
         no_spots,
@@ -1619,7 +1629,7 @@ define(["require", "exports", "./glyffin"], function (require, exports, Glyffin)
         5,
         5,
         5,
-        5,
+        1,
         5,
         5,
         5,

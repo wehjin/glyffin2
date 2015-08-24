@@ -837,6 +837,9 @@ var gt_spots = [
     [1, 5],
     [0, 6]
 ];
+var pipe_spots = [
+    [0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6], [0, 7]
+];
 var ascii_spots = [
     // 0-31
     no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
@@ -850,16 +853,16 @@ var ascii_spots = [
     slash_spots,
     d0_spots, d1_spots, d2_spots, d3_spots, d4_spots, d5_spots, d6_spots, d7_spots,
     d8_spots, d9_spots, colon_spots, smcolon_spots, lt_spots, eq_spots, gt_spots, qmark_spots,
-
+    // 64-95
     at_spots, A_spots, B_spots, C_spots, D_spots, E_spots, F_spots, G_spots,
     H_spots, I_spots, J_spots, K_spots, L_spots, M_spots, N_spots, O_spots,
     P_spots, Q_spots, R_spots, S_spots, T_spots, U_spots, V_spots, W_spots,
     X_spots, Y_spots, Z_spots, lbrack_spots, no_spots, rbrack_spots, no_spots, no_spots,
-
+    // 96-127
     no_spots, a_spots, b_spots, c_spots, d_spots, e_spots, f_spots, g_spots,
     h_spots, i_spots, j_spots, k_spots, l_spots, m_spots, n_spots, o_spots,
     p_spots, q_spots, r_spots, s_spots, t_spots, u_spots, v_spots, w_spots,
-    x_spots, y_spots, z_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
+    x_spots, y_spots, z_spots, no_spots, pipe_spots, no_spots, no_spots, no_spots,
 ];
 
 var x_weight_default : number = 5;
@@ -874,16 +877,16 @@ var x_weights : number[] = [
     4, 4, 4, 5, 1, 5, 1, 5,
     5, 5, 5, 5, 5, 5, 5, 5,
     5, 5, 1, 1, 4, 5, 4, 5,
-
+    // 64-95
     6, 5, 5, 5, 5, 5, 5, 5,
     5, 3, 5, 5, 5, 5, 5, 5,
     5, 5, 5, 5, 5, 5, 5, 5,
     5, 5, 5, 3, 5, 3, 5, 5,
-
+    // 96-127
     5, 5, 5, 5, 5, 5, 4, 5,
     5, 1, 5, 4, 2, 5, 5, 5,
     5, 5, 5, 5, 3, 5, 5, 5,
-    5, 5, 5, 5, 5, 5, 5, 5,
+    5, 5, 5, 5, 1, 5, 5, 5,
 ];
 
 var spaceWeight = getWordXWeight(' ');
