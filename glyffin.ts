@@ -699,16 +699,15 @@ class ClickGesturing implements Gesturing {
 
         if (this.pressTime == 0) {
             this.doPress();
+            // Let the press appear on screen before unpressing and clicking.
+            window.requestAnimationFrame(()=> {
+                this.doEnd();
+                this.onClick();
+            });
+            return;
         }
-
-        var delay = (this.pressTime + 200) - Date.now();
-        // Stayed pressed until minimum duration ends then un-press.
-        setTimeout(()=> {
-            this.doEnd();
-
-            // Wait for screen to show the un-press before delivering click.
-            setTimeout(this.onClick, 100);
-        }, (delay > 0) ? delay : 0);
+        this.doEnd();
+        this.onClick();
     }
 
     move(spot : Spot) : GestureStatus {
