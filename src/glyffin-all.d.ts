@@ -7,6 +7,7 @@
 export import Core = require("../glyffin");
 export import Gl = require("../glyffin-gl");
 export import Text = require("../glyffin-ascii");
+export import Glyff = Core.Glyff;
 export import Void = Core.Void;
 export import Inset2 = Core.Inset2;
 export import RedGlyff = Core.RedGlyff;

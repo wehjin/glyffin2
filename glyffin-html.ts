@@ -85,10 +85,11 @@ class TouchEvents {
     }
 
     public disable() {
+        this.element.removeEventListener("touchstart", this.ontouchstart, false);
         this.element.removeEventListener("touchmove", this.ontouchmove, false);
         this.element.removeEventListener("touchcancel", this.ontouchcancel, false);
         this.element.removeEventListener("touchend", this.ontouchend, false);
-        this.ontouchcancel = this.ontouchmove = this.ontouchend = null;
+        this.ontouchstart = this.ontouchcancel = this.ontouchmove = this.ontouchend = null;
     }
 
     private getTouchSpot(touches : JsTouchList) : Spot {

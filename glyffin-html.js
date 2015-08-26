@@ -53,10 +53,11 @@ define(["require", "exports", "./glyffin"], function (require, exports, Glyffin)
             }, false);
         };
         TouchEvents.prototype.disable = function () {
+            this.element.removeEventListener("touchstart", this.ontouchstart, false);
             this.element.removeEventListener("touchmove", this.ontouchmove, false);
             this.element.removeEventListener("touchcancel", this.ontouchcancel, false);
             this.element.removeEventListener("touchend", this.ontouchend, false);
-            this.ontouchcancel = this.ontouchmove = this.ontouchend = null;
+            this.ontouchstart = this.ontouchcancel = this.ontouchmove = this.ontouchend = null;
         };
         TouchEvents.prototype.getTouchSpot = function (touches) {
             var jsTouch = touches.item(0);
