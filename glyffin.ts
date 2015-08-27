@@ -1191,7 +1191,7 @@ export class Glyff<T> {
                     lowerPresenter.end();
                 }
             };
-        });
+        }, this.depth);
     }
 
     moveX(x : number) : Glyff<T> {
@@ -1216,8 +1216,8 @@ export class Glyff<T> {
         var gapToUnpressed = pressed ? 4 : 0;
         return Glyff.create<string>((presenter : Presenter<Void>)=> {
             var audience = presenter.audience;
-            var unpressedPerimeter = presenter.perimeter;
-            var unpressedPerimeter = unpressedPerimeter.addLevel(gapToUnpressed);
+            var pressedPerimeter = presenter.perimeter;
+            var unpressedPerimeter = pressedPerimeter.addLevel(gapToUnpressed);
             var removable = presenter.addPresentation(unpressed.present(unpressedPerimeter,
                 audience));
             var zone = audience.addZone(unpressedPerimeter,
@@ -1226,7 +1226,7 @@ export class Glyff<T> {
                         return;
                     }
                     removable.remove();
-                    removable = presenter.addPresentation(pressed.present(unpressedPerimeter,
+                    removable = presenter.addPresentation(pressed.present(pressedPerimeter,
                         audience));
                 }, ()=> {
                     if (!pressed) {

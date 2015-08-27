@@ -989,7 +989,7 @@ define(["require", "exports"], function (require, exports) {
                         lowerPresenter.end();
                     }
                 };
-            });
+            }, this.depth);
         };
         Glyff.prototype.moveX = function (x) {
             var _this = this;
@@ -1013,15 +1013,15 @@ define(["require", "exports"], function (require, exports) {
             var gapToUnpressed = pressed ? 4 : 0;
             return Glyff.create(function (presenter) {
                 var audience = presenter.audience;
-                var unpressedPerimeter = presenter.perimeter;
-                var unpressedPerimeter = unpressedPerimeter.addLevel(gapToUnpressed);
+                var pressedPerimeter = presenter.perimeter;
+                var unpressedPerimeter = pressedPerimeter.addLevel(gapToUnpressed);
                 var removable = presenter.addPresentation(unpressed.present(unpressedPerimeter, audience));
                 var zone = audience.addZone(unpressedPerimeter, new ClickGesturable(unpressedPerimeter.tapHeight / 2, function () {
                     if (!pressed) {
                         return;
                     }
                     removable.remove();
-                    removable = presenter.addPresentation(pressed.present(unpressedPerimeter, audience));
+                    removable = presenter.addPresentation(pressed.present(pressedPerimeter, audience));
                 }, function () {
                     if (!pressed) {
                         return;
