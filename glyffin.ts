@@ -633,6 +633,9 @@ export interface Lifter<U, T> {
     (lowerPresenter : Presenter<U>):Presenter<T>;
 }
 
+export interface Transformer<U,T> {
+    (higher : Glyff<T>):Glyff<U>;
+}
 
 export class Insertion<T> {
 
@@ -893,7 +896,7 @@ export class Glyff<T> {
         }, depth || 0);
     }
 
-    rebuild<U>(builder : (previous : Glyff<T>)=>Glyff<U>) : Glyff<U> {
+    rebuild<U>(builder : Transformer<U,T>) : Glyff<U> {
         return builder(this);
     }
 

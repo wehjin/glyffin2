@@ -214,6 +214,9 @@ export interface OnPresent<T> {
 export interface Lifter<U, T> {
     (lowerPresenter: Presenter<U>): Presenter<T>;
 }
+export interface Transformer<U, T> {
+    (higher: Glyff<T>): Glyff<U>;
+}
 export declare class Insertion<T> {
     amount: number;
     glyff: Glyff<T>;
@@ -226,7 +229,7 @@ export declare class Glyff<T> {
     static create<U>(onPresent: OnPresent<U>, depth: number): Glyff<U>;
     present(perimeter: Perimeter, audience: Audience, reactionOrOnResult?: Reaction<T> | OnResult<T>, onError?: ErrorCallback): Presentation;
     lift<U>(lifter: Lifter<U, T>, depth?: number): Glyff<U>;
-    rebuild<U>(builder: (previous: Glyff<T>) => Glyff<U>): Glyff<U>;
+    rebuild<U>(builder: Transformer<U, T>): Glyff<U>;
     disappear(disappeared: boolean): Glyff<T>;
     isolate(isolated: boolean): Glyff<T>;
     addLefts(insertions: Insertion<T>[]): Glyff<T>;
