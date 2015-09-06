@@ -728,10 +728,7 @@ define(["require", "exports"], function (require, exports) {
             }, depth || 0);
         };
         Glyff.prototype.rebuild = function (builder) {
-            var rebuilt = builder(this);
-            return Glyff.create(function (presenter) {
-                presenter.addPresentation(rebuilt.present(presenter.perimeter, presenter.audience, presenter));
-            }, rebuilt.depth);
+            return builder(this);
         };
         Glyff.prototype.disappear = function (disappeared) {
             var _this = this;

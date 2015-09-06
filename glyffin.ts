@@ -894,11 +894,7 @@ export class Glyff<T> {
     }
 
     rebuild<U>(builder : (previous : Glyff<T>)=>Glyff<U>) : Glyff<U> {
-        var rebuilt = builder(this);
-        return Glyff.create<U>((presenter : Presenter<U>)=> {
-            presenter.addPresentation(rebuilt.present(presenter.perimeter, presenter.audience,
-                presenter));
-        }, rebuilt.depth);
+        return builder(this);
     }
 
     disappear(disappeared : boolean) : Glyff<T> {
