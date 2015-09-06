@@ -1016,7 +1016,7 @@ export class Glyff<T> {
     }
 
 
-    revealDown<U>(inset : Inset1, revelation : Glyff<U>) : Glyff<T|U|string> {
+    revealDown<U>(inset : Inset1, revelation : Glyff<U>, startDown? : boolean) : Glyff<T|U|string> {
         var gapToCover = revelation.depth + 1;
         return Glyff.create<T|U|string>((presenter : Presenter<T|U|string>) => {
             var perimeter = presenter.perimeter;
@@ -1080,7 +1080,7 @@ export class Glyff<T> {
                 });
             }
 
-            setAnchorHeight(0);
+            setAnchorHeight(startDown ? maxRevelationHeight : 0);
             presenter.addPresentation({
                 end: ()=> {
                     if (zone) {

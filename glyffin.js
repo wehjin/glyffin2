@@ -833,7 +833,7 @@ define(["require", "exports"], function (require, exports) {
             }
             return Glyff.create(onPresent, gapToNear + nearGlyff.depth);
         };
-        Glyff.prototype.revealDown = function (inset, revelation) {
+        Glyff.prototype.revealDown = function (inset, revelation, startDown) {
             var _this = this;
             var gapToCover = revelation.depth + 1;
             return Glyff.create(function (presenter) {
@@ -887,7 +887,7 @@ define(["require", "exports"], function (require, exports) {
                         }
                     });
                 }
-                setAnchorHeight(0);
+                setAnchorHeight(startDown ? maxRevelationHeight : 0);
                 presenter.addPresentation({
                     end: function () {
                         if (zone) {
