@@ -219,11 +219,6 @@ export declare class Insertion<T> {
     glyff: Glyff<T>;
     constructor(amount: number, glyff: Glyff<T>);
 }
-export interface Mogrifier<T, U> {
-    getPerimeter(presenter: Presenter<U>): Perimeter;
-    getUpperAudience(presenter: Presenter<U>): Audience;
-    getUpperReaction(presenter: Presenter<U>): Reaction<T>;
-}
 export declare class Glyff<T> {
     private onPresent;
     depth: number;
@@ -232,7 +227,6 @@ export declare class Glyff<T> {
     present(perimeter: Perimeter, audience: Audience, reactionOrOnResult?: Reaction<T> | OnResult<T>, onError?: ErrorCallback): Presentation;
     lift<U>(lifter: Lifter<U, T>, depth?: number): Glyff<U>;
     rebuild<U>(builder: (previous: Glyff<T>) => Glyff<U>): Glyff<U>;
-    compose<U>(mogrifier: Mogrifier<T, U>, depth?: number): Glyff<U>;
     disappear(disappeared: boolean): Glyff<T>;
     isolate(isolated: boolean): Glyff<T>;
     addLefts(insertions: Insertion<T>[]): Glyff<T>;

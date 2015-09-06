@@ -733,15 +733,6 @@ define(["require", "exports"], function (require, exports) {
                 presenter.addPresentation(rebuilt.present(presenter.perimeter, presenter.audience, presenter));
             }, rebuilt.depth);
         };
-        Glyff.prototype.compose = function (mogrifier, depth) {
-            var upperGlyff = this;
-            return Glyff.create(function (presenter) {
-                var perimeter = mogrifier.getPerimeter(presenter);
-                var audience = mogrifier.getUpperAudience(presenter);
-                var reaction = mogrifier.getUpperReaction(presenter);
-                presenter.addPresentation(upperGlyff.present(perimeter, audience, reaction));
-            }, depth || 0);
-        };
         Glyff.prototype.disappear = function (disappeared) {
             var _this = this;
             return Glyff.create(function (presenter) {
@@ -955,19 +946,9 @@ define(["require", "exports"], function (require, exports) {
                 }
             }, this.depth);
         };
-        // TODO: Integrate with pad2.
+        // TODO: Think about removing
         Glyff.prototype.pad = function (xPixels, yPixels) {
-            return this.compose({
-                getPerimeter: function (presenter) {
-                    return presenter.perimeter.inset(xPixels, yPixels);
-                },
-                getUpperAudience: function (presenter) {
-                    return presenter.audience;
-                },
-                getUpperReaction: function (presenter) {
-                    return presenter;
-                }
-            });
+            return this.pad2(new Inset2(0, xPixels, 0, yPixels));
         };
         Glyff.prototype.pad2 = function (inset) {
             return this.lift(function (lowerPresenter) {

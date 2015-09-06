@@ -640,12 +640,6 @@ export class Insertion<T> {
     }
 }
 
-export interface Mogrifier<T,U> {
-    getPerimeter(presenter : Presenter<U>): Perimeter;
-    getUpperAudience(presenter : Presenter<U>): Audience;
-    getUpperReaction(presenter : Presenter<U>): Reaction<T>;
-}
-
 class ClickGesturing implements Gesturing {
 
     private isEnded : boolean = false;
@@ -907,16 +901,6 @@ export class Glyff<T> {
         }, rebuilt.depth);
     }
 
-    compose<U>(mogrifier : Mogrifier<T,U>, depth? : number) : Glyff<U> {
-        var upperGlyff = this;
-        return Glyff.create<U>((presenter : Presenter<U>)=> {
-            var perimeter = mogrifier.getPerimeter(presenter);
-            var audience = mogrifier.getUpperAudience(presenter);
-            var reaction = mogrifier.getUpperReaction(presenter);
-            presenter.addPresentation(upperGlyff.present(perimeter, audience, reaction));
-        }, depth || 0);
-    }
-
     disappear(disappeared : boolean) : Glyff<T> {
         return Glyff.create<T>((presenter : Presenter<Void>)=> {
             var audience = disappeared ? {
@@ -1156,19 +1140,9 @@ export class Glyff<T> {
         }, this.depth);
     }
 
-    // TODO: Integrate with pad2.
+    // TODO: Think about removing
     pad(xPixels : number, yPixels : number) : Glyff<T> {
-        return this.compose({
-            getPerimeter(presenter : Presenter<T>) : Perimeter {
-                return presenter.perimeter.inset(xPixels, yPixels);
-            },
-            getUpperAudience(presenter : Presenter<T>) : Audience {
-                return presenter.audience;
-            },
-            getUpperReaction(presenter : Presenter<T>) : Reaction<T> {
-                return presenter;
-            }
-        });
+        return this.pad2(new Inset2(0, xPixels, 0, yPixels));
     }
 
     pad2(inset : Inset2) : Glyff<T> {
