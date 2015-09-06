@@ -91,8 +91,7 @@ Rx.httpGet(hNewsUri).subscribe((response : Rx.HttpResponse)=> {
         var item = items[itemIndex];
         var nextItem = items[(itemIndex + 1) % items.length];
         var prevItem = items[getPreviousItemIndex(itemIndex)];
-        var cell = getUnpressedCell(item).pagen(itemIndex, getRightCell(nextItem),
-            getLeftCell(prevItem));
+        var cell = getUnpressedCell(item).stackNearLeft(getRightCell(nextItem), getLeftCell(prevItem));
 
         var app = Glyffin.colorPath(backgroundColorPath)
             .addNearMajor(1, cell.splitHeightRetain(-tapHeight * 3, Glyffin.ClearGlyff));

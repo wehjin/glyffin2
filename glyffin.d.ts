@@ -248,7 +248,8 @@ export declare class Glyff<T> {
     moveX(x: number): Glyff<T>;
     moveY(y: number): Glyff<T>;
     clicken<U>(symbol: string, pressed?: Glyff<U>): Glyff<string>;
-    pagen<U>(index: number, next: Glyff<U>, prev: Glyff<U>): Glyff<string | T>;
+    stackNearLeft<R, S>(far: Glyff<R>, nearLeft: Glyff<S>): Glyff<string | T>;
+    stackNearRight<R, S>(far: Glyff<R>, nearRight: Glyff<S>): Glyff<string | T>;
     private animateWithPath(path);
     animate(duration: number): Glyff<T>;
     pulseAnimate(duration: number, count: number): Glyff<T>;

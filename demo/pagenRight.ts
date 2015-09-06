@@ -13,7 +13,7 @@ import Color = Glyffin.Color;
 var room = new GlyffinGl.GlRoom(<HTMLCanvasElement>document.getElementById('webgl'));
 var glAudience = new GlyffinGl.GlAudience(room);
 
-var backColors = [Color.RED, Color.GREEN, Color.BLUE];
+var backColors = [Color.YELLOW, Color.CYAN, Color.MAGENTA];
 var pageGlyffs = [];
 backColors.forEach((color)=> {
     pageGlyffs.push(Glyff.color(color));
@@ -51,7 +51,7 @@ function refresh() {
     }
 
     var page = getPageGlyff(index);
-    var pages = page.stackNearLeft(getPageGlyff(index + 1), getPageGlyff(index - 1));
+    var pages = page.stackNearRight(getPageGlyff(index + 1), getPageGlyff(index - 1));
     var app = Glyffin.BlackGlyff.addNearMajor(1, pages);
     presentation = app.present(perimeter, glAudience, (symbol)=> {
         console.log("%s", symbol);

@@ -1219,189 +1219,12 @@ export class Glyff<T> {
         }, gapToUnpressed + unpressed.depth);
     }
 
-    pagen<U>(index : number, next : Glyff<U>, prev : Glyff<U>) : Glyff<string|T> {
-        var gapToCenter = (next ? next.depth + 1 : 0);
-        var gapToLeft = gapToCenter + this.depth + 1;
-        var newDepth = gapToLeft + (prev ? prev.depth : 0);
-        return Glyff.create<string|T>((presenter : Presenter<string|T>)=> {
-            var perimeter = presenter.perimeter;
-            var audience = presenter.audience;
-            var current = this;
-            var centerPerimeter = perimeter.addLevel(gapToCenter);
-            var leftPerimeter = perimeter.addLevel(gapToLeft);
-            var noResultReaction = new NoResultReaction(presenter);
+    stackNearLeft<R,S>(far : Glyff<R>, nearLeft : Glyff<S>) : Glyff<string|T> {
+        return Operator.stacken(this, false, far, nearLeft);
+    }
 
-            var slideRange = perimeter.right;
-            var centerAdded : Removable, rightAdded : Removable, leftAdded : Removable;
-
-            function setCenter(glyff : Glyff<string|T>) {
-                if (centerAdded) {
-                    centerAdded.remove();
-                }
-                centerAdded =
-                    presenter.addPresentation(glyff.present(centerPerimeter, audience,
-                        presenter));
-            }
-
-            var centerSlide : number;
-
-            function setCenterSlide(newSlide : number) {
-                if (newSlide !== centerSlide) {
-                    centerSlide = newSlide;
-                    setCenter(newSlide === 0 ? current : current.moveX(newSlide));
-                }
-            }
-
-            function showRight(show : boolean) {
-                if (show && !rightAdded && next) {
-                    rightAdded = presenter.addPresentation(next.present(perimeter, audience,
-                        noResultReaction));
-                } else if (!show && rightAdded) {
-                    rightAdded.remove();
-                    rightAdded = null;
-                }
-            }
-
-            var leftSlide : number;
-
-            function setLeftSlide(newSlide : number) {
-                if (newSlide <= -slideRange) {
-                    newSlide = -slideRange;
-                }
-                if (newSlide >= 0) {
-                    newSlide = 0;
-                }
-                if (newSlide !== leftSlide) {
-                    leftSlide = newSlide;
-                    setLeft((newSlide <= -slideRange || !prev) ? null : prev.moveX(newSlide));
-                }
-            }
-
-            function setLeft(glyff : Glyff<Void>) {
-                if (leftAdded) {
-                    leftAdded.remove();
-                }
-                if (glyff) {
-                    leftAdded = presenter.addPresentation(glyff.present(leftPerimeter, audience,
-                        noResultReaction));
-                }
-            }
-
-            var triggerAge = (perimeter.tapHeight * 1.5) / slideRange;
-            var age = 0.0;
-
-            function setAge(newAge : number) {
-                setCenterSlide(newAge <= 0 ? 0 : (newAge * -slideRange));
-                showRight(newAge > 0);
-                setLeftSlide(newAge >= 0 ? -slideRange : (newAge + 1) * -slideRange);
-                age = newAge;
-            }
-
-            var stopAnimation;
-
-            function animateAge(newAge : number, ageVelocity : number, onEnd : ()=>void) {
-                if (stopAnimation) {
-                    stopAnimation();
-                }
-                var startAge = age;
-                var ageRange = newAge - startAge;
-                var startTime = Date.now();
-
-                var duration = 200;
-                if (ageVelocity * ageRange > 0) {
-                    // Velocity and range are in same direction and both non-zero.
-                    // Continue to see if we should shorten the duration.
-                    var minVelocity = ageRange / duration;
-                    if (ageVelocity / minVelocity > 1) {
-                        // Moving faster than minimum.  Get new duration.
-                        duration = ageRange / ageVelocity;
-                    }
-                }
-
-                var frame;
-
-                stopAnimation = ()=> {
-                    if (frame) {
-                        window.cancelAnimationFrame(frame);
-                        frame = 0;
-                    }
-                    stopAnimation = null;
-                };
-
-                function animate() {
-                    if (age == newAge) {
-                        stopAnimation = null;
-                        setTimeout(()=> {
-                            if (onEnd) {
-                                onEnd();
-                            }
-                        }, 1);
-                        return;
-                    }
-                    frame = window.requestAnimationFrame(()=> {
-                        frame = 0;
-                        var elapsed = (Date.now() - startTime);
-                        var progress = (elapsed / duration) + .001; // Bias ensures we get there
-                        setAge(elapsed >= duration ? newAge : startAge + ageRange * progress);
-                        animate();
-                    });
-                }
-
-                // Animate only after initializing stopAnimation so that animate can set
-                // it to null if needed.
-                animate();
-            }
-
-            setAge(0);
-            var zone = audience.addZone(perimeter, {
-                init(startSpot : Spot) : Gesturing {
-                    if (stopAnimation) {
-                        return null;
-                    }
-
-                    var moveFrame;
-                    var targetAge = age;
-                    return new PagenGesturing(startSpot, perimeter.tapHeight * .75,
-                        (pixelsMoved : number)=> {
-                            targetAge = -pixelsMoved / slideRange * 1.2;
-                            if ((targetAge < 0 && !prev) || (targetAge > 0 && !next)) {
-                                targetAge = 0;
-                            }
-                            if (!moveFrame) {
-                                moveFrame = setTimeout(()=> {
-                                    if (!moveFrame) {
-                                        return;
-                                    }
-                                    moveFrame = 0;
-                                    setAge(targetAge);
-                                }, 3);
-                            }
-                        }, ()=> {
-                            moveFrame = 0;
-                            setAge(0);
-                        }, (velocity : number)=> {
-                            moveFrame = 0;
-                            var ageVelocity = -velocity / slideRange;
-                            if (Math.abs(targetAge) < triggerAge) {
-                                animateAge(0, ageVelocity, null);
-                            } else if (targetAge > 0) {
-                                animateAge(1, ageVelocity, ()=> {
-                                    presenter.onResult("next");
-                                });
-                            } else {
-                                animateAge(-1, ageVelocity, ()=> {
-                                    presenter.onResult("back");
-                                });
-                            }
-                        });
-                }
-            });
-            presenter.addPresentation(<Presentation>{
-                end: ()=> {
-                    zone.remove();
-                }
-            });
-        }, newDepth);
+    stackNearRight<R,S>(far : Glyff<R>, nearRight : Glyff<S>) : Glyff<string|T> {
+        return Operator.stacken(this, true, far, nearRight);
     }
 
     private animateWithPath(path : AnimationPath) {
@@ -1557,4 +1380,199 @@ export var WhiteGlyff = Glyff.color(Color.WHITE);
 export var BlackGlyff = Glyff.color(Color.BLACK);
 export var GrayGlyff = Glyff.color(Color.GRAY);
 export var BeigeGlyff = Glyff.color(Color.BEIGE);
+
+module Operator {
+    export function stacken<R,S,T>(center : Glyff<T>, slideRight : boolean, far : Glyff<R>,
+                                   near : Glyff<S>) : Glyff<string|T> {
+        var gapToCenter = (far ? far.depth + 1 : 0);
+        var gapToNear = gapToCenter + center.depth + 1;
+        var newDepth = gapToNear + (near ? near.depth : 0);
+        return Glyff.create<string|T>((presenter : Presenter<string|T>)=> {
+            var perimeter = presenter.perimeter;
+            var audience = presenter.audience;
+            var farPerimeter = perimeter;
+            var centerPerimeter = perimeter.addLevel(gapToCenter);
+            var nearPerimeter = perimeter.addLevel(gapToNear);
+            var noResultReaction = new NoResultReaction(presenter);
+
+            var slideRange = perimeter.right;
+            var directionFactor = (slideRight ? 1 : -1);
+            var maxSlide = directionFactor * slideRange;
+            var centerAdded : Removable;
+            var farAdded : Removable;
+            var nearAdded : Removable;
+
+            function showFar(show : boolean) {
+                if (show && !farAdded && far) {
+                    farAdded = presenter.addPresentation(far.present(farPerimeter, audience,
+                        noResultReaction));
+                } else if (!show && farAdded) {
+                    farAdded.remove();
+                    farAdded = null;
+                }
+            }
+
+            function setCenter(glyff : Glyff<string|T>) {
+                if (centerAdded) {
+                    centerAdded.remove();
+                }
+                centerAdded =
+                    presenter.addPresentation(glyff.present(centerPerimeter, audience,
+                        presenter));
+            }
+
+            function setNear(glyff : Glyff<Void>) {
+                if (nearAdded) {
+                    nearAdded.remove();
+                }
+                if (glyff) {
+                    nearAdded = presenter.addPresentation(glyff.present(nearPerimeter, audience,
+                        noResultReaction));
+                }
+            }
+
+            var centerSlide : number;
+            var nearSlide : number;
+
+            function setCenterSlide(newSlide : number) {
+                if (newSlide !== centerSlide) {
+                    centerSlide = newSlide;
+                    setCenter(newSlide === 0 ? center : center.moveX(newSlide));
+                }
+            }
+
+            function setNearSlide(newSlide : number) {
+                if (slideRight) {
+                    newSlide = Math.min(newSlide, maxSlide);
+                    newSlide = Math.max(newSlide, 0);
+                } else {
+                    newSlide = Math.max(newSlide, maxSlide);
+                    newSlide = Math.min(newSlide, 0);
+                }
+                if (newSlide !== nearSlide) {
+                    nearSlide = newSlide;
+                    var offStage = slideRight ?
+                        (newSlide >= slideRange) : (newSlide <= -slideRange);
+                    setNear((offStage || !near) ? null : near.moveX(newSlide));
+                }
+            }
+
+            var triggerAge = (perimeter.tapHeight * 1.5) / slideRange;
+            var age = 0.0;
+
+            function setAge(newAge : number) {
+                showFar(newAge > 0);
+                setCenterSlide(newAge <= 0 ? 0 : newAge * maxSlide);
+                setNearSlide(newAge >= 0 ? maxSlide : (newAge + 1) * maxSlide);
+                age = newAge;
+            }
+
+            var stopAnimation;
+
+            function animateAge(newAge : number, ageVelocity : number, onEnd : ()=>void) {
+                if (stopAnimation) {
+                    stopAnimation();
+                }
+                var startAge = age;
+                var ageRange = newAge - startAge;
+                var startTime = Date.now();
+
+                var duration = 200;
+                if (ageVelocity * ageRange > 0) {
+                    // Velocity and range are in same direction and both non-zero.
+                    // Continue to see if we should shorten the duration.
+                    var minVelocity = ageRange / duration;
+                    if (ageVelocity / minVelocity > 1) {
+                        // Moving faster than minimum.  Get new duration.
+                        duration = ageRange / ageVelocity;
+                    }
+                }
+
+                var frame;
+
+                stopAnimation = ()=> {
+                    if (frame) {
+                        window.cancelAnimationFrame(frame);
+                        frame = 0;
+                    }
+                    stopAnimation = null;
+                };
+
+                function animate() {
+                    if (age == newAge) {
+                        stopAnimation = null;
+                        setTimeout(()=> {
+                            if (onEnd) {
+                                onEnd();
+                            }
+                        }, 1);
+                        return;
+                    }
+                    frame = window.requestAnimationFrame(()=> {
+                        frame = 0;
+                        var elapsed = (Date.now() - startTime);
+                        var progress = (elapsed / duration) + .001; // Bias ensures we get there
+                        setAge(elapsed >= duration ? newAge : startAge + ageRange * progress);
+                        animate();
+                    });
+                }
+
+                // Animate only after initializing stopAnimation so that animate can set
+                // it to null if needed.
+                animate();
+            }
+
+            setAge(0);
+            var zone = audience.addZone(perimeter, {
+                init(startSpot : Spot) : Gesturing {
+                    if (stopAnimation) {
+                        return null;
+                    }
+
+                    var moveFrame;
+                    var targetAge = age;
+                    return new PagenGesturing(startSpot, perimeter.tapHeight * .75,
+                        (pixelsMoved : number)=> {
+                            var boost = 1.2;
+                            targetAge = pixelsMoved / maxSlide * boost;
+                            if ((targetAge < 0 && !near) || (targetAge > 0 && !far)) {
+                                targetAge = 0;
+                            }
+                            if (!moveFrame) {
+                                moveFrame = setTimeout(()=> {
+                                    if (!moveFrame) {
+                                        return;
+                                    }
+                                    moveFrame = 0;
+                                    setAge(targetAge);
+                                }, 3);
+                            }
+                        }, ()=> {
+                            moveFrame = 0;
+                            setAge(0);
+                        }, (velocity : number)=> {
+                            moveFrame = 0;
+                            var ageVelocity = velocity / maxSlide;
+                            if (Math.abs(targetAge) < triggerAge) {
+                                animateAge(0, ageVelocity, null);
+                            } else if (targetAge > 0) {
+                                animateAge(1, ageVelocity, ()=> {
+                                    presenter.onResult("next");
+                                });
+                            } else {
+                                animateAge(-1, ageVelocity, ()=> {
+                                    presenter.onResult("back");
+                                });
+                            }
+                        });
+                }
+            });
+            presenter.addPresentation(<Presentation>{
+                end: ()=> {
+                    zone.remove();
+                }
+            });
+        }, newDepth);
+    }
+}
 

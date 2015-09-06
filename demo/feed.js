@@ -61,7 +61,7 @@ define(["require", "exports", "../glyffin", "../glyffin-gl", "../glyffin-ascii",
             var item = items[itemIndex];
             var nextItem = items[(itemIndex + 1) % items.length];
             var prevItem = items[getPreviousItemIndex(itemIndex)];
-            var cell = getUnpressedCell(item).pagen(itemIndex, getRightCell(nextItem), getLeftCell(prevItem));
+            var cell = getUnpressedCell(item).stackNearLeft(getRightCell(nextItem), getLeftCell(prevItem));
             var app = Glyffin.colorPath(backgroundColorPath).addNearMajor(1, cell.splitHeightRetain(-tapHeight * 3, Glyffin.ClearGlyff));
             var spinnerSize = tapHeight * 3;
             var spinner = Glyff.colorAnimation(Color.BLUE, Color.RED).pulseAnimate(1000, 50).limitHeight(spinnerSize, .5).limitWidth(spinnerSize, .5);

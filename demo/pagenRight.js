@@ -6,7 +6,7 @@ define(["require", "exports", "../glyffin", "../glyffin-gl"], function (require,
     var Color = Glyffin.Color;
     var room = new GlyffinGl.GlRoom(document.getElementById('webgl'));
     var glAudience = new GlyffinGl.GlAudience(room);
-    var backColors = [Color.RED, Color.GREEN, Color.BLUE];
+    var backColors = [Color.YELLOW, Color.CYAN, Color.MAGENTA];
     var pageGlyffs = [];
     backColors.forEach(function (color) {
         pageGlyffs.push(Glyff.color(color));
@@ -37,7 +37,7 @@ define(["require", "exports", "../glyffin", "../glyffin-gl"], function (require,
             presentation.end();
         }
         var page = getPageGlyff(index);
-        var pages = page.stackNearLeft(getPageGlyff(index + 1), getPageGlyff(index - 1));
+        var pages = page.stackNearRight(getPageGlyff(index + 1), getPageGlyff(index - 1));
         var app = Glyffin.BlackGlyff.addNearMajor(1, pages);
         presentation = app.present(perimeter, glAudience, function (symbol) {
             console.log("%s", symbol);
@@ -53,4 +53,4 @@ define(["require", "exports", "../glyffin", "../glyffin-gl"], function (require,
     }
     refresh();
 });
-//# sourceMappingURL=pagen.js.map
+//# sourceMappingURL=pagenRight.js.map
