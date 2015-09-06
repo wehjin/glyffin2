@@ -1016,9 +1016,9 @@ export class Glyff<T> {
     }
 
 
-    revealDown<U>(inset : Inset1, revelation : Glyff<U>) : Glyff<T|U> {
+    revealDown<U>(inset : Inset1, revelation : Glyff<U>) : Glyff<T|U|string> {
         var gapToCover = revelation.depth + 1;
-        return Glyff.create<T|U>((presenter : Presenter<T|U>) => {
+        return Glyff.create<T|U|string>((presenter : Presenter<T|U|string>) => {
             var perimeter = presenter.perimeter;
             var audience = presenter.audience;
             var perimeterHeight = perimeter.getHeight();
@@ -1071,6 +1071,7 @@ export class Glyff<T> {
                                 var distanceFromTarget = Math.abs(revelationHeight - target);
                                 if (distanceFromTarget < maxRevelationHeight / 2) {
                                     setAnchorHeight(target);
+                                    presenter.onResult(target === 0 ? "close" : "open");
                                 } else {
                                     setRevelationHeight(anchorHeight);
                                 }

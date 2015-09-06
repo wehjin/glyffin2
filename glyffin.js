@@ -878,6 +878,7 @@ define(["require", "exports"], function (require, exports) {
                                 var distanceFromTarget = Math.abs(revelationHeight - target);
                                 if (distanceFromTarget < maxRevelationHeight / 2) {
                                     setAnchorHeight(target);
+                                    presenter.onResult(target === 0 ? "close" : "open");
                                 }
                                 else {
                                     setRevelationHeight(anchorHeight);

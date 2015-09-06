@@ -239,7 +239,7 @@ export declare class Glyff<T> {
     splitHeightRetain<U>(size: number, addGlyff: Glyff<U>): Glyff<T>;
     over<U>(farGlyph: Glyff<U>, dz?: number): Glyff<T | U>;
     addNearMajor<U>(level: number, nearGlyff: Glyff<U>): Glyff<U>;
-    revealDown<U>(inset: Inset1, revelation: Glyff<U>): Glyff<T | U>;
+    revealDown<U>(inset: Inset1, revelation: Glyff<U>): Glyff<T | U | string>;
     limitWidth(maxWidth: number, align: number): Glyff<T>;
     limitHeight(maxHeight: number, align: number): Glyff<T>;
     kaleid(columns: number, rows: number, spots: number[][]): Glyff<Void>;
