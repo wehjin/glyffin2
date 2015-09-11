@@ -840,6 +840,20 @@ var gt_spots = [
 var pipe_spots = [
     [0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6], [0, 7]
 ];
+var obrace_spots = [
+    [2, 0], [3, 0],
+    [1, 1], [1, 2],
+    [0, 3],
+    [1, 4], [1, 5],
+    [2, 6], [3, 6]
+];
+var cbrace_spots = [
+    [0, 0], [1, 0],
+    [2, 1], [2, 2],
+    [3, 3],
+    [2, 4], [2, 5],
+    [0, 6], [1, 6]
+];
 var ascii_spots = [
     // 0-31
     no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots, no_spots,
@@ -862,7 +876,7 @@ var ascii_spots = [
     no_spots, a_spots, b_spots, c_spots, d_spots, e_spots, f_spots, g_spots,
     h_spots, i_spots, j_spots, k_spots, l_spots, m_spots, n_spots, o_spots,
     p_spots, q_spots, r_spots, s_spots, t_spots, u_spots, v_spots, w_spots,
-    x_spots, y_spots, z_spots, no_spots, pipe_spots, no_spots, no_spots, no_spots,
+    x_spots, y_spots, z_spots, obrace_spots, pipe_spots, cbrace_spots, no_spots, no_spots,
 ];
 
 var x_weight_default : number = 5;
@@ -886,7 +900,7 @@ var x_weights : number[] = [
     5, 5, 5, 5, 5, 5, 4, 5,
     5, 1, 5, 4, 2, 5, 5, 5,
     5, 5, 5, 5, 3, 5, 5, 5,
-    5, 5, 5, 5, 1, 5, 5, 5,
+    5, 5, 5, 4, 1, 4, 5, 5,
 ];
 
 var spaceWeight = getWordXWeight(' ');

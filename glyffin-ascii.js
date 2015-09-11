@@ -1373,6 +1373,28 @@ define(["require", "exports", "./glyffin"], function (require, exports, Glyffin)
         [0, 6],
         [0, 7]
     ];
+    var obrace_spots = [
+        [2, 0],
+        [3, 0],
+        [1, 1],
+        [1, 2],
+        [0, 3],
+        [1, 4],
+        [1, 5],
+        [2, 6],
+        [3, 6]
+    ];
+    var cbrace_spots = [
+        [0, 0],
+        [1, 0],
+        [2, 1],
+        [2, 2],
+        [3, 3],
+        [2, 4],
+        [2, 5],
+        [0, 6],
+        [1, 6]
+    ];
     var ascii_spots = [
         no_spots,
         no_spots,
@@ -1497,9 +1519,9 @@ define(["require", "exports", "./glyffin"], function (require, exports, Glyffin)
         x_spots,
         y_spots,
         z_spots,
-        no_spots,
+        obrace_spots,
         pipe_spots,
-        no_spots,
+        cbrace_spots,
         no_spots,
         no_spots,
     ];
@@ -1628,9 +1650,9 @@ define(["require", "exports", "./glyffin"], function (require, exports, Glyffin)
         5,
         5,
         5,
-        5,
+        4,
         1,
-        5,
+        4,
         5,
         5,
     ];
