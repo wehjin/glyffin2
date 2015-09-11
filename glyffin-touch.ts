@@ -2,9 +2,7 @@
  * Created by wehjin on 6/6/15.
  */
 
-import Glyffin = require("./glyffin");
-import Perimeter = Glyffin.Perimeter;
-import Gesturable = Glyffin.Gesturable;
+import {Perimeter, Gesturable, Glyff, BlueGlyff, GreenGlyff} from "./glyffin";
 
 export class Interactive {
     constructor(public bounds : Perimeter, public touchProvider : Gesturable) {
@@ -32,7 +30,7 @@ export class Interactive {
     }
 }
 
-export function button(symbol? : string) : Glyffin.Glyff<string> {
+export function button(symbol? : string) : Glyff<string> {
     symbol = symbol || "button";
-    return Glyffin.GreenGlyff.clicken(symbol, Glyffin.BlueGlyff);
+    return GreenGlyff.clicken(symbol, BlueGlyff);
 }

@@ -1,16 +1,7 @@
 /**
  * Created by wehjin on 5/24/15.
  */
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"], function (require, exports, Glyffin, GlyffinHtml, GlyffinTouch) {
-    var Interactive = GlyffinTouch.Interactive;
-    var SpotObservable = GlyffinHtml.SpotObservable;
-    var GestureStatus = Glyffin.GestureStatus;
+define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"], function (require, exports, glyffin_1, glyffin_html_1, glyffin_touch_1) {
     var STAGE_SIZE = 256;
     var LIGHT_X = 0;
     var LIGHT_Y = STAGE_SIZE / 2;
@@ -144,7 +135,8 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
                     throw "Out of patches";
                 }
                 patchIndex = this.freePatchHead;
-                this.freePatchHead = this.freePatchCleared = this.freePatchList[this.freePatchHead];
+                this.freePatchHead =
+                    this.freePatchCleared = this.freePatchList[this.freePatchHead];
             }
             else {
                 patchIndex = this.freePatchHead;
@@ -191,8 +183,27 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
     })();
     var ShadowProgram = (function () {
         function ShadowProgram(gl, mvpMatrix) {
-            this.VSHADER_SOURCE = 'attribute vec4 a_Position;\n' + 'uniform mat4 u_MvpMatrix;\n' + 'void main() {\n' + '  gl_Position = u_MvpMatrix * a_Position;\n' + '}\n';
-            this.FSHADER_SOURCE = '#ifdef GL_ES\n' + 'precision mediump float;\n' + '#endif\n' + 'vec4 pack (float depth) {\n' + '  const vec4 bitShift = vec4(1.0, 256.0, 256.0 * 256.0, 256.0 * 256.0 * 256.0);\n' + '  const vec4 bitMask = vec4(1.0/256.0, 1.0/256.0, 1.0/256.0, 0.0);\n' + '  vec4 rgbaDepth = fract(gl_FragCoord.z * bitShift);\n' + '  rgbaDepth -= rgbaDepth.gbaa * bitMask;\n' + '  return rgbaDepth;\n' + '}\n' + 'void main() {\n' + (stopAfterShadow ? '  gl_FragColor = vec4(gl_FragCoord.z,0.0,0.0,1.0);\n' : '  gl_FragColor = pack(gl_FragCoord.z);\n') + '}\n';
+            this.VSHADER_SOURCE = 'attribute vec4 a_Position;\n' +
+                'uniform mat4 u_MvpMatrix;\n' +
+                'void main() {\n' +
+                '  gl_Position = u_MvpMatrix * a_Position;\n' +
+                '}\n';
+            this.FSHADER_SOURCE = '#ifdef GL_ES\n' +
+                'precision mediump float;\n' +
+                '#endif\n' +
+                'vec4 pack (float depth) {\n' +
+                '  const vec4 bitShift = vec4(1.0, 256.0, 256.0 * 256.0, 256.0 * 256.0 * 256.0);\n' +
+                '  const vec4 bitMask = vec4(1.0/256.0, 1.0/256.0, 1.0/256.0, 0.0);\n' +
+                '  vec4 rgbaDepth = fract(gl_FragCoord.z * bitShift);\n' +
+                // stored into each byte
+                '  rgbaDepth -= rgbaDepth.gbaa * bitMask;\n' +
+                // 8 bits
+                '  return rgbaDepth;\n' +
+                '}\n' +
+                'void main() {\n' +
+                (stopAfterShadow ? '  gl_FragColor = vec4(gl_FragCoord.z,0.0,0.0,1.0);\n' :
+                    '  gl_FragColor = pack(gl_FragCoord.z);\n') +
+                '}\n';
             var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
             this.glProgram = program;
             this.u_MvpMatrix = gl.getUniformLocation(program, 'u_MvpMatrix');
@@ -212,8 +223,66 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
     })();
     var LightProgram = (function () {
         function LightProgram(gl, modelMatrix, mvpMatrix) {
-            this.VSHADER_SOURCE = 'const vec3 c_Normal = vec3( 0.0, 0.0, 1.0 );\n' + 'uniform mat4 u_ModelMatrix;\n' + 'uniform mat4 u_MvpMatrix;\n' + 'uniform mat4 u_MvpMatrixFromLight;\n' + 'attribute vec4 a_Position;\n' + 'attribute vec4 a_Color;\n' + 'varying vec4 v_Color;\n' + 'varying vec3 v_Normal;\n' + 'varying vec3 v_Position;\n' + 'varying vec4 v_PositionFromLight;\n' + 'void main(){\n' + '  gl_Position = u_MvpMatrix * a_Position;\n' + '  v_Position = vec3(u_ModelMatrix * a_Position);\n' + '  v_PositionFromLight = u_MvpMatrixFromLight * a_Position;\n' + '  v_Normal = c_Normal;\n' + '  v_Color = a_Color;\n' + '}\n';
-            this.FSHADER_SOURCE = '#ifdef GL_ES\n' + 'precision mediump float;\n' + '#endif\n' + 'uniform vec3 u_LightColor;\n' + 'uniform vec3 u_LightPosition;\n' + 'uniform vec3 u_AmbientLight;\n' + 'uniform sampler2D u_ShadowMap;\n' + 'varying vec3 v_Position;\n' + 'varying vec3 v_Normal;\n' + 'varying vec4 v_Color;\n' + 'varying vec4 v_PositionFromLight;\n' + 'float unpack(const in vec4 rgbaDepth) {\n' + '  const vec4 bitShift = vec4(1.0, 1.0/256.0, 1.0/(256.0*256.0), 1.0/(256.0*256.0*256.0));\n' + '  float depth = dot(rgbaDepth, bitShift);\n' + '  return depth;\n' + '}\n' + 'void main(){\n' + '  vec3 normal = normalize(v_Normal);\n' + '  vec3 lightDirection = normalize(u_LightPosition - v_Position);\n' + '  float lightIntensity = max(dot(lightDirection, normal), 0.0);\n' + '  vec3 diffuse = u_LightColor * v_Color.rgb * lightIntensity;\n' + '  vec3 ambient = u_AmbientLight * v_Color.rgb;\n' + '  vec4 color = vec4(diffuse + ambient, v_Color.a);\n' + '  vec3 shadowCoord = (v_PositionFromLight.xyz/v_PositionFromLight.w)/2.0 + 0.5;\n' + '  float poissonVisibility = 0.0;\n' + '  const float bias = 0.003;\n' + '  float depthAcc = 0.0;\n' + '  vec2 poissonDisk[4];\n' + '  poissonDisk[0] = vec2( -0.94201624, -0.39906216 );\n' + '  poissonDisk[1] = vec2( 0.94558609, -0.76890725 );\n' + '  poissonDisk[2] = vec2( -0.094184101, -0.92938870 );\n' + '  poissonDisk[3] = vec2( 0.34495938, 0.29387760 );\n' + '  for (int i=0;i<4;i++) {\n' + '    vec4 rgbaDepth = texture2D(u_ShadowMap, shadowCoord.xy + poissonDisk[i]/700.0*0.0);\n' + '    float depth = unpack(rgbaDepth);\n' + '    depthAcc += depth;\n' + '  }\n' + '  float visibility = (shadowCoord.z > depthAcc/4.0 + bias) ? 0.8 : 1.0;\n' + (redShadow ? '  gl_FragColor = (visibility < 1.0) ? vec4(1.0,0.0,0.0,1.0) : color;\n' : '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n') + '}\n';
+            this.VSHADER_SOURCE = 'const vec3 c_Normal = vec3( 0.0, 0.0, 1.0 );\n' +
+                'uniform mat4 u_ModelMatrix;\n' +
+                'uniform mat4 u_MvpMatrix;\n' +
+                'uniform mat4 u_MvpMatrixFromLight;\n' +
+                'attribute vec4 a_Position;\n' +
+                'attribute vec4 a_Color;\n' +
+                'varying vec4 v_Color;\n' +
+                'varying vec3 v_Normal;\n' +
+                'varying vec3 v_Position;\n' +
+                'varying vec4 v_PositionFromLight;\n' +
+                'void main(){\n' +
+                '  gl_Position = u_MvpMatrix * a_Position;\n' +
+                '  v_Position = vec3(u_ModelMatrix * a_Position);\n' +
+                '  v_PositionFromLight = u_MvpMatrixFromLight * a_Position;\n' +
+                '  v_Normal = c_Normal;\n' +
+                '  v_Color = a_Color;\n' +
+                '}\n';
+            this.FSHADER_SOURCE = '#ifdef GL_ES\n' +
+                'precision mediump float;\n' +
+                '#endif\n' +
+                'uniform vec3 u_LightColor;\n' +
+                'uniform vec3 u_LightPosition;\n' +
+                'uniform vec3 u_AmbientLight;\n' +
+                'uniform sampler2D u_ShadowMap;\n' +
+                'varying vec3 v_Position;\n' +
+                'varying vec3 v_Normal;\n' +
+                'varying vec4 v_Color;\n' +
+                'varying vec4 v_PositionFromLight;\n' +
+                'float unpack(const in vec4 rgbaDepth) {\n' +
+                '  const vec4 bitShift = vec4(1.0, 1.0/256.0, 1.0/(256.0*256.0), 1.0/(256.0*256.0*256.0));\n' +
+                '  float depth = dot(rgbaDepth, bitShift);\n' +
+                // same
+                '  return depth;\n' +
+                '}\n' +
+                'void main(){\n' +
+                // Normalize the normal because it is interpolated and not 1.0 in length any more
+                '  vec3 normal = normalize(v_Normal);\n' +
+                '  vec3 lightDirection = normalize(u_LightPosition - v_Position);\n' +
+                '  float lightIntensity = max(dot(lightDirection, normal), 0.0);\n' +
+                '  vec3 diffuse = u_LightColor * v_Color.rgb * lightIntensity;\n' +
+                '  vec3 ambient = u_AmbientLight * v_Color.rgb;\n' +
+                '  vec4 color = vec4(diffuse + ambient, v_Color.a);\n' +
+                '  vec3 shadowCoord = (v_PositionFromLight.xyz/v_PositionFromLight.w)/2.0 + 0.5;\n' +
+                '  float poissonVisibility = 0.0;\n' +
+                '  const float bias = 0.003;\n' +
+                '  float depthAcc = 0.0;\n' +
+                '  vec2 poissonDisk[4];\n' +
+                '  poissonDisk[0] = vec2( -0.94201624, -0.39906216 );\n' +
+                '  poissonDisk[1] = vec2( 0.94558609, -0.76890725 );\n' +
+                '  poissonDisk[2] = vec2( -0.094184101, -0.92938870 );\n' +
+                '  poissonDisk[3] = vec2( 0.34495938, 0.29387760 );\n' +
+                '  for (int i=0;i<4;i++) {\n' +
+                '    vec4 rgbaDepth = texture2D(u_ShadowMap, shadowCoord.xy + poissonDisk[i]/700.0*0.0);\n' +
+                '    float depth = unpack(rgbaDepth);\n' +
+                '    depthAcc += depth;\n' +
+                '  }\n' +
+                '  float visibility = (shadowCoord.z > depthAcc/4.0 + bias) ? 0.8 : 1.0;\n' +
+                (redShadow ? '  gl_FragColor = (visibility < 1.0) ? vec4(1.0,0.0,0.0,1.0) : color;\n' :
+                    '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n') +
+                '}\n';
             var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
             this.glProgram = program;
             this.u_ModelMatrix = gl.getUniformLocation(program, 'u_ModelMatrix');
@@ -223,7 +292,9 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
             this.u_LightPosition = gl.getUniformLocation(program, 'u_LightPosition');
             this.u_MvpMatrixFromLight = gl.getUniformLocation(program, 'u_MvpMatrixFromLight');
             this.u_ShadowMap = gl.getUniformLocation(program, 'u_ShadowMap');
-            if (!this.u_ModelMatrix || !this.u_MvpMatrix || !this.u_AmbientLight || !this.u_LightColor || !this.u_LightPosition || !this.u_MvpMatrixFromLight || !this.u_ShadowMap) {
+            if (!this.u_ModelMatrix || !this.u_MvpMatrix || !this.u_AmbientLight ||
+                !this.u_LightColor || !this.u_LightPosition || !this.u_MvpMatrixFromLight ||
+                !this.u_ShadowMap) {
                 console.log('Failed to get uniform storage location');
             }
             gl.useProgram(program);
@@ -242,8 +313,23 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
     var DepthProgram = (function () {
         function DepthProgram(gl, modelMatrix, mvpMatrix) {
             this.gl = gl;
-            this.VSHADER_SOURCE = 'uniform mat4 u_MvpMatrix;\n' + 'attribute vec4 a_Position;\n' + 'attribute vec4 a_Color;\n' + 'varying vec4 v_Color;\n' + 'const vec4 offset = vec4(0,0.5,.5,0);\n' + 'void main(){\n' + '  gl_Position = u_MvpMatrix * a_Position + offset;\n' + '  v_Color = a_Color;\n' + '}\n';
-            this.FSHADER_SOURCE = '#ifdef GL_ES\n' + 'precision mediump float;\n' + '#endif\n' + 'varying vec4 v_Color;\n' + 'void main(){\n' + '  float amount = 1.0 - (v_Color.r + v_Color.g + v_Color.b)/3.0;\n' + '  gl_FragColor = vec4(.9,.9,.9,amount);\n' + '}\n';
+            this.VSHADER_SOURCE = 'uniform mat4 u_MvpMatrix;\n' +
+                'attribute vec4 a_Position;\n' +
+                'attribute vec4 a_Color;\n' +
+                'varying vec4 v_Color;\n' +
+                'const vec4 offset = vec4(0,0.5,.5,0);\n' +
+                'void main(){\n' +
+                '  gl_Position = u_MvpMatrix * a_Position + offset;\n' +
+                '  v_Color = a_Color;\n' +
+                '}\n';
+            this.FSHADER_SOURCE = '#ifdef GL_ES\n' +
+                'precision mediump float;\n' +
+                '#endif\n' +
+                'varying vec4 v_Color;\n' +
+                'void main(){\n' +
+                '  float amount = 1.0 - (v_Color.r + v_Color.g + v_Color.b)/3.0;\n' +
+                '  gl_FragColor = vec4(.9,.9,.9,amount);\n' +
+                '}\n';
             gl.lineWidth(2.0);
             var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
             this.glProgram = program;
@@ -271,8 +357,8 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
         };
         return DepthProgram;
     })();
-    var MyRoom = (function () {
-        function MyRoom(canvas) {
+    var GlRoom = (function () {
+        function GlRoom(canvas) {
             this.canvas = canvas;
             canvas.style.position = "absolute";
             canvas.style.width = "100%";
@@ -283,7 +369,7 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
             this.width = canvas.width = canvas.clientWidth;
             this.height = canvas.height = canvas.clientHeight;
             this.depthMap = new Uint8Array(this.width * this.height * 4);
-            this.perimeter = new Glyffin.Perimeter(0, 0, this.width, this.height, 1, 0, 48, 10, new Glyffin.Palette());
+            this.perimeter = new glyffin_1.Perimeter(0, 0, this.width, this.height, 1, 0, 48, 10, new glyffin_1.Palette());
             var maxDimension = Math.max(canvas.width, canvas.height);
             var modelMatrix = new Matrix4();
             modelMatrix.setScale(STAGE_SIZE / canvas.width, -STAGE_SIZE / canvas.height, STAGE_SIZE / maxDimension);
@@ -332,10 +418,10 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
             gl.enable(gl.CULL_FACE);
             gl.cullFace(gl.BACK);
         }
-        MyRoom.prototype.writePatch = function (offset, bytes) {
+        GlRoom.prototype.writePatch = function (offset, bytes) {
             this.gl.bufferSubData(this.gl.ARRAY_BUFFER, offset, bytes);
         };
-        MyRoom.prototype.redraw = function (vertexCount, vertices) {
+        GlRoom.prototype.redraw = function (vertexCount, vertices) {
             var gl = this.gl;
             gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STREAM_DRAW);
             gl.depthFunc(gl.LEQUAL);
@@ -374,15 +460,8 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
                 gl.drawArrays(this.gl.LINES, 0, vertexCount / 3);
             }
         };
-        return MyRoom;
-    })();
-    var GlRoom = (function (_super) {
-        __extends(GlRoom, _super);
-        function GlRoom() {
-            _super.apply(this, arguments);
-        }
         return GlRoom;
-    })(MyRoom);
+    })();
     exports.GlRoom = GlRoom;
     var GlAudience = (function () {
         function GlAudience(room) {
@@ -399,10 +478,10 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
                 this.unsubscribeSpots();
             }
             var gesturings = [];
-            this.unsubscribeSpots = new SpotObservable(element).subscribe({
+            this.unsubscribeSpots = new glyffin_html_1.SpotObservable(element).subscribe({
                 onStart: function (spot) {
                     console.log("Interactives:", _this.interactives);
-                    var hits = Interactive.findHits(_this.interactives, spot.x, spot.y);
+                    var hits = glyffin_touch_1.Interactive.findHits(_this.interactives, spot.x, spot.y);
                     if (hits.length < 1) {
                         return false;
                     }
@@ -429,7 +508,7 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
                             continue;
                         }
                         var status = gesturing.move(spot);
-                        if (status === 2 /* SUPERCHARGED */) {
+                        if (status === glyffin_1.GestureStatus.SUPERCHARGED) {
                             shouldDrain = true;
                         }
                     }
@@ -494,7 +573,7 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
         GlAudience.prototype.addPatch = function (bounds, color) {
             var _this = this;
             if (bounds.left >= bounds.right || bounds.top >= bounds.bottom || color.alpha == 0) {
-                return Glyffin.EMPTY_PATCH;
+                return glyffin_1.EMPTY_PATCH;
             }
             var patch = this.vertices.getPatch(bounds.left, bounds.top, bounds.right, bounds.bottom, bounds.level, color, this.room);
             this.scheduleRedraw();
@@ -505,7 +584,7 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
             };
         };
         GlAudience.prototype.addZone = function (bounds, touchProvider) {
-            var interactive = new Interactive(bounds, touchProvider);
+            var interactive = new glyffin_touch_1.Interactive(bounds, touchProvider);
             this.interactives.push(interactive);
             var interactives = this.interactives;
             return {
@@ -515,7 +594,7 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
             };
         };
         GlAudience.prototype.present = function (glyff, reactionOrOnResult, onError) {
-            return Glyffin.EMPTY_PRESENTATION;
+            return glyffin_1.EMPTY_PRESENTATION;
         };
         return GlAudience;
     })();
@@ -527,7 +606,8 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
             console.log("Hey");
         }
         GlHall.prototype.present = function (glyff, onResult, onError) {
-            var previousAudience = this.audiences.length == 0 ? null : this.audiences[this.audiences.length - 1];
+            var previousAudience = this.audiences.length == 0 ?
+                null : this.audiences[this.audiences.length - 1];
             /*
              var nextCanvas = previousAudience ? this.createCanvas(previousAudience.canvas) : this.canvas;
     

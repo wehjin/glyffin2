@@ -1,6 +1,6 @@
 {
   "name": "glyffin",
-  "version": "0.1.3",
+  "version": "0.2.3",
   "description": "Draw rectangles on a screen",
   "jam": {
     "main": "src/glyffin-all.js"

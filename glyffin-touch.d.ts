@@ -1,9 +1,8 @@
 /**
  * Created by wehjin on 6/6/15.
  */
-import Glyffin = require("./glyffin");
-import Perimeter = Glyffin.Perimeter;
-import Gesturable = Glyffin.Gesturable;
+import {Perimeter, Gesturable, Glyff} from "./glyffin";
+
 export declare class Interactive {
     bounds: Perimeter;
     touchProvider: Gesturable;
@@ -11,4 +10,4 @@ export declare class Interactive {
     isHit(touchX: number, touchY: number): boolean;
     static findHits(all: Interactive[], x: number, y: number): Interactive[];
 }
-export declare function button(symbol?: string): Glyffin.Glyff<string>;
+export declare function button(symbol? : string) : Glyff<string>;

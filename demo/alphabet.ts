@@ -1,18 +1,17 @@
+///<reference path="../src/glyffin-all.d.ts"/>
 /**
  * Created by wehjin on 5/24/15.
  */
 
-import Glyffin=require("../glyffin");
-import GlyffinGl=require("../glyffin-gl");
-import GlyffinText=require("../glyffin-ascii");
+import {Inset2, GlRoom, GlAudience, asciiMultiLine} from "../src/glyffin-all";
 
-var room = new GlyffinGl.GlRoom(<HTMLCanvasElement>document.getElementById('webgl'));
-var audience = new GlyffinGl.GlAudience(room);
+var room = new GlRoom(<HTMLCanvasElement>document.getElementById('webgl'));
+var audience = new GlAudience(room);
 var perimeter = room.perimeter;
 var alphabet = "" +
     "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_\n" +
     "`abcdefghijklmnopqrstuvwxyz{|}~" +
     " !\"#$%&\'()*+,-.0123456789:;<=>?";
-GlyffinText.asciiMultiLine(3, alphabet)
-    .pad2(Glyffin.Inset2.EIGHTH)
+asciiMultiLine(3, alphabet)
+    .pad2(Inset2.EIGHTH)
     .present(perimeter, audience);

@@ -2,8 +2,7 @@
  * Created by wehjin on 7/2/15.
  */
 
-import Glyffin = require("./glyffin");
-import Spot = Glyffin.Spot;
+import {Spot} from "./glyffin";
 
 interface JsTouch {
     clientX: number;

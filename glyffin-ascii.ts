@@ -2,12 +2,8 @@
  * Created by wehjin on 5/24/15.
  */
 
-import Glyffin = require("./glyffin");
-import Void = Glyffin.Void;
-import Glyff = Glyffin.Glyff;
-import Presenter = Glyffin.Presenter;
-import Insertion = Glyffin.Insertion;
-import ClearGlyff = Glyffin.ClearGlyff;
+
+import {Glyff, Void, Presenter,Insertion,ClearGlyff,BeigeGlyff} from "./glyffin";
 
 // TODO: Add horizontal alignment
 
@@ -45,16 +41,16 @@ function getWordXWeight(word : string) : number {
     return letterWeights + spaceWeights;
 }
 
-export function asciiByCode(code : number, base? : Glyffin.Glyff<Void>) : Glyffin.Glyff<Void> {
+export function asciiByCode(code : number, base? : Glyff<Void>) : Glyff<Void> {
     code = getAsciiCode(code);
     var spots = code >= ascii_spots.length ? no_spots : ascii_spots[code];
     var xWeight = getCharXWeight(code);
-    return (base ? base : Glyffin.BeigeGlyff).kaleid(xWeight, 7, spots);
+    return (base ? base : BeigeGlyff).kaleid(xWeight, 7, spots);
 }
 
 export function asciiMultiLine(lines : number, paragraph : string,
-                               base? : Glyffin.Glyff<Void>) : Glyffin.Glyff<Void> {
-    return Glyffin.Glyff.create((presenter : Glyffin.Presenter<Void>)=> {
+                               base? : Glyff<Void>) : Glyff<Void> {
+    return Glyff.create((presenter : Presenter<Void>)=> {
         var perimeter = presenter.perimeter;
         var audience = presenter.audience;
         var linesAndLeadings = (lines * 2 - 1);
@@ -125,7 +121,7 @@ export function asciiWord(word : string, xWeightPixels : number, base? : Glyff<V
         var code = word.charCodeAt(i);
         var charWidth = xWeightPixels * getCharXWeight(code);
         if (i > 0) {
-            insertions.push(new Insertion(xWeightPixels, Glyffin.ClearGlyff));
+            insertions.push(new Insertion(xWeightPixels, ClearGlyff));
         }
         insertions.push(new Insertion(charWidth, asciiByCode(code, base)));
     }

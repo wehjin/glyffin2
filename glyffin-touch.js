@@ -1,14 +1,17 @@
 /**
  * Created by wehjin on 6/6/15.
  */
-define(["require", "exports", "./glyffin"], function (require, exports, Glyffin) {
+define(["require", "exports", "./glyffin"], function (require, exports, glyffin_1) {
     var Interactive = (function () {
         function Interactive(bounds, touchProvider) {
             this.bounds = bounds;
             this.touchProvider = touchProvider;
         }
         Interactive.prototype.isHit = function (touchX, touchY) {
-            return this.bounds.left <= touchX && this.bounds.right >= touchX && this.bounds.top <= touchY && this.bounds.bottom >= touchY;
+            return this.bounds.left <= touchX &&
+                this.bounds.right >= touchX &&
+                this.bounds.top <= touchY &&
+                this.bounds.bottom >= touchY;
         };
         Interactive.findHits = function (all, x, y) {
             var hitInteractives = [];
@@ -28,7 +31,7 @@ define(["require", "exports", "./glyffin"], function (require, exports, Glyffin)
     exports.Interactive = Interactive;
     function button(symbol) {
         symbol = symbol || "button";
-        return Glyffin.GreenGlyff.clicken(symbol, Glyffin.BlueGlyff);
+        return glyffin_1.GreenGlyff.clicken(symbol, glyffin_1.BlueGlyff);
     }
     exports.button = button;
 });

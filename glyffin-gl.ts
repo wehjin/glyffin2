@@ -4,15 +4,12 @@
 
 /// <reference path="webglbook.d.ts" />
 
-import Glyffin = require("./glyffin");
-import GlyffinHtml = require("./glyffin-html");
-import GlyffinTouch = require("./glyffin-touch");
-
-import Interactive = GlyffinTouch.Interactive;
-import SpotObservable = GlyffinHtml.SpotObservable;
-import Spot = Glyffin.Spot;
-import Gesturing = Glyffin.Gesturing;
-import GestureStatus = Glyffin.GestureStatus;
+import {
+    Glyff,Color, Spot,Gesturing, Gesturable, GestureStatus, OnError, OnResult, Perimeter,
+    Patch, Reaction, Presentation, Zone, Palette, Audience, EMPTY_PRESENTATION, EMPTY_PATCH, Hall
+} from "./glyffin";
+import {SpotObservable} from "./glyffin-html";
+import {Interactive} from "./glyffin-touch";
 
 var STAGE_SIZE = 256;
 var LIGHT_X = 0;
@@ -173,7 +170,7 @@ class Patches {
     }
 
     getPatch(left : number, top : number, right : number, bottom : number, level : number,
-             color : Glyffin.Color, room : MyRoom) : number {
+             color : Color, room : GlRoom) : number {
         var patchIndex;
         if (this.freePatchHead === this.freePatchCleared) {
             if (this.freePatchCleared === this.freePatchTail) {
@@ -209,7 +206,7 @@ class Patches {
         this.totalFreed++;
     }
 
-    clearFreedPatches(room : MyRoom) {
+    clearFreedPatches(room : GlRoom) {
         var next = this.freePatchCleared;
         var last = this.freePatchTail;
         if (next === last) {
@@ -448,7 +445,7 @@ class DepthProgram implements Program {
     }
 }
 
-class MyRoom {
+export class GlRoom {
 
     private gl : WebGLRenderingContext;
     private lightProgram : LightProgram;
@@ -457,7 +454,7 @@ class MyRoom {
     private frameBuffer : FrameBuffer;
     width : number;
     height : number;
-    perimeter : Glyffin.Perimeter;
+    perimeter : Perimeter;
     depthMap : Uint8Array;
 
     constructor(public canvas : HTMLCanvasElement) {
@@ -470,8 +467,8 @@ class MyRoom {
         this.width = canvas.width = canvas.clientWidth;
         this.height = canvas.height = canvas.clientHeight;
         this.depthMap = new Uint8Array(this.width * this.height * 4);
-        this.perimeter = new Glyffin.Perimeter(0, 0, this.width, this.height, 1, 0, 48, 10,
-            new Glyffin.Palette());
+        this.perimeter = new Perimeter(0, 0, this.width, this.height, 1, 0, 48, 10,
+            new Palette());
 
         var maxDimension = Math.max(canvas.width, canvas.height);
         var modelMatrix = new Matrix4();
@@ -586,10 +583,7 @@ class MyRoom {
     }
 }
 
-export class GlRoom extends MyRoom {
-}
-
-export class GlAudience implements Glyffin.Audience {
+export class GlAudience implements Audience {
     private vertices : Patches;
     private interactives : Interactive[] = [];
     private drawCount : number = 0;
@@ -607,7 +601,7 @@ export class GlAudience implements Glyffin.Audience {
             this.unsubscribeSpots();
         }
 
-        var gesturings : Glyffin.Gesturing[] = [];
+        var gesturings : Gesturing[] = [];
         this.unsubscribeSpots = new SpotObservable(element).subscribe({
             onStart: (spot : Spot) : boolean => {
                 console.log("Interactives:", this.interactives);
@@ -702,23 +696,23 @@ export class GlAudience implements Glyffin.Audience {
          */
     }
 
-    addPatch(bounds : Glyffin.Perimeter, color : Glyffin.Color) : Glyffin.Patch {
+    addPatch(bounds : Perimeter, color : Color) : Patch {
         if (bounds.left >= bounds.right || bounds.top >= bounds.bottom || color.alpha == 0) {
-            return Glyffin.EMPTY_PATCH;
+            return EMPTY_PATCH;
         }
 
         var patch = this.vertices.getPatch(bounds.left, bounds.top, bounds.right,
             bounds.bottom, bounds.level, color, this.room);
         this.scheduleRedraw();
-        return <Glyffin.Patch>{
+        return <Patch>{
             remove: ()=> {
                 this.vertices.putPatch(patch);
             }
         };
     }
 
-    addZone(bounds : Glyffin.Perimeter,
-            touchProvider : Glyffin.Gesturable) : Glyffin.Zone {
+    addZone(bounds : Perimeter,
+            touchProvider : Gesturable) : Zone {
         var interactive = new Interactive(bounds, touchProvider);
         this.interactives.push(interactive);
         var interactives = this.interactives;
@@ -729,14 +723,14 @@ export class GlAudience implements Glyffin.Audience {
         };
     }
 
-    present<U>(glyff : Glyffin.Glyff<U>,
-               reactionOrOnResult : Glyffin.Reaction<U>|Glyffin.OnResult<U>,
-               onError : Glyffin.OnError) : Glyffin.Presentation {
-        return Glyffin.EMPTY_PRESENTATION;
+    present<U>(glyff : Glyff<U>,
+               reactionOrOnResult : Reaction<U>|OnResult<U>,
+               onError : OnError) : Presentation {
+        return EMPTY_PRESENTATION;
     }
 }
 
-export class GlHall implements Glyffin.Hall {
+export class GlHall implements Hall {
 
     audience : GlAudience;
     audiences : GlAudience[] = [];
@@ -745,8 +739,8 @@ export class GlHall implements Glyffin.Hall {
         console.log("Hey");
     }
 
-    present<U>(glyff : Glyffin.Glyff<U>, onResult? : Glyffin.OnResult<U>,
-               onError? : Glyffin.OnError) : Glyffin.Presentation {
+    present<U>(glyff : Glyff<U>, onResult? : OnResult<U>,
+               onError? : OnError) : Presentation {
         var previousAudience : GlAudience = this.audiences.length == 0 ?
             null : this.audiences[this.audiences.length - 1];
         /*

@@ -111,30 +111,36 @@ define(["require", "exports"], function (require, exports) {
         Perimeter.prototype.splitHeight = function (pixels) {
             if (pixels >= 0) {
                 var split = this.top + pixels;
-                return [new Perimeter(this.left, this.top, this.right, split, this.age, this.level, this.tapHeight, this.readHeight, this.palette), new Perimeter(this.left, split, this.right, this.bottom, this.age, this.level, this.tapHeight, this.readHeight, this.palette)];
+                return [new Perimeter(this.left, this.top, this.right, split, this.age, this.level, this.tapHeight, this.readHeight, this.palette),
+                    new Perimeter(this.left, split, this.right, this.bottom, this.age, this.level, this.tapHeight, this.readHeight, this.palette)];
             }
             else {
                 var split = this.bottom + pixels;
-                return [new Perimeter(this.left, split, this.right, this.bottom, this.age, this.level, this.tapHeight, this.readHeight, this.palette), new Perimeter(this.left, this.top, this.right, split, this.age, this.level, this.tapHeight, this.readHeight, this.palette)];
+                return [new Perimeter(this.left, split, this.right, this.bottom, this.age, this.level, this.tapHeight, this.readHeight, this.palette),
+                    new Perimeter(this.left, this.top, this.right, split, this.age, this.level, this.tapHeight, this.readHeight, this.palette)];
             }
         };
         Perimeter.prototype.splitWidth = function (pixels) {
             if (pixels >= 0) {
                 var split = this.left + pixels;
-                return [new Perimeter(this.left, this.top, split, this.bottom, this.age, this.level, this.tapHeight, this.readHeight, this.palette), new Perimeter(split, this.top, this.right, this.bottom, this.age, this.level, this.tapHeight, this.readHeight, this.palette)];
+                return [new Perimeter(this.left, this.top, split, this.bottom, this.age, this.level, this.tapHeight, this.readHeight, this.palette),
+                    new Perimeter(split, this.top, this.right, this.bottom, this.age, this.level, this.tapHeight, this.readHeight, this.palette)];
             }
             else {
                 var split = this.right + pixels;
-                return [new Perimeter(split, this.top, this.right, this.bottom, this.age, this.level, this.tapHeight, this.readHeight, this.palette), new Perimeter(this.left, this.top, split, this.bottom, this.age, this.level, this.tapHeight, this.readHeight, this.palette)];
+                return [new Perimeter(split, this.top, this.right, this.bottom, this.age, this.level, this.tapHeight, this.readHeight, this.palette),
+                    new Perimeter(this.left, this.top, split, this.bottom, this.age, this.level, this.tapHeight, this.readHeight, this.palette)];
             }
         };
         Perimeter.prototype.limitHeight = function (maxHeight, align) {
             var height = this.getHeight();
-            return (height <= maxHeight) ? this : this.downFromTop((height - maxHeight) * align, maxHeight);
+            return (height <= maxHeight) ? this :
+                this.downFromTop((height - maxHeight) * align, maxHeight);
         };
         Perimeter.prototype.limitWidth = function (maxWidth, align) {
             var width = this.getWidth();
-            return (width <= maxWidth) ? this : this.rightFromLeft((width - maxWidth) * align, maxWidth);
+            return (width <= maxWidth) ? this :
+                this.rightFromLeft((width - maxWidth) * align, maxWidth);
         };
         return Perimeter;
     })();
@@ -317,18 +323,18 @@ define(["require", "exports"], function (require, exports) {
         };
         PagenGesturing.prototype.move = function (spot) {
             if (this.drained) {
-                return 3 /* DRAINED */;
+                return GestureStatus.DRAINED;
             }
             this.speedometer.addSpot(spot);
             if (this.sliding == 0) {
                 var crossOffset = spot.yDistance(this.downSpot);
                 if (Math.abs(crossOffset) > this.minCharging) {
                     this.drained = true;
-                    return 3 /* DRAINED */;
+                    return GestureStatus.DRAINED;
                 }
                 var grainOffset = spot.xDistance(this.downSpot);
                 if (Math.abs(grainOffset) < this.minCharging) {
-                    return 0 /* CHARGING */;
+                    return GestureStatus.CHARGING;
                 }
                 this.sliding = grainOffset > 0 ? 1 : -1;
             }
@@ -344,7 +350,7 @@ define(["require", "exports"], function (require, exports) {
                 pixelsMoved = grainOffset;
             }
             this.onStarted(pixelsMoved);
-            return 2 /* SUPERCHARGED */;
+            return GestureStatus.SUPERCHARGED;
         };
         PagenGesturing.prototype.release = function () {
             if (this.drained || this.sliding == 0) {
@@ -389,14 +395,15 @@ define(["require", "exports"], function (require, exports) {
                 var crossOffset = Math.abs(spot.yDistance(this.downSpot));
                 if (crossOffset > this.chargingSize) {
                     this.drained = true;
-                    return 3 /* DRAINED */;
+                    return GestureStatus.DRAINED;
                 }
                 var grainOffset = spot.xDistance(this.downSpot);
                 if (Math.abs(grainOffset) < this.chargingSize) {
-                    return 0 /* CHARGING */;
+                    return GestureStatus.CHARGING;
                 }
-                if ((this.chargingDirection > 0 && grainOffset < 0) || (this.chargingDirection < 0 && grainOffset > 0)) {
-                    return 0 /* CHARGING */;
+                if ((this.chargingDirection > 0 && grainOffset < 0) ||
+                    (this.chargingDirection < 0 && grainOffset > 0)) {
+                    return GestureStatus.CHARGING;
                 }
                 this.direction = grainOffset >= 0 ? 1 : -1;
                 this.startSpot = this.downSpot.addX(this.chargingSize * this.direction);
@@ -413,7 +420,7 @@ define(["require", "exports"], function (require, exports) {
                 pixelsMoved = grainOffset;
             }
             this.onStarted(pixelsMoved);
-            return 2 /* SUPERCHARGED */;
+            return GestureStatus.SUPERCHARGED;
         };
         HorizontalGesturing.prototype.release = function () {
             if (this.drained || !this.startSpot) {
@@ -457,14 +464,15 @@ define(["require", "exports"], function (require, exports) {
                 var crossOffset = Math.abs(spot.xDistance(this.downSpot));
                 if (crossOffset > Math.abs(this.minMove)) {
                     this.drained = true;
-                    return 3 /* DRAINED */;
+                    return GestureStatus.DRAINED;
                 }
                 var grainOffset = spot.yDistance(this.downSpot);
                 if (Math.abs(grainOffset) < Math.abs(this.minMove)) {
-                    return 0 /* CHARGING */;
+                    return GestureStatus.CHARGING;
                 }
-                if ((this.minMove > 0 && grainOffset < 0) || (this.minMove < 0 && grainOffset > 0)) {
-                    return 0 /* CHARGING */;
+                if ((this.minMove > 0 && grainOffset < 0) ||
+                    (this.minMove < 0 && grainOffset > 0)) {
+                    return GestureStatus.CHARGING;
                 }
                 this.startSpot = this.downSpot.addY(this.minMove);
             }
@@ -480,7 +488,7 @@ define(["require", "exports"], function (require, exports) {
                 pixelsMoved = grainOffset;
             }
             this.onStarted(pixelsMoved);
-            return 2 /* SUPERCHARGED */;
+            return GestureStatus.SUPERCHARGED;
         };
         VerticalGesturing.prototype.release = function () {
             if (this.drained || !this.startSpot) {
@@ -570,13 +578,13 @@ define(["require", "exports"], function (require, exports) {
         };
         ClickGesturing.prototype.move = function (spot) {
             if (this.isEnded) {
-                return 3 /* DRAINED */;
+                return GestureStatus.DRAINED;
             }
             if (spot.gridDistance(this.startSpot) > this.threshold) {
                 this.doEnd();
-                return 3 /* DRAINED */;
+                return GestureStatus.DRAINED;
             }
-            return 1 /* CHARGED */;
+            return GestureStatus.CHARGED;
         };
         ClickGesturing.prototype.cancel = function () {
             if (this.isEnded) {
@@ -847,12 +855,17 @@ define(["require", "exports"], function (require, exports) {
                 var cover = _this;
                 function setRevelationHeight(height) {
                     revelationHeight = Math.max(0, Math.min(height, maxRevelationHeight));
-                    var coverPerimeter = perimeter.downFromTop(revelationHeight, perimeterHeight).addLevel(gapToCover);
+                    var coverPerimeter = perimeter.downFromTop(revelationHeight, perimeterHeight)
+                        .addLevel(gapToCover);
                     if (unpresent) {
                         unpresent();
                     }
-                    var revelationRemovable = presenter.addPresentation(revelation.isolate(revelationHeight < maxRevelationHeight).disappear(revelationHeight <= 0).present(revelationPerimeter, audience, presenter));
-                    var coverRemovable = presenter.addPresentation(cover.present(coverPerimeter, audience, presenter));
+                    var revelationRemovable = presenter.addPresentation(revelation
+                        .isolate(revelationHeight < maxRevelationHeight)
+                        .disappear(revelationHeight <= 0)
+                        .present(revelationPerimeter, audience, presenter));
+                    var coverRemovable = presenter.addPresentation(cover
+                        .present(coverPerimeter, audience, presenter));
                     unpresent = function () {
                         coverRemovable.remove();
                         revelationRemovable.remove();
@@ -1194,7 +1207,8 @@ define(["require", "exports"], function (require, exports) {
                     if (centerAdded) {
                         centerAdded.remove();
                     }
-                    centerAdded = presenter.addPresentation(glyff.present(centerPerimeter, audience, presenter));
+                    centerAdded =
+                        presenter.addPresentation(glyff.present(centerPerimeter, audience, presenter));
                 }
                 function setNear(glyff) {
                     if (nearAdded) {
@@ -1223,7 +1237,8 @@ define(["require", "exports"], function (require, exports) {
                     }
                     if (newSlide !== nearSlide) {
                         nearSlide = newSlide;
-                        var offStage = slideRight ? (newSlide >= slideRange) : (newSlide <= -slideRange);
+                        var offStage = slideRight ?
+                            (newSlide >= slideRange) : (newSlide <= -slideRange);
                         setNear((offStage || !near) ? null : near.moveX(newSlide));
                     }
                 }
