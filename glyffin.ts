@@ -71,6 +71,10 @@ export class Perimeter {
         return this.right - this.left;
     }
 
+    getCenterY() : number {
+        return this.top + this.getHeight() / 2;
+    }
+
     at(left : number, top : number, right : number, bottom : number) : Perimeter {
         return new Perimeter(left, top, right,
             bottom, this.age, this.level, this.tapHeight, this.readHeight, this.palette);
@@ -182,7 +186,6 @@ export class Perimeter {
         return (width <= maxWidth) ? this :
             this.rightFromLeft((width - maxWidth) * align, maxWidth);
     }
-
 }
 
 export class Color {

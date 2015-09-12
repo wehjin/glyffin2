@@ -71,6 +71,9 @@ define(["require", "exports"], function (require, exports) {
         Perimeter.prototype.getWidth = function () {
             return this.right - this.left;
         };
+        Perimeter.prototype.getCenterY = function () {
+            return this.top + this.getHeight() / 2;
+        };
         Perimeter.prototype.at = function (left, top, right, bottom) {
             return new Perimeter(left, top, right, bottom, this.age, this.level, this.tapHeight, this.readHeight, this.palette);
         };
