@@ -80,6 +80,12 @@ define(["require", "exports"], function (require, exports) {
         Perimeter.prototype.withLevel = function (level) {
             return new Perimeter(this.left, this.top, this.right, this.bottom, this.age, level, this.tapHeight, this.readHeight, this.palette);
         };
+        Perimeter.prototype.withHeight = function (pixelsHigh, alignment) {
+            var shiftDown = (this.getHeight() - pixelsHigh) * alignment;
+            var top = this.top + shiftDown;
+            var bottom = top + pixelsHigh;
+            return new Perimeter(this.left, top, this.right, bottom, this.age, this.level, this.tapHeight, this.readHeight, this.palette);
+        };
         Perimeter.prototype.addLevel = function (add) {
             return new Perimeter(this.left, this.top, this.right, this.bottom, this.age, this.level + add, this.tapHeight, this.readHeight, this.palette);
         };

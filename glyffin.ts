@@ -86,6 +86,14 @@ export class Perimeter {
             this.tapHeight, this.readHeight, this.palette);
     }
 
+    withHeight(pixelsHigh : number, alignment : number) {
+        var shiftDown = (this.getHeight() - pixelsHigh) * alignment;
+        var top = this.top + shiftDown;
+        var bottom = top + pixelsHigh;
+        return new Perimeter(this.left, top, this.right, bottom, this.age, this.level,
+            this.tapHeight, this.readHeight, this.palette);
+    }
+
     addLevel(add : number) : Perimeter {
         return new Perimeter(this.left, this.top, this.right, this.bottom, this.age,
             this.level + add, this.tapHeight, this.readHeight, this.palette);
