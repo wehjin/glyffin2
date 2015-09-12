@@ -47,12 +47,12 @@ define(["require", "exports", "../src/glyffin-all"], function (require, exports,
             var viewPresentation = glyffin_all_1.EMPTY_REMOVABLE;
             var maxScrollUpAt0 = (cellPixelsHigh + dividerPixelsHigh) * (cellGlyffs.length - 1);
             var maxScrollDownAt0 = 0;
-            var currentScroll = 0;
-            var extraScroll = 0;
+            var currentScrollUp = 0;
+            var extraScrollUp = 0;
             var maxScrollUp = maxScrollUpAt0;
             var maxScrollDown = maxScrollDownAt0;
             function presentView() {
-                var scrollPixels = currentScroll + extraScroll;
+                var scrollPixels = currentScrollUp + extraScrollUp;
                 var view = listStatic(cellGlyffs, centerPerimeter, dividerPixelsHigh, scrollPixels);
                 viewPresentation.remove();
                 viewPresentation =
@@ -63,19 +63,19 @@ define(["require", "exports", "../src/glyffin-all"], function (require, exports,
                 init: function (spot) {
                     return new glyffin_all_1.VerticalGesturing(spot, listPerimeter.readHeight, 0, function (pixelsMoved) {
                         // Started
-                        extraScroll =
-                            Math.min(maxScrollUp, Math.max(-maxScrollDown, -pixelsMoved));
+                        var rawExtraUp = -pixelsMoved;
+                        extraScrollUp = Math.min(maxScrollUp, Math.max(-maxScrollDown, rawExtraUp));
                         presentView();
                     }, function () {
                         // Cancelled
-                        extraScroll = 0;
+                        extraScrollUp = 0;
                         presentView();
                     }, function () {
                         // Completed
-                        currentScroll = currentScroll + extraScroll;
-                        extraScroll = 0;
-                        maxScrollUp = maxScrollUpAt0 - currentScroll;
-                        maxScrollDown = maxScrollDownAt0 + currentScroll;
+                        currentScrollUp = currentScrollUp + extraScrollUp;
+                        extraScrollUp = 0;
+                        maxScrollUp = maxScrollUpAt0 - currentScrollUp;
+                        maxScrollDown = maxScrollDownAt0 + currentScrollUp;
                     });
                 }
             });

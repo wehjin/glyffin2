@@ -59,13 +59,13 @@ function list(cellGlyffs : Glyff<Void>[], cellHeight : Inset1) : Glyff<Void> {
         var maxScrollUpAt0 = (cellPixelsHigh + dividerPixelsHigh) * (cellGlyffs.length - 1);
         var maxScrollDownAt0 = 0;
 
-        var currentScroll = 0;
-        var extraScroll = 0;
+        var currentScrollUp = 0;
+        var extraScrollUp = 0;
         var maxScrollUp = maxScrollUpAt0;
         var maxScrollDown = maxScrollDownAt0;
 
         function presentView() {
-            var scrollPixels = currentScroll + extraScroll;
+            var scrollPixels = currentScrollUp + extraScrollUp;
             var view = listStatic(cellGlyffs, centerPerimeter, dividerPixelsHigh, scrollPixels);
             viewPresentation.remove();
             viewPresentation =
@@ -78,19 +78,19 @@ function list(cellGlyffs : Glyff<Void>[], cellHeight : Inset1) : Glyff<Void> {
                 return new VerticalGesturing(spot, listPerimeter.readHeight, 0,
                     (pixelsMoved : number)=> {
                         // Started
-                        extraScroll =
-                            Math.min(maxScrollUp, Math.max(-maxScrollDown, -pixelsMoved));
+                        var rawExtraUp = -pixelsMoved;
+                        extraScrollUp = Math.min(maxScrollUp, Math.max(-maxScrollDown, rawExtraUp));
                         presentView();
                     }, ()=> {
                         // Cancelled
-                        extraScroll = 0;
+                        extraScrollUp = 0;
                         presentView();
                     }, ()=> {
                         // Completed
-                        currentScroll = currentScroll + extraScroll;
-                        extraScroll = 0;
-                        maxScrollUp = maxScrollUpAt0 - currentScroll;
-                        maxScrollDown = maxScrollDownAt0 + currentScroll;
+                        currentScrollUp = currentScrollUp + extraScrollUp;
+                        extraScrollUp = 0;
+                        maxScrollUp = maxScrollUpAt0 - currentScrollUp;
+                        maxScrollDown = maxScrollDownAt0 + currentScrollUp;
                     })
             }
         });
