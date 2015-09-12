@@ -4,8 +4,8 @@
  */
 
 import {
-    Glyff, Void, Presenter, Inset2, Inset1, Perimeter,
-    GlRoom, GlAudience, asciiMultiLine,
+    Glyff, Void, Presenter, Inset2, Inset1, Perimeter, EMPTY_REMOVABLE, Spot, Gesturing,
+    GlRoom, GlAudience, asciiMultiLine, VerticalGesturing,
     RedGlyff, BlueGlyff, GreenGlyff, ClearGlyff,
 } from "../src/glyffin-all";
 
@@ -24,7 +24,7 @@ function getMaxDepth(glyffs : Glyff<any>[]) : number {
 }
 
 function listStatic(cellGlyffs : Glyff<Void>[], centerPerimeter : Perimeter,
-                    dividerPixelsHigh : number) : Glyff<Void> {
+                    dividerPixelsHigh : number, scrollPixels : number) : Glyff<Void> {
     if (cellGlyffs.length === 0) {
         return ClearGlyff;
     }
@@ -36,18 +36,14 @@ function listStatic(cellGlyffs : Glyff<Void>[], centerPerimeter : Perimeter,
     }
     var cellCount = cellGlyffs.length;
     return Glyff.create((lower : Presenter<Void>)=> {
-        var listPerimeter = lower.perimeter;
-        var listPixelsHigh = listPerimeter.getHeight();
         var cellPixelsHigh = centerPerimeter.getHeight();
         var cellAndDividerPixelsHigh = cellPixelsHigh + dividerPixelsHigh;
         for (var i = 0; i < cellCount; i++) {
             var cellGlyff = cellGlyffs[i];
-            var cellShift = i * cellAndDividerPixelsHigh;
+            var cellShift = i * cellAndDividerPixelsHigh - scrollPixels;
             var cellPerimeter = centerPerimeter.translateY(cellShift);
             lower.addPresentation(cellGlyff.present(cellPerimeter, lower.audience, lower));
         }
-        var maxVisible = (cellPixelsHigh == 0 ? 20 : Math.floor(listPixelsHigh / cellPixelsHigh)) +
-            2;
     }, getMaxDepth(cellGlyffs));
 }
 
@@ -58,8 +54,46 @@ function list(cellGlyffs : Glyff<Void>[], cellHeight : Inset1) : Glyff<Void> {
         var listPixelsHigh = listPerimeter.getHeight();
         var cellPixelsHigh = cellHeight.getPixels(listPixelsHigh);
         var centerPerimeter = listPerimeter.withHeight(cellPixelsHigh, .5);
-        var view = listStatic(cellGlyffs, centerPerimeter, dividerPixelsHigh);
-        lower.addPresentation(view.present(listPerimeter, lower.audience, lower));
+        var viewPresentation = EMPTY_REMOVABLE;
+
+        var maxScrollUpAt0 = (cellPixelsHigh + dividerPixelsHigh) * (cellGlyffs.length - 1);
+        var maxScrollDownAt0 = 0;
+
+        var currentScroll = 0;
+        var extraScroll = 0;
+        var maxScrollUp = maxScrollUpAt0;
+        var maxScrollDown = maxScrollDownAt0;
+
+        function presentView() {
+            var scrollPixels = currentScroll + extraScroll;
+            var view = listStatic(cellGlyffs, centerPerimeter, dividerPixelsHigh, scrollPixels);
+            viewPresentation.remove();
+            viewPresentation =
+                lower.addPresentation(view.present(listPerimeter, lower.audience, lower));
+        }
+
+        presentView();
+        lower.audience.addZone(listPerimeter, {
+            init: (spot : Spot) : Gesturing => {
+                return new VerticalGesturing(spot, listPerimeter.readHeight, 0,
+                    (pixelsMoved : number)=> {
+                        // Started
+                        extraScroll =
+                            Math.min(maxScrollUp, Math.max(-maxScrollDown, -pixelsMoved));
+                        presentView();
+                    }, ()=> {
+                        // Cancelled
+                        extraScroll = 0;
+                        presentView();
+                    }, ()=> {
+                        // Completed
+                        currentScroll = currentScroll + extraScroll;
+                        extraScroll = 0;
+                        maxScrollUp = maxScrollUpAt0 - currentScroll;
+                        maxScrollDown = maxScrollDownAt0 + currentScroll;
+                    })
+            }
+        });
     }, getMaxDepth(cellGlyffs));
 }
 

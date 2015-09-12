@@ -15,7 +15,7 @@ define(["require", "exports", "../src/glyffin-all"], function (require, exports,
         }
         return depth;
     }
-    function listStatic(cellGlyffs, centerPerimeter, dividerPixelsHigh) {
+    function listStatic(cellGlyffs, centerPerimeter, dividerPixelsHigh, scrollPixels) {
         if (cellGlyffs.length === 0) {
             return glyffin_all_1.ClearGlyff;
         }
@@ -27,18 +27,14 @@ define(["require", "exports", "../src/glyffin-all"], function (require, exports,
         }
         var cellCount = cellGlyffs.length;
         return glyffin_all_1.Glyff.create(function (lower) {
-            var listPerimeter = lower.perimeter;
-            var listPixelsHigh = listPerimeter.getHeight();
             var cellPixelsHigh = centerPerimeter.getHeight();
             var cellAndDividerPixelsHigh = cellPixelsHigh + dividerPixelsHigh;
             for (var i = 0; i < cellCount; i++) {
                 var cellGlyff = cellGlyffs[i];
-                var cellShift = i * cellAndDividerPixelsHigh;
+                var cellShift = i * cellAndDividerPixelsHigh - scrollPixels;
                 var cellPerimeter = centerPerimeter.translateY(cellShift);
                 lower.addPresentation(cellGlyff.present(cellPerimeter, lower.audience, lower));
             }
-            var maxVisible = (cellPixelsHigh == 0 ? 20 : Math.floor(listPixelsHigh / cellPixelsHigh)) +
-                2;
         }, getMaxDepth(cellGlyffs));
     }
     function list(cellGlyffs, cellHeight) {
@@ -48,8 +44,41 @@ define(["require", "exports", "../src/glyffin-all"], function (require, exports,
             var listPixelsHigh = listPerimeter.getHeight();
             var cellPixelsHigh = cellHeight.getPixels(listPixelsHigh);
             var centerPerimeter = listPerimeter.withHeight(cellPixelsHigh, .5);
-            var view = listStatic(cellGlyffs, centerPerimeter, dividerPixelsHigh);
-            lower.addPresentation(view.present(listPerimeter, lower.audience, lower));
+            var viewPresentation = glyffin_all_1.EMPTY_REMOVABLE;
+            var maxScrollUpAt0 = (cellPixelsHigh + dividerPixelsHigh) * (cellGlyffs.length - 1);
+            var maxScrollDownAt0 = 0;
+            var currentScroll = 0;
+            var extraScroll = 0;
+            var maxScrollUp = maxScrollUpAt0;
+            var maxScrollDown = maxScrollDownAt0;
+            function presentView() {
+                var scrollPixels = currentScroll + extraScroll;
+                var view = listStatic(cellGlyffs, centerPerimeter, dividerPixelsHigh, scrollPixels);
+                viewPresentation.remove();
+                viewPresentation =
+                    lower.addPresentation(view.present(listPerimeter, lower.audience, lower));
+            }
+            presentView();
+            lower.audience.addZone(listPerimeter, {
+                init: function (spot) {
+                    return new glyffin_all_1.VerticalGesturing(spot, listPerimeter.readHeight, 0, function (pixelsMoved) {
+                        // Started
+                        extraScroll =
+                            Math.min(maxScrollUp, Math.max(-maxScrollDown, -pixelsMoved));
+                        presentView();
+                    }, function () {
+                        // Cancelled
+                        extraScroll = 0;
+                        presentView();
+                    }, function () {
+                        // Completed
+                        currentScroll = currentScroll + extraScroll;
+                        extraScroll = 0;
+                        maxScrollUp = maxScrollUpAt0 - currentScroll;
+                        maxScrollDown = maxScrollDownAt0 + currentScroll;
+                    });
+                }
+            });
         }, getMaxDepth(cellGlyffs));
     }
     list(cells, cellHeight).present(perimeter, audience);

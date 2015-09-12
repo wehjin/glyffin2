@@ -556,7 +556,7 @@ export class VerticalGesturing implements Gesturing {
     private startSpot : Spot;
     private drained : boolean;
 
-    constructor(private downSpot : Spot, private minMove : number,
+    constructor(private downSpot : Spot, private threshold : number, private direction : number,
                 private onStarted : (down : number)=>void,
                 private onCanceled : ()=>void,
                 private onFinished : ()=>void) {
@@ -577,25 +577,26 @@ export class VerticalGesturing implements Gesturing {
         }
         if (!this.startSpot) {
             var crossOffset = Math.abs(spot.xDistance(this.downSpot));
-            if (crossOffset > Math.abs(this.minMove)) {
+            if (crossOffset > Math.abs(this.threshold)) {
                 this.drained = true;
                 return GestureStatus.DRAINED;
             }
             var grainOffset = spot.yDistance(this.downSpot);
-            if (Math.abs(grainOffset) < Math.abs(this.minMove)) {
+            if (Math.abs(grainOffset) < Math.abs(this.threshold)) {
                 return GestureStatus.CHARGING;
             }
-            if ((this.minMove > 0 && grainOffset < 0) ||
-                (this.minMove < 0 && grainOffset > 0)) {
+            if (this.direction > 0 && grainOffset < 0
+                || this.direction < 0 && grainOffset > 0) {
                 return GestureStatus.CHARGING;
             }
-            this.startSpot = this.downSpot.addY(this.minMove);
+            this.startSpot = this.downSpot.addY(this.threshold *
+                (grainOffset == 0 ? 0 : grainOffset / Math.abs(grainOffset)));
         }
         var grainOffset = spot.yDistance(this.startSpot);
         var pixelsMoved : number;
-        if (this.minMove > 0) {
+        if (this.direction > 0) {
             pixelsMoved = Math.max(0, grainOffset);
-        } else if (this.minMove < 0) {
+        } else if (this.direction < 0) {
             pixelsMoved = Math.min(0, grainOffset);
         } else {
             pixelsMoved = grainOffset;
@@ -1072,7 +1073,7 @@ export class Glyff<T> {
                 zone = audience.addZone(zonePerimeter, {
                     init: (spot : Spot) : Gesturing => {
                         return new VerticalGesturing(spot,
-                            perimeter.tapHeight / 2 * (anchorHeight <= 0 ? 1 : -1),
+                            perimeter.tapHeight / 2, anchorHeight <= 0 ? 1 : -1,
                             (moved)=> {
                                 setRevelationHeight(anchorHeight + moved);
                             }, ()=> {

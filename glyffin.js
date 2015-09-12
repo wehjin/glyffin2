@@ -451,9 +451,10 @@ define(["require", "exports"], function (require, exports) {
     })();
     exports.HorizontalGesturing = HorizontalGesturing;
     var VerticalGesturing = (function () {
-        function VerticalGesturing(downSpot, minMove, onStarted, onCanceled, onFinished) {
+        function VerticalGesturing(downSpot, threshold, direction, onStarted, onCanceled, onFinished) {
             this.downSpot = downSpot;
-            this.minMove = minMove;
+            this.threshold = threshold;
+            this.direction = direction;
             this.onStarted = onStarted;
             this.onCanceled = onCanceled;
             this.onFinished = onFinished;
@@ -471,26 +472,27 @@ define(["require", "exports"], function (require, exports) {
             }
             if (!this.startSpot) {
                 var crossOffset = Math.abs(spot.xDistance(this.downSpot));
-                if (crossOffset > Math.abs(this.minMove)) {
+                if (crossOffset > Math.abs(this.threshold)) {
                     this.drained = true;
                     return GestureStatus.DRAINED;
                 }
                 var grainOffset = spot.yDistance(this.downSpot);
-                if (Math.abs(grainOffset) < Math.abs(this.minMove)) {
+                if (Math.abs(grainOffset) < Math.abs(this.threshold)) {
                     return GestureStatus.CHARGING;
                 }
-                if ((this.minMove > 0 && grainOffset < 0) ||
-                    (this.minMove < 0 && grainOffset > 0)) {
+                if (this.direction > 0 && grainOffset < 0
+                    || this.direction < 0 && grainOffset > 0) {
                     return GestureStatus.CHARGING;
                 }
-                this.startSpot = this.downSpot.addY(this.minMove);
+                this.startSpot = this.downSpot.addY(this.threshold *
+                    (grainOffset == 0 ? 0 : grainOffset / Math.abs(grainOffset)));
             }
             var grainOffset = spot.yDistance(this.startSpot);
             var pixelsMoved;
-            if (this.minMove > 0) {
+            if (this.direction > 0) {
                 pixelsMoved = Math.max(0, grainOffset);
             }
-            else if (this.minMove < 0) {
+            else if (this.direction < 0) {
                 pixelsMoved = Math.min(0, grainOffset);
             }
             else {
@@ -891,7 +893,7 @@ define(["require", "exports"], function (require, exports) {
                     anchorHeight = height;
                     zone = audience.addZone(zonePerimeter, {
                         init: function (spot) {
-                            return new VerticalGesturing(spot, perimeter.tapHeight / 2 * (anchorHeight <= 0 ? 1 : -1), function (moved) {
+                            return new VerticalGesturing(spot, perimeter.tapHeight / 2, anchorHeight <= 0 ? 1 : -1, function (moved) {
                                 setRevelationHeight(anchorHeight + moved);
                             }, function () {
                                 setRevelationHeight(anchorHeight);
