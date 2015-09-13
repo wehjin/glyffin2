@@ -937,7 +937,7 @@ export function makeVerticalList(cellGlyffs : Glyff<Void>[], cellHeight : Inset1
         }
 
         presentView();
-        lower.audience.addZone(listPerimeter, {
+        var zone = lower.audience.addZone(listPerimeter, {
             init: (spot : Spot) : Gesturing => {
                 return new VerticalGesturing(spot, listPerimeter.readHeight, 0,
                     (pixelsMoved : number)=> {
@@ -956,6 +956,11 @@ export function makeVerticalList(cellGlyffs : Glyff<Void>[], cellHeight : Inset1
                         maxScrollUp = maxScrollUpAt0 - currentScrollUp;
                         maxScrollDown = maxScrollDownAt0 + currentScrollUp;
                     })
+            }
+        });
+        lower.addPresentation({
+            end() {
+                zone.remove();
             }
         });
     }, getMaxDepth(cellGlyffs));

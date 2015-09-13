@@ -775,7 +775,7 @@ define(["require", "exports"], function (require, exports) {
                     lower.addPresentation(view.present(listPerimeter, lower.audience, lower));
             }
             presentView();
-            lower.audience.addZone(listPerimeter, {
+            var zone = lower.audience.addZone(listPerimeter, {
                 init: function (spot) {
                     return new VerticalGesturing(spot, listPerimeter.readHeight, 0, function (pixelsMoved) {
                         // Started
@@ -793,6 +793,11 @@ define(["require", "exports"], function (require, exports) {
                         maxScrollUp = maxScrollUpAt0 - currentScrollUp;
                         maxScrollDown = maxScrollDownAt0 + currentScrollUp;
                     });
+                }
+            });
+            lower.addPresentation({
+                end: function () {
+                    zone.remove();
                 }
             });
         }, getMaxDepth(cellGlyffs));
