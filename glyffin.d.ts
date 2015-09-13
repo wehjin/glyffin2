@@ -257,6 +257,7 @@ export declare class Glyff<T> {
     static colorAnimation(first: Color, last: Color): Glyff<Void>;
     static divideWidth<T>(glyffs: Glyff<T>[], inset?: Inset1, gapGlyff?: Glyff<any>): Glyff<T>;
     static divideHeight<T>(glyffs: Glyff<T>[], inset?: Inset1, gapGlyff?: Glyff<any>): Glyff<T>;
+    static verticalList(cellGlyffs : Glyff<Void>[], cellHeight : Inset1) : Glyff<Void>;
 }
 export interface Hall {
     present<U>(glyff: Glyff<U>, onResult?: OnResult<U>, onError?: OnError): Presentation;
