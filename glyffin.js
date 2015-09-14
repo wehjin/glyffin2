@@ -731,7 +731,7 @@ define(["require", "exports"], function (require, exports) {
         }
         return depth;
     }
-    function listStatic(cellGlyffs, centerPerimeter, dividerPixelsHigh, scrollPixels) {
+    function listStatic(cellGlyffs, centerPerimeter, dividerPixelsHigh, scrollPixels, visibleShiftRange) {
         if (cellGlyffs.length === 0) {
             return exports.ClearGlyff;
         }
@@ -741,13 +741,21 @@ define(["require", "exports"], function (require, exports) {
                 lower.addPresentation(cellGlyff.present(centerPerimeter, lower.audience, lower));
             }, cellGlyff.depth);
         }
-        var cellCount = cellGlyffs.length;
         return Glyff.create(function (lower) {
+            var cellCount = cellGlyffs.length;
             var cellPixelsHigh = centerPerimeter.getHeight();
             var cellAndDividerPixelsHigh = cellPixelsHigh + dividerPixelsHigh;
+            var minVisibleShift = visibleShiftRange[0];
+            var maxVisibleShift = visibleShiftRange[1];
             for (var i = 0; i < cellCount; i++) {
                 var cellGlyff = cellGlyffs[i];
                 var cellShift = i * cellAndDividerPixelsHigh - scrollPixels;
+                if (cellShift < minVisibleShift) {
+                    continue;
+                }
+                if (cellShift >= maxVisibleShift) {
+                    break;
+                }
                 var cellPerimeter = centerPerimeter.translateY(cellShift);
                 lower.addPresentation(cellGlyff.present(cellPerimeter, lower.audience, lower));
             }
@@ -760,7 +768,10 @@ define(["require", "exports"], function (require, exports) {
             var listPixelsHigh = listPerimeter.getHeight();
             var cellPixelsHigh = cellHeight.getPixels(listPixelsHigh);
             var centerPerimeter = listPerimeter.withHeight(cellPixelsHigh, .5);
-            var viewPresentation = exports.EMPTY_REMOVABLE;
+            var maxVisibleShift = (listPixelsHigh + cellPixelsHigh) / 2;
+            var minVisibleShift = -maxVisibleShift;
+            var visibleShiftRange = [minVisibleShift, maxVisibleShift];
+            var staticRemovable = exports.EMPTY_REMOVABLE;
             var maxScrollUpAt0 = (cellPixelsHigh + dividerPixelsHigh) * (cellGlyffs.length - 1);
             var maxScrollDownAt0 = 0;
             var currentScrollUp = 0;
@@ -769,9 +780,9 @@ define(["require", "exports"], function (require, exports) {
             var maxScrollDown = maxScrollDownAt0;
             function presentView() {
                 var scrollPixels = currentScrollUp + extraScrollUp;
-                var view = listStatic(cellGlyffs, centerPerimeter, dividerPixelsHigh, scrollPixels);
-                viewPresentation.remove();
-                viewPresentation =
+                var view = listStatic(cellGlyffs, centerPerimeter, dividerPixelsHigh, scrollPixels, visibleShiftRange);
+                staticRemovable.remove();
+                staticRemovable =
                     lower.addPresentation(view.present(listPerimeter, lower.audience, lower));
             }
             presentView();

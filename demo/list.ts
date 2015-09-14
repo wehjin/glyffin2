@@ -6,13 +6,13 @@
 import {
     Glyff, Void, Presenter, Inset2, Inset1, Perimeter, EMPTY_REMOVABLE, Spot, Gesturing,
     GlRoom, GlAudience, asciiMultiLine, VerticalGesturing,
-    RedGlyff, BlueGlyff, GreenGlyff, ClearGlyff,
+    RedGlyff, BlueGlyff, GreenGlyff, MagentaGlyff, ClearGlyff,
 } from "../src/glyffin-all";
 
 var room = new GlRoom(<HTMLCanvasElement>document.getElementById('webgl'));
 var audience = new GlAudience(room);
 var perimeter = room.perimeter;
-var cells = [RedGlyff, BlueGlyff, GreenGlyff];
+var cells = [RedGlyff, BlueGlyff, GreenGlyff, MagentaGlyff];
 var cellHeight = new Inset1(.27, 0);
 
 

@@ -888,7 +888,8 @@ function getMaxDepth(glyffs : Glyff<any>[]) : number {
 }
 
 function listStatic(cellGlyffs : Glyff<Void>[], centerPerimeter : Perimeter,
-                    dividerPixelsHigh : number, scrollPixels : number) : Glyff<Void> {
+                    dividerPixelsHigh : number, scrollPixels : number,
+                    visibleShiftRange : number[]) : Glyff<Void> {
     if (cellGlyffs.length === 0) {
         return ClearGlyff;
     }
@@ -898,13 +899,21 @@ function listStatic(cellGlyffs : Glyff<Void>[], centerPerimeter : Perimeter,
             lower.addPresentation(cellGlyff.present(centerPerimeter, lower.audience, lower));
         }, cellGlyff.depth);
     }
-    var cellCount = cellGlyffs.length;
     return Glyff.create((lower : Presenter<Void>)=> {
+        var cellCount = cellGlyffs.length;
         var cellPixelsHigh = centerPerimeter.getHeight();
         var cellAndDividerPixelsHigh = cellPixelsHigh + dividerPixelsHigh;
+        var minVisibleShift = visibleShiftRange[0];
+        var maxVisibleShift = visibleShiftRange[1];
         for (var i = 0; i < cellCount; i++) {
             var cellGlyff = cellGlyffs[i];
             var cellShift = i * cellAndDividerPixelsHigh - scrollPixels;
+            if (cellShift < minVisibleShift) {
+                continue;
+            }
+            if (cellShift >= maxVisibleShift) {
+                break;
+            }
             var cellPerimeter = centerPerimeter.translateY(cellShift);
             lower.addPresentation(cellGlyff.present(cellPerimeter, lower.audience, lower));
         }
@@ -918,7 +927,10 @@ export function makeVerticalList(cellGlyffs : Glyff<Void>[], cellHeight : Inset1
         var listPixelsHigh = listPerimeter.getHeight();
         var cellPixelsHigh = cellHeight.getPixels(listPixelsHigh);
         var centerPerimeter = listPerimeter.withHeight(cellPixelsHigh, .5);
-        var viewPresentation = EMPTY_REMOVABLE;
+        var maxVisibleShift = (listPixelsHigh + cellPixelsHigh) / 2;
+        var minVisibleShift = -maxVisibleShift;
+        var visibleShiftRange = [minVisibleShift, maxVisibleShift];
+        var staticRemovable : Removable = EMPTY_REMOVABLE;
 
         var maxScrollUpAt0 = (cellPixelsHigh + dividerPixelsHigh) * (cellGlyffs.length - 1);
         var maxScrollDownAt0 = 0;
@@ -930,9 +942,10 @@ export function makeVerticalList(cellGlyffs : Glyff<Void>[], cellHeight : Inset1
 
         function presentView() {
             var scrollPixels = currentScrollUp + extraScrollUp;
-            var view = listStatic(cellGlyffs, centerPerimeter, dividerPixelsHigh, scrollPixels);
-            viewPresentation.remove();
-            viewPresentation =
+            var view = listStatic(cellGlyffs, centerPerimeter, dividerPixelsHigh, scrollPixels,
+                visibleShiftRange);
+            staticRemovable.remove();
+            staticRemovable =
                 lower.addPresentation(view.present(listPerimeter, lower.audience, lower));
         }
 
