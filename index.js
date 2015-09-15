@@ -11,7 +11,17 @@ define(["require", "exports", "./glyffin", "./glyffin-gl", "./glyffin-ascii", ".
     var alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz 0123456789 \"'(),.;:[]";
     var fingerPixels = perimeter.tapHeight;
     var readPixels = perimeter.readHeight;
-    var demo = Glyffin.RedGlyff.splitHeightYield(100, Glyffin.BlueGlyff.splitHeightYield(readPixels * 8, GlyffinText.asciiMultiLine(3, alphabet)).pad(10, 10)).splitHeightYield(readPixels * 5, Glyffin.BlueGlyff.splitHeightYield(readPixels * 3, GlyffinText.asciiMultiLine(2, headline)).pad(readPixels, readPixels)).splitHeightYield(readPixels * 7, Glyffin.BlueGlyff.splitHeightYield(readPixels * 5, GlyffinText.asciiMultiLine(3, headline2)).pad(readPixels, readPixels)).splitHeightRetain(fingerPixels, GlyffinTouch.button());
+    var demo = Glyffin.RedGlyff
+        .splitHeightYield(100, Glyffin.BlueGlyff
+        .splitHeightYield(readPixels * 8, GlyffinText.asciiMultiLine(3, alphabet))
+        .pad(10, 10))
+        .splitHeightYield(readPixels * 5, Glyffin.BlueGlyff
+        .splitHeightYield(readPixels * 3, GlyffinText.asciiMultiLine(2, headline))
+        .pad(readPixels, readPixels))
+        .splitHeightYield(readPixels * 7, Glyffin.BlueGlyff
+        .splitHeightYield(readPixels * 5, GlyffinText.asciiMultiLine(3, headline2))
+        .pad(readPixels, readPixels))
+        .splitHeightRetain(fingerPixels, GlyffinTouch.button());
     var page = Glyffin.BeigeGlyff.splitHeightRetain(fingerPixels, GlyffinTouch.button());
     var app = Glyff.create(function (presenter) {
         var perimeter = presenter.perimeter;

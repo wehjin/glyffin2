@@ -634,6 +634,7 @@ export interface Audience {
 export interface Presenter<T> extends Reaction<T>, Presentation {
     perimeter:Perimeter;
     audience:Audience;
+    isEnded():boolean;
     addPresentation(presentation : Presentation):Removable;
 }
 
@@ -867,7 +868,14 @@ class BasePresenter<T> implements Presenter<T> {
         }
     }
 
+    isEnded() : boolean {
+        return this.ended;
+    }
+
     end() {
+        if (this.ended) {
+            return;
+        }
         this.ended = true;
         for (var i = 0; i < this.presentations.length; i++) {
             var presentation = this.presentations[i];
@@ -1308,20 +1316,23 @@ export class Glyff<T> {
                 audience));
             var zone = audience.addZone(unpressedPerimeter,
                 new ClickGesturable(unpressedPerimeter.tapHeight / 2, ()=> {
-                    if (!pressed) {
+                    if (!pressed || presenter.isEnded()) {
                         return;
                     }
                     removable.remove();
                     removable = presenter.addPresentation(pressed.present(pressedPerimeter,
                         audience));
                 }, ()=> {
-                    if (!pressed) {
+                    if (!pressed || presenter.isEnded()) {
                         return;
                     }
                     removable.remove();
                     removable = presenter.addPresentation(unpressed.present(unpressedPerimeter,
                         audience));
                 }, ()=> {
+                    if (presenter.isEnded()) {
+                        return;
+                    }
                     presenter.onResult(symbol);
                 }));
             presenter.addPresentation(<Presentation>{

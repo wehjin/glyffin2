@@ -712,7 +712,13 @@ define(["require", "exports"], function (require, exports) {
                 this.onError(error);
             }
         };
+        BasePresenter.prototype.isEnded = function () {
+            return this.ended;
+        };
         BasePresenter.prototype.end = function () {
+            if (this.ended) {
+                return;
+            }
             this.ended = true;
             for (var i = 0; i < this.presentations.length; i++) {
                 var presentation = this.presentations[i];
@@ -1110,18 +1116,21 @@ define(["require", "exports"], function (require, exports) {
                 var unpressedPerimeter = pressedPerimeter.addLevel(gapToUnpressed);
                 var removable = presenter.addPresentation(unpressed.present(unpressedPerimeter, audience));
                 var zone = audience.addZone(unpressedPerimeter, new ClickGesturable(unpressedPerimeter.tapHeight / 2, function () {
-                    if (!pressed) {
+                    if (!pressed || presenter.isEnded()) {
                         return;
                     }
                     removable.remove();
                     removable = presenter.addPresentation(pressed.present(pressedPerimeter, audience));
                 }, function () {
-                    if (!pressed) {
+                    if (!pressed || presenter.isEnded()) {
                         return;
                     }
                     removable.remove();
                     removable = presenter.addPresentation(unpressed.present(unpressedPerimeter, audience));
                 }, function () {
+                    if (presenter.isEnded()) {
+                        return;
+                    }
                     presenter.onResult(symbol);
                 }));
                 presenter.addPresentation({
