@@ -140,9 +140,6 @@ export declare class NoResultReaction<T, U> implements Reaction<T> {
     onError(error: Error): void;
 }
 export declare class SpeedometerX {
-    private spots;
-    private times;
-    private count;
     constructor(spot: Spot);
     addSpot(spot: Spot): void;
     getVelocity(): number;
@@ -151,14 +148,6 @@ export declare class SpeedometerX {
     private getVelocity2();
 }
 export declare class PagenGesturing implements Gesturing {
-    private downSpot;
-    private minCharging;
-    private onStarted;
-    private onCanceled;
-    private onFinished;
-    private drained;
-    private sliding;
-    private speedometer;
     constructor(downSpot: Spot, minCharging: number, onStarted: (pixelsMoved: number) => void, onCanceled: () => void, onFinished: (velocity: number) => void);
     isDrained(): boolean;
     isPowered(): boolean;
@@ -167,15 +156,6 @@ export declare class PagenGesturing implements Gesturing {
     cancel(): void;
 }
 export declare class HorizontalGesturing implements Gesturing {
-    private downSpot;
-    private chargingSize;
-    private chargingDirection;
-    private onStarted;
-    private onCanceled;
-    private onFinished;
-    private startSpot;
-    private drained;
-    private direction;
     constructor(downSpot: Spot, chargingSize: number, chargingDirection: number, onStarted: (pixelsMoved: number) => void, onCanceled: () => void, onFinished: () => void);
     isDrained(): boolean;
     isPowered(): boolean;
@@ -184,13 +164,6 @@ export declare class HorizontalGesturing implements Gesturing {
     cancel(): void;
 }
 export declare class VerticalGesturing implements Gesturing {
-    private downSpot;
-    private minMove;
-    private onStarted;
-    private onCanceled;
-    private onFinished;
-    private startSpot;
-    private drained;
     constructor(downSpot: Spot, minMove: number, onStarted: (down: number) => void, onCanceled: () => void, onFinished: () => void);
     isDrained(): boolean;
     isPowered(): boolean;

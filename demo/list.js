@@ -6,10 +6,10 @@ define(["require", "exports", "../src/glyffin-all"], function (require, exports,
     var room = new glyffin_all_1.GlRoom(document.getElementById('webgl'));
     var audience = new glyffin_all_1.GlAudience(room);
     var perimeter = room.perimeter;
+    var backs = [glyffin_all_1.RedGlyff, glyffin_all_1.BlueGlyff, glyffin_all_1.GreenGlyff, glyffin_all_1.MagentaGlyff, glyffin_all_1.YellowGlyff, glyffin_all_1.CyanGlyff];
     function getCell(backGlyff) {
         return backGlyff.clicken("click", glyffin_all_1.GrayGlyff);
     }
-    var backs = [glyffin_all_1.RedGlyff, glyffin_all_1.BlueGlyff, glyffin_all_1.GreenGlyff, glyffin_all_1.MagentaGlyff];
     var cells = [];
     for (var i = 0; i < backs.length; i++) {
         cells.push(getCell(backs[i]));

@@ -55,6 +55,76 @@ export class Spot {
     }
 }
 
+export class Speedometer {
+    private positions : number[] = [null, null, null];
+    private times : number[] = [0, 0, 0];
+    private count : number = 0;
+
+    constructor(position : number) {
+        this.addPosition(position);
+    }
+
+    addPosition(position : number) {
+        var count = this.count;
+        var positions = this.positions;
+        var times = this.times;
+        var time = Date.now();
+        if (count > 0 && time <= times[count - 1]) {
+            count = count - 1;
+        }
+        if (count >= 3) {
+            positions[0] = positions[1];
+            times[0] = times[1];
+            positions[1] = positions[2];
+            times[1] = times[2];
+            count = 2;
+        }
+        positions[count] = position;
+        times[count] = time;
+        this.count = count + 1;
+    }
+
+    getVelocity() : number {
+        switch (this.count) {
+            case 3:
+                return this.getVelocity2();
+            case 2:
+                return this.getVelocity1();
+            default:
+                return 0;
+        }
+    }
+
+    getCount() : number {
+        return this.count;
+    }
+
+    private getVelocity1() : number {
+        var times = this.times;
+        var positions = this.positions;
+        var duration = times[1] - times[0];
+        var distance = positions[1] - positions[0];
+        if (duration > maxDuration) {
+            // Last mark was fresh move.  We don't have a hard duration so approximate;
+            return distance / approximateDuration;
+        }
+        return distance / duration;
+    }
+
+    private getVelocity2() : number {
+        var times = this.times;
+        var positions = this.positions;
+        var duration2 = times[2] - times[1];
+        var distance2 = positions[2] - positions[1];
+        if (duration2 > maxDuration) {
+            // Last mark was fresh move.  We don't have a hard duration so approximate;
+            return distance2 / approximateDuration;
+        }
+        return (this.getVelocity1() + distance2 / duration2) / 2;
+    }
+}
+
+
 export class Perimeter {
 
     constructor(public left : number, public top : number, public right : number,
@@ -341,68 +411,13 @@ export class NoResultReaction<T,U> implements Reaction<T> {
 var maxDuration = 50;
 var approximateDuration = maxDuration / 2;
 
-export class SpeedometerX {
-    private spots : Spot[] = [null, null, null];
-    private times : number[] = [0, 0, 0];
-    private count : number = 0;
-
+export class SpeedometerX extends Speedometer {
     constructor(spot : Spot) {
-        this.addSpot(spot);
+        super(spot.x);
     }
 
     addSpot(spot : Spot) {
-        var count = this.count;
-        var spots = this.spots;
-        var times = this.times;
-        var time = Date.now();
-        if (count > 0 && time <= times[count - 1]) {
-            count = count - 1;
-        }
-        if (count >= 3) {
-            spots[0] = spots[1];
-            times[0] = times[1];
-            spots[1] = spots[2];
-            times[1] = times[2];
-            count = 2;
-        }
-        spots[count] = spot;
-        times[count] = time;
-        this.count = count + 1;
-    }
-
-    getVelocity() : number {
-        switch (this.count) {
-            case 3:
-                return this.getVelocity2();
-            case 2:
-                return this.getVelocity1();
-            default:
-                return 0;
-        }
-    }
-
-    getCount() : number {
-        return this.count;
-    }
-
-    private getVelocity1() : number {
-        var duration = this.times[1] - this.times[0];
-        var distance = this.spots[1].xDistance(this.spots[0]);
-        if (duration > maxDuration) {
-            // Last mark was fresh move.  We don't have a hard duration so approximate;
-            return distance / approximateDuration;
-        }
-        return distance / duration;
-    }
-
-    private getVelocity2() : number {
-        var duration2 = this.times[2] - this.times[1];
-        var distance2 = this.spots[2].xDistance(this.spots[1]);
-        if (duration2 > maxDuration) {
-            // Last mark was fresh move.  We don't have a hard duration so approximate;
-            return distance2 / approximateDuration;
-        }
-        return (this.getVelocity1() + distance2 / duration2) / 2;
+        this.addPosition(spot.x);
     }
 }
 
@@ -555,11 +570,12 @@ export class VerticalGesturing implements Gesturing {
 
     private startSpot : Spot;
     private drained : boolean;
+    private speedometer : Speedometer;
 
     constructor(private downSpot : Spot, private threshold : number, private direction : number,
                 private onStarted : (down : number)=>void,
                 private onCanceled : ()=>void,
-                private onFinished : ()=>void) {
+                private onFinished : (velocity : number)=>void) {
         this.drained = false;
     }
 
@@ -601,6 +617,11 @@ export class VerticalGesturing implements Gesturing {
         } else {
             pixelsMoved = grainOffset;
         }
+        if (this.speedometer) {
+            this.speedometer.addPosition(spot.y);
+        } else {
+            this.speedometer = new Speedometer(spot.y);
+        }
         this.onStarted(pixelsMoved);
         return GestureStatus.SUPERCHARGED;
     }
@@ -610,7 +631,7 @@ export class VerticalGesturing implements Gesturing {
             return;
         }
         this.drained = true;
-        this.onFinished();
+        this.onFinished(this.speedometer ? this.speedometer.getVelocity() : 0);
     }
 
     cancel() {
@@ -947,6 +968,7 @@ export function makeVerticalList(cellGlyffs : Glyff<Void>[], cellHeight : Inset1
         var extraScrollUp = 0;
         var maxScrollUp = maxScrollUpAt0;
         var maxScrollDown = maxScrollDownAt0;
+        var currentScrollUpVelocity = 0;
 
         function presentView() {
             var scrollPixels = currentScrollUp + extraScrollUp;
@@ -955,11 +977,14 @@ export function makeVerticalList(cellGlyffs : Glyff<Void>[], cellHeight : Inset1
             staticRemovable.remove();
             staticRemovable =
                 lower.addPresentation(view.present(listPerimeter, lower.audience, lower));
+            console.log("Velocity:" + currentScrollUpVelocity);
         }
 
         presentView();
         var zone = lower.audience.addZone(listPerimeter, {
             init: (spot : Spot) : Gesturing => {
+                currentScrollUpVelocity = 0;
+                presentView();
                 return new VerticalGesturing(spot, listPerimeter.readHeight, 0,
                     (pixelsMoved : number)=> {
                         // Started
@@ -970,12 +995,14 @@ export function makeVerticalList(cellGlyffs : Glyff<Void>[], cellHeight : Inset1
                         // Cancelled
                         extraScrollUp = 0;
                         presentView();
-                    }, ()=> {
+                    }, (velocity : number)=> {
                         // Completed
                         currentScrollUp = currentScrollUp + extraScrollUp;
                         extraScrollUp = 0;
                         maxScrollUp = maxScrollUpAt0 - currentScrollUp;
                         maxScrollDown = maxScrollDownAt0 + currentScrollUp;
+                        currentScrollUpVelocity = -velocity;
+                        presentView();
                     })
             }
         });
@@ -1280,6 +1307,9 @@ export class Glyff<T> {
                 },
                 onError(err : Error) {
                     lowerPresenter.onError(err);
+                },
+                isEnded() : boolean {
+                    return lowerPresenter.isEnded();
                 },
                 end() {
                     lowerPresenter.end();

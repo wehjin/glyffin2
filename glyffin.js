@@ -1,6 +1,12 @@
 /**
  * Created by wehjin on 5/24/15.
  */
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
 define(["require", "exports"], function (require, exports) {
     /// <reference path="webglbook.d.ts" />
     var Void = (function () {
@@ -53,6 +59,70 @@ define(["require", "exports"], function (require, exports) {
         return Spot;
     })();
     exports.Spot = Spot;
+    var Speedometer = (function () {
+        function Speedometer(position) {
+            this.positions = [null, null, null];
+            this.times = [0, 0, 0];
+            this.count = 0;
+            this.addPosition(position);
+        }
+        Speedometer.prototype.addPosition = function (position) {
+            var count = this.count;
+            var positions = this.positions;
+            var times = this.times;
+            var time = Date.now();
+            if (count > 0 && time <= times[count - 1]) {
+                count = count - 1;
+            }
+            if (count >= 3) {
+                positions[0] = positions[1];
+                times[0] = times[1];
+                positions[1] = positions[2];
+                times[1] = times[2];
+                count = 2;
+            }
+            positions[count] = position;
+            times[count] = time;
+            this.count = count + 1;
+        };
+        Speedometer.prototype.getVelocity = function () {
+            switch (this.count) {
+                case 3:
+                    return this.getVelocity2();
+                case 2:
+                    return this.getVelocity1();
+                default:
+                    return 0;
+            }
+        };
+        Speedometer.prototype.getCount = function () {
+            return this.count;
+        };
+        Speedometer.prototype.getVelocity1 = function () {
+            var times = this.times;
+            var positions = this.positions;
+            var duration = times[1] - times[0];
+            var distance = positions[1] - positions[0];
+            if (duration > maxDuration) {
+                // Last mark was fresh move.  We don't have a hard duration so approximate;
+                return distance / approximateDuration;
+            }
+            return distance / duration;
+        };
+        Speedometer.prototype.getVelocity2 = function () {
+            var times = this.times;
+            var positions = this.positions;
+            var duration2 = times[2] - times[1];
+            var distance2 = positions[2] - positions[1];
+            if (duration2 > maxDuration) {
+                // Last mark was fresh move.  We don't have a hard duration so approximate;
+                return distance2 / approximateDuration;
+            }
+            return (this.getVelocity1() + distance2 / duration2) / 2;
+        };
+        return Speedometer;
+    })();
+    exports.Speedometer = Speedometer;
     var Perimeter = (function () {
         function Perimeter(left, top, right, bottom, age, level, tapHeight, readHeight, palette) {
             this.left = left;
@@ -253,65 +323,16 @@ define(["require", "exports"], function (require, exports) {
     exports.NoResultReaction = NoResultReaction;
     var maxDuration = 50;
     var approximateDuration = maxDuration / 2;
-    var SpeedometerX = (function () {
+    var SpeedometerX = (function (_super) {
+        __extends(SpeedometerX, _super);
         function SpeedometerX(spot) {
-            this.spots = [null, null, null];
-            this.times = [0, 0, 0];
-            this.count = 0;
-            this.addSpot(spot);
+            _super.call(this, spot.x);
         }
         SpeedometerX.prototype.addSpot = function (spot) {
-            var count = this.count;
-            var spots = this.spots;
-            var times = this.times;
-            var time = Date.now();
-            if (count > 0 && time <= times[count - 1]) {
-                count = count - 1;
-            }
-            if (count >= 3) {
-                spots[0] = spots[1];
-                times[0] = times[1];
-                spots[1] = spots[2];
-                times[1] = times[2];
-                count = 2;
-            }
-            spots[count] = spot;
-            times[count] = time;
-            this.count = count + 1;
-        };
-        SpeedometerX.prototype.getVelocity = function () {
-            switch (this.count) {
-                case 3:
-                    return this.getVelocity2();
-                case 2:
-                    return this.getVelocity1();
-                default:
-                    return 0;
-            }
-        };
-        SpeedometerX.prototype.getCount = function () {
-            return this.count;
-        };
-        SpeedometerX.prototype.getVelocity1 = function () {
-            var duration = this.times[1] - this.times[0];
-            var distance = this.spots[1].xDistance(this.spots[0]);
-            if (duration > maxDuration) {
-                // Last mark was fresh move.  We don't have a hard duration so approximate;
-                return distance / approximateDuration;
-            }
-            return distance / duration;
-        };
-        SpeedometerX.prototype.getVelocity2 = function () {
-            var duration2 = this.times[2] - this.times[1];
-            var distance2 = this.spots[2].xDistance(this.spots[1]);
-            if (duration2 > maxDuration) {
-                // Last mark was fresh move.  We don't have a hard duration so approximate;
-                return distance2 / approximateDuration;
-            }
-            return (this.getVelocity1() + distance2 / duration2) / 2;
+            this.addPosition(spot.x);
         };
         return SpeedometerX;
-    })();
+    })(Speedometer);
     exports.SpeedometerX = SpeedometerX;
     var PagenGesturing = (function () {
         function PagenGesturing(downSpot, minCharging, onStarted, onCanceled, onFinished) {
@@ -498,6 +519,12 @@ define(["require", "exports"], function (require, exports) {
             else {
                 pixelsMoved = grainOffset;
             }
+            if (this.speedometer) {
+                this.speedometer.addPosition(spot.y);
+            }
+            else {
+                this.speedometer = new Speedometer(spot.y);
+            }
             this.onStarted(pixelsMoved);
             return GestureStatus.SUPERCHARGED;
         };
@@ -506,7 +533,7 @@ define(["require", "exports"], function (require, exports) {
                 return;
             }
             this.drained = true;
-            this.onFinished();
+            this.onFinished(this.speedometer ? this.speedometer.getVelocity() : 0);
         };
         VerticalGesturing.prototype.cancel = function () {
             if (this.drained) {
@@ -784,16 +811,20 @@ define(["require", "exports"], function (require, exports) {
             var extraScrollUp = 0;
             var maxScrollUp = maxScrollUpAt0;
             var maxScrollDown = maxScrollDownAt0;
+            var currentScrollUpVelocity = 0;
             function presentView() {
                 var scrollPixels = currentScrollUp + extraScrollUp;
                 var view = listStatic(cellGlyffs, centerPerimeter, dividerPixelsHigh, scrollPixels, visibleShiftRange);
                 staticRemovable.remove();
                 staticRemovable =
                     lower.addPresentation(view.present(listPerimeter, lower.audience, lower));
+                console.log("Velocity:" + currentScrollUpVelocity);
             }
             presentView();
             var zone = lower.audience.addZone(listPerimeter, {
                 init: function (spot) {
+                    currentScrollUpVelocity = 0;
+                    presentView();
                     return new VerticalGesturing(spot, listPerimeter.readHeight, 0, function (pixelsMoved) {
                         // Started
                         var rawExtraUp = -pixelsMoved;
@@ -803,12 +834,14 @@ define(["require", "exports"], function (require, exports) {
                         // Cancelled
                         extraScrollUp = 0;
                         presentView();
-                    }, function () {
+                    }, function (velocity) {
                         // Completed
                         currentScrollUp = currentScrollUp + extraScrollUp;
                         extraScrollUp = 0;
                         maxScrollUp = maxScrollUpAt0 - currentScrollUp;
                         maxScrollDown = maxScrollDownAt0 + currentScrollUp;
+                        currentScrollUpVelocity = -velocity;
+                        presentView();
                     });
                 }
             });
@@ -1083,6 +1116,9 @@ define(["require", "exports"], function (require, exports) {
                     },
                     onError: function (err) {
                         lowerPresenter.onError(err);
+                    },
+                    isEnded: function () {
+                        return lowerPresenter.isEnded();
                     },
                     end: function () {
                         lowerPresenter.end();
