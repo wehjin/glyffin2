@@ -949,6 +949,12 @@ function listStatic(cellGlyffs : Glyff<Void>[], centerPerimeter : Perimeter,
     }, getMaxDepth(cellGlyffs));
 }
 
+enum ListStage {
+    STABLE,
+    POWERED,
+    GLIDING
+}
+
 export function makeVerticalList(cellGlyffs : Glyff<Void>[], cellHeight : Inset1) : Glyff<Void> {
     var dividerPixelsHigh = 10;
     return Glyff.create((lower : Presenter<Void>)=> {
@@ -961,47 +967,91 @@ export function makeVerticalList(cellGlyffs : Glyff<Void>[], cellHeight : Inset1
         var visibleShiftRange = [minVisibleShift, maxVisibleShift];
         var staticRemovable : Removable = EMPTY_REMOVABLE;
 
-        var maxScrollUpAt0 = (cellPixelsHigh + dividerPixelsHigh) * (cellGlyffs.length - 1);
-        var maxScrollDownAt0 = 0;
+        var maxScrollUp = (cellPixelsHigh + dividerPixelsHigh) * (cellGlyffs.length - 1);
+        var minScrollUp = 0;
+
+        function limitedScrollUp(scrollUp : number) : number {
+            return Math.min(maxScrollUp, Math.max(minScrollUp, scrollUp));
+        }
 
         var currentScrollUp = 0;
         var extraScrollUp = 0;
-        var maxScrollUp = maxScrollUpAt0;
-        var maxScrollDown = maxScrollDownAt0;
-        var currentScrollUpVelocity = 0;
+        var tGlideStart;
+        var rGlideStart;
+        var vGlideStart;
+        var a;
+        var dtMax;
+        var listStage : ListStage = ListStage.STABLE;
 
+        function startGlide(scrollUpVelocity : number) {
+            tGlideStart = Date.now();
+            rGlideStart = currentScrollUp;
+            vGlideStart = scrollUpVelocity;
+            a = (vGlideStart > 0 ? -1 : 1) * .01;
+            dtMax = (0 - vGlideStart) / a;
+        }
+
+        var glideFrame = 0;
         function presentView() {
-            var scrollPixels = currentScrollUp + extraScrollUp;
+            var scrollPixels;
+            if (listStage === ListStage.GLIDING) {
+                var dt = Date.now() - tGlideStart;
+                var dtLimited = Math.min(dt, dtMax);
+                var v = vGlideStart + a * dtLimited;
+                console.log("Velocity:" + v);
+                var r = rGlideStart + (v - .5 * a * dtLimited) * dtLimited;
+                currentScrollUp = limitedScrollUp(r);
+                scrollPixels = currentScrollUp;
+                if (Math.abs(v) > .001 && currentScrollUp != maxScrollUp &&
+                    currentScrollUp != minScrollUp) {
+                    glideFrame = requestAnimationFrame(()=> {
+                        if (listStage === ListStage.GLIDING) {
+                            presentView();
+                        }
+                    });
+                } else {
+                    listStage = ListStage.STABLE;
+                }
+            } else if (listStage === ListStage.POWERED) {
+                scrollPixels = currentScrollUp + extraScrollUp;
+            } else {
+                scrollPixels = currentScrollUp;
+            }
             var view = listStatic(cellGlyffs, centerPerimeter, dividerPixelsHigh, scrollPixels,
                 visibleShiftRange);
             staticRemovable.remove();
             staticRemovable =
                 lower.addPresentation(view.present(listPerimeter, lower.audience, lower));
-            console.log("Velocity:" + currentScrollUpVelocity);
         }
 
         presentView();
         var zone = lower.audience.addZone(listPerimeter, {
             init: (spot : Spot) : Gesturing => {
-                currentScrollUpVelocity = 0;
+                listStage = ListStage.POWERED;
+                if (glideFrame) {
+                    cancelAnimationFrame(glideFrame);
+                    glideFrame = 0;
+                }
+                var maxExtraUp = maxScrollUp - currentScrollUp;
+                var minExtraUp = minScrollUp - currentScrollUp;
                 presentView();
                 return new VerticalGesturing(spot, listPerimeter.readHeight, 0,
                     (pixelsMoved : number)=> {
                         // Started
                         var rawExtraUp = -pixelsMoved;
-                        extraScrollUp = Math.min(maxScrollUp, Math.max(-maxScrollDown, rawExtraUp));
+                        extraScrollUp = Math.min(maxExtraUp, Math.max(minExtraUp, rawExtraUp));
                         presentView();
                     }, ()=> {
                         // Cancelled
                         extraScrollUp = 0;
+                        listStage = ListStage.STABLE;
                         presentView();
                     }, (velocity : number)=> {
                         // Completed
-                        currentScrollUp = currentScrollUp + extraScrollUp;
+                        currentScrollUp = limitedScrollUp(currentScrollUp + extraScrollUp);
                         extraScrollUp = 0;
-                        maxScrollUp = maxScrollUpAt0 - currentScrollUp;
-                        maxScrollDown = maxScrollDownAt0 + currentScrollUp;
-                        currentScrollUpVelocity = -velocity;
+                        startGlide(-velocity);
+                        listStage = ListStage.GLIDING;
                         presentView();
                     })
             }
