@@ -161,7 +161,7 @@ export class SpotObservable {
             };
             this.element.onmouseout = ()=> {
                 stop();
-                spotObserver.onCancel();
+                spotObserver.onEnd();
             };
             this.element.onmouseup = ()=> {
                 stop();

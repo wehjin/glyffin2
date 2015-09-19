@@ -26,4 +26,7 @@ for (var i = 0; i < backs.length; i++) {
 var cellHeight = new Inset1(.27, 0);
 
 
-Glyff.verticalList(cells, cellHeight).present(perimeter, audience);
+Glyff.verticalList(cells, cellHeight)
+    .present(perimeter, audience, (x)=> {
+        console.log(x);
+    });

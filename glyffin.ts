@@ -982,6 +982,7 @@ export function makeVerticalList(cellGlyffs : Glyff<Void>[], cellHeight : Inset1
         var a;
         var dtMax;
         var listStage : ListStage = ListStage.STABLE;
+        var glideFrame = 0;
 
         function startGlide(scrollUpVelocity : number) {
             tGlideStart = Date.now();
@@ -989,9 +990,17 @@ export function makeVerticalList(cellGlyffs : Glyff<Void>[], cellHeight : Inset1
             vGlideStart = scrollUpVelocity;
             a = (vGlideStart > 0 ? -1 : 1) * .01;
             dtMax = (0 - vGlideStart) / a;
+            listStage = ListStage.GLIDING;
         }
 
-        var glideFrame = 0;
+        function startPower() {
+            if (glideFrame) {
+                cancelAnimationFrame(glideFrame);
+                glideFrame = 0;
+            }
+            listStage = ListStage.POWERED;
+        }
+
         function presentView() {
             var scrollPixels;
             if (listStage === ListStage.GLIDING) {
@@ -1027,14 +1036,9 @@ export function makeVerticalList(cellGlyffs : Glyff<Void>[], cellHeight : Inset1
         presentView();
         var zone = lower.audience.addZone(listPerimeter, {
             init: (spot : Spot) : Gesturing => {
-                listStage = ListStage.POWERED;
-                if (glideFrame) {
-                    cancelAnimationFrame(glideFrame);
-                    glideFrame = 0;
-                }
+                startPower();
                 var maxExtraUp = maxScrollUp - currentScrollUp;
                 var minExtraUp = minScrollUp - currentScrollUp;
-                presentView();
                 return new VerticalGesturing(spot, listPerimeter.readHeight, 0,
                     (pixelsMoved : number)=> {
                         // Started
@@ -1051,7 +1055,6 @@ export function makeVerticalList(cellGlyffs : Glyff<Void>[], cellHeight : Inset1
                         currentScrollUp = limitedScrollUp(currentScrollUp + extraScrollUp);
                         extraScrollUp = 0;
                         startGlide(-velocity);
-                        listStage = ListStage.GLIDING;
                         presentView();
                     })
             }

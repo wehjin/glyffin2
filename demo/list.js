@@ -15,6 +15,9 @@ define(["require", "exports", "../src/glyffin-all"], function (require, exports,
         cells.push(getCell(backs[i]));
     }
     var cellHeight = new glyffin_all_1.Inset1(.27, 0);
-    glyffin_all_1.Glyff.verticalList(cells, cellHeight).present(perimeter, audience);
+    glyffin_all_1.Glyff.verticalList(cells, cellHeight)
+        .present(perimeter, audience, function (x) {
+        console.log(x);
+    });
 });
 //# sourceMappingURL=list.js.map

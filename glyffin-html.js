@@ -126,7 +126,7 @@ define(["require", "exports", "./glyffin"], function (require, exports, glyffin_
                 };
                 _this.element.onmouseout = function () {
                     stop();
-                    spotObserver.onCancel();
+                    spotObserver.onEnd();
                 };
                 _this.element.onmouseup = function () {
                     stop();
