@@ -988,7 +988,7 @@ export function makeVerticalList(cellGlyffs : Glyff<Void>[], cellHeight : Inset1
             tGlideStart = Date.now();
             rGlideStart = currentScrollUp;
             vGlideStart = scrollUpVelocity;
-            a = (vGlideStart > 0 ? -1 : 1) * .01;
+            a = (vGlideStart > 0 ? -1 : 1) * .005;
             dtMax = (0 - vGlideStart) / a;
             listStage = ListStage.GLIDING;
         }

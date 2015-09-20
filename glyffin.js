@@ -829,7 +829,7 @@ define(["require", "exports"], function (require, exports) {
                 tGlideStart = Date.now();
                 rGlideStart = currentScrollUp;
                 vGlideStart = scrollUpVelocity;
-                a = (vGlideStart > 0 ? -1 : 1) * .01;
+                a = (vGlideStart > 0 ? -1 : 1) * .005;
                 dtMax = (0 - vGlideStart) / a;
                 listStage = ListStage.GLIDING;
             }
