@@ -887,5 +887,47 @@ define(["require", "exports", "./glyffin"], function (require, exports, glyffin_
         5, 5, 5, 4, 1, 4, 5, 5,
     ];
     var spaceWeight = getWordXWeight(' ');
+    var Atlas = (function () {
+        function Atlas() {
+            var glyphWidthPixels = 8;
+            var glyphHeightPixels = 8;
+            var pageWidthGlyphs = 32;
+            var pageHeightGlyphs = 1;
+            var pageWidthPixels = pageWidthGlyphs * glyphWidthPixels;
+            var pageHeightPixels = pageHeightGlyphs * glyphHeightPixels;
+            var canvas = document.createElement("canvas");
+            canvas.width = pageWidthPixels;
+            canvas.height = pageHeightPixels;
+            var context = canvas.getContext("2d");
+            var imageData = context.createImageData(pageWidthPixels, pageHeightPixels);
+            console.log("Width: " + imageData.width);
+            var data = imageData.data;
+            function writePixel(glyph, x, y, on) {
+                var pixelStride = 4;
+                var rowIndex = (pageWidthPixels * pixelStride) * y;
+                var index = rowIndex + (glyph * glyphWidthPixels + x) * pixelStride;
+                data[index] = on ? 255 : 0;
+                data[index + 3] = 255;
+            }
+            var pointStart = 48;
+            for (var g = 0; g < pageWidthGlyphs; g++) {
+                var point = pointStart + g;
+                var spots = ascii_spots[point];
+                var x_weight = x_weights[point];
+                for (var k = 0; k < spots.length; k++) {
+                    var spot = spots[k];
+                    var i = spot[0];
+                    var j = spot[1];
+                    writePixel(g, i, j, true);
+                }
+            }
+            context.putImageData(imageData, 0, 0);
+            var image = document.createElement("img");
+            image.src = canvas.toDataURL("image/png");
+            this.image = image;
+        }
+        return Atlas;
+    })();
+    exports.Atlas = Atlas;
 });
 //# sourceMappingURL=glyffin-ascii.js.map

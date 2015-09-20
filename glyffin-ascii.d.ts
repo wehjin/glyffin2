@@ -10,3 +10,7 @@ export declare function asciiEntireWord(word: string, ink?: Glyff<Void>): Glyff<
 export declare function asciiWord(word : string, xWeightPixels : number,
                                   base? : Glyff<Void>) : Glyff<Void>;
 export declare function asciiChar(ch: string, base?: Glyff<Void>): Glyff<Void>;
+
+export declare class Atlas {
+    image : HTMLImageElement;
+}
