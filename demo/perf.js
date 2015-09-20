@@ -21,7 +21,9 @@ define(["require", "exports", "../glyffin-gl", "../glyffin-ascii"], function (re
             presentation.end();
         }
         var elapsed = Date.now() - start;
-        presentation = GlyffinText.asciiMultiLine(10, "Elapsed: " + elapsed.toString()).clicken("restart").present(perimeter, audience, function (result) {
+        presentation = GlyffinText.asciiMultiLine(10, "Elapsed: " + elapsed.toString())
+            .clicken("restart")
+            .present(perimeter, audience, function (result) {
             if (result == "restart") {
                 measure();
             }

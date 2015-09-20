@@ -44,50 +44,85 @@ define(["require", "exports", "./glyffin"], function (require, exports, glyffin_
         return (base ? base : glyffin_1.BeigeGlyff).kaleid(xWeight, 7, spots);
     }
     exports.asciiByCode = asciiByCode;
-    function asciiMultiLine(lines, paragraph, base) {
-        return glyffin_1.Glyff.create(function (presenter) {
-            var perimeter = presenter.perimeter;
-            var audience = presenter.audience;
+    var MultiLines = (function () {
+        function MultiLines(maxWidthPixels, maxHeightPixels, lines, paragraph) {
             var linesAndLeadings = (lines * 2 - 1);
-            var ascentPixels = perimeter.getHeight() / linesAndLeadings;
-            var lineHeight = ascentPixels * 2;
+            var ascentPixels = maxHeightPixels / linesAndLeadings;
+            var lineStride = ascentPixels * 2;
             var xWeightPixels = ascentPixels / 7;
-            var width = perimeter.getWidth();
-            var xWeightsPerLine = Math.floor(width / xWeightPixels);
+            var xWeightsPerLine = Math.floor(maxWidthPixels / xWeightPixels);
             var lineContents = [];
             var currentLine = null;
-            var beginLine = function (wordWeight, word) {
+            function beginLine(wordWeight, word) {
                 currentLine = new LineContent(wordWeight, word);
                 lineContents.push(currentLine);
                 if (wordWeight >= xWeightsPerLine && lineContents.length < lines) {
                     currentLine = null;
                 }
-            };
+            }
+            this.lineContents = lineContents;
+            this.lineHeightPixels = ascentPixels;
+            this.lineStridePixels = lineStride;
             var words = paragraph.trim().split(/\s+/);
-            words.forEach(function (word) {
+            var wordCount = words.length;
+            for (var i = 0; i < wordCount; i++) {
+                var word = words[i];
                 var wordWeight = getWordXWeight(word);
                 if (wordWeight == 0) {
-                    return;
+                    continue;
                 }
                 if (!currentLine) {
                     beginLine(wordWeight, word);
-                    return;
+                    continue;
                 }
                 var newLineWeight = spaceWeight + wordWeight + currentLine.weight;
                 if (newLineWeight < xWeightsPerLine || lineContents.length == lines) {
                     currentLine.weight = newLineWeight;
                     currentLine.text += ' ' + word;
-                    return;
+                    continue;
                 }
                 beginLine(wordWeight, word);
-            });
-            var lineNumber = 0;
-            lineContents.forEach(function (lineContent) {
-                var linePerimeter = perimeter.downFromTop(lineNumber * lineHeight, ascentPixels);
-                presenter.addPresentation(asciiEntireWord(lineContent.text, base)
+            }
+        }
+        MultiLines.getKey = function (maxWidthPixels, maxHeightPixels, lines, paragraph) {
+            return maxWidthPixels.toString() + ":" + maxHeightPixels + ":" + lines + ":" + paragraph;
+        };
+        return MultiLines;
+    })();
+    var MULTILINE_KEYS = [];
+    var MULTILINE_MAP = {};
+    function getMultiLines(maxWidthPixels, maxHeightPixels, lines, paragraph) {
+        var key = MultiLines.getKey(maxWidthPixels, maxHeightPixels, lines, paragraph);
+        if (MULTILINE_MAP.hasOwnProperty(key)) {
+            return MULTILINE_MAP[key];
+        }
+        else {
+            var multiLines = new MultiLines(maxWidthPixels, maxHeightPixels, lines, paragraph);
+            MULTILINE_MAP[key] = multiLines;
+            MULTILINE_KEYS.push(key);
+            if (MULTILINE_KEYS.length > 50) {
+                var toDelete = MULTILINE_KEYS.shift();
+                delete MULTILINE_MAP[toDelete];
+            }
+            return multiLines;
+        }
+    }
+    function asciiMultiLine(lines, paragraph, base) {
+        return glyffin_1.Glyff.create(function (presenter) {
+            var perimeter = presenter.perimeter;
+            var audience = presenter.audience;
+            var maxHeightPixels = perimeter.getHeight();
+            var maxWidthPixels = perimeter.getWidth();
+            var multiLines = getMultiLines(maxWidthPixels, maxHeightPixels, lines, paragraph);
+            var lineHeight = multiLines.lineHeightPixels;
+            var lineStride = multiLines.lineStridePixels;
+            var lineContents = multiLines.lineContents;
+            var lineContentCount = lineContents.length;
+            for (var i = 0; i < lineContentCount; i++) {
+                var linePerimeter = perimeter.downFromTop(i * lineStride, lineHeight);
+                presenter.addPresentation(asciiEntireWord(lineContents[i].text, base)
                     .present(linePerimeter, audience, presenter));
-                lineNumber++;
-            });
+            }
         }, 0);
     }
     exports.asciiMultiLine = asciiMultiLine;

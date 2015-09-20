@@ -48,57 +48,103 @@ export function asciiByCode(code : number, base? : Glyff<Void>) : Glyff<Void> {
     return (base ? base : BeigeGlyff).kaleid(xWeight, 7, spots);
 }
 
-export function asciiMultiLine(lines : number, paragraph : string,
-                               base? : Glyff<Void>) : Glyff<Void> {
-    return Glyff.create((presenter : Presenter<Void>)=> {
-        var perimeter = presenter.perimeter;
-        var audience = presenter.audience;
+class MultiLines {
+    lineContents : LineContent[];
+    lineHeightPixels : number;
+    lineStridePixels : number;
+
+    static getKey(maxWidthPixels : number, maxHeightPixels : number, lines : number,
+                  paragraph : string) {
+        return maxWidthPixels.toString() + ":" + maxHeightPixels + ":" + lines + ":" + paragraph;
+    }
+
+    constructor(maxWidthPixels : number, maxHeightPixels : number, lines : number,
+                paragraph : string) {
         var linesAndLeadings = (lines * 2 - 1);
-        var ascentPixels = perimeter.getHeight() / linesAndLeadings;
-        var lineHeight = ascentPixels * 2;
+        var ascentPixels = maxHeightPixels / linesAndLeadings;
+        var lineStride = ascentPixels * 2;
         var xWeightPixels = ascentPixels / 7;
-        var width = perimeter.getWidth();
-        var xWeightsPerLine = Math.floor(width / xWeightPixels);
+        var xWeightsPerLine = Math.floor(maxWidthPixels / xWeightPixels);
 
         var lineContents : LineContent[] = [];
         var currentLine : LineContent = null;
-        var beginLine = (wordWeight : number, word : string)=> {
+
+        function beginLine(wordWeight : number, word : string) {
             currentLine = new LineContent(wordWeight, word);
             lineContents.push(currentLine);
             if (wordWeight >= xWeightsPerLine && lineContents.length < lines) {
                 currentLine = null;
             }
-        };
+        }
+
+        this.lineContents = lineContents;
+        this.lineHeightPixels = ascentPixels;
+        this.lineStridePixels = lineStride;
 
         var words = paragraph.trim().split(/\s+/);
-        words.forEach((word : string)=> {
+        var wordCount = words.length;
+        for (var i = 0; i < wordCount; i++) {
+            var word = words[i];
             var wordWeight = getWordXWeight(word);
             if (wordWeight == 0) {
-                return;
+                continue;
             }
 
             if (!currentLine) {
                 beginLine(wordWeight, word);
-                return;
+                continue;
             }
 
             var newLineWeight = spaceWeight + wordWeight + currentLine.weight;
             if (newLineWeight < xWeightsPerLine || lineContents.length == lines) {
                 currentLine.weight = newLineWeight;
                 currentLine.text += ' ' + word;
-                return;
+                continue;
             }
 
             beginLine(wordWeight, word);
-        });
+        }
+    }
+}
 
-        var lineNumber = 0;
-        lineContents.forEach((lineContent : LineContent)=> {
-            var linePerimeter = perimeter.downFromTop(lineNumber * lineHeight, ascentPixels);
-            presenter.addPresentation(asciiEntireWord(lineContent.text, base)
+var MULTILINE_KEYS : string[] = [];
+var MULTILINE_MAP : Object = {};
+
+function getMultiLines(maxWidthPixels : number, maxHeightPixels : number, lines : number,
+                       paragraph : string) : MultiLines {
+    var key = MultiLines.getKey(maxWidthPixels, maxHeightPixels, lines, paragraph);
+    if (MULTILINE_MAP.hasOwnProperty(key)) {
+        return MULTILINE_MAP[key];
+    } else {
+        var multiLines = new MultiLines(maxWidthPixels, maxHeightPixels, lines, paragraph);
+        MULTILINE_MAP[key] = multiLines;
+        MULTILINE_KEYS.push(key);
+        if (MULTILINE_KEYS.length > 50) {
+            var toDelete = MULTILINE_KEYS.shift();
+            delete MULTILINE_MAP[toDelete];
+        }
+        return multiLines;
+    }
+}
+
+export function asciiMultiLine(lines : number, paragraph : string,
+                               base? : Glyff<Void>) : Glyff<Void> {
+    return Glyff.create((presenter : Presenter<Void>)=> {
+        var perimeter = presenter.perimeter;
+        var audience = presenter.audience;
+        var maxHeightPixels = perimeter.getHeight();
+        var maxWidthPixels = perimeter.getWidth();
+
+        var multiLines = getMultiLines(maxWidthPixels, maxHeightPixels, lines, paragraph);
+        var lineHeight = multiLines.lineHeightPixels;
+        var lineStride = multiLines.lineStridePixels;
+        var lineContents = multiLines.lineContents;
+        var lineContentCount = lineContents.length;
+        for (var i = 0; i < lineContentCount; i++) {
+            var linePerimeter = perimeter.downFromTop(i * lineStride, lineHeight);
+            presenter.addPresentation(asciiEntireWord(lineContents[i].text, base)
                 .present(linePerimeter, audience, presenter));
-            lineNumber++;
-        });
+        }
     }, 0);
 }
 
