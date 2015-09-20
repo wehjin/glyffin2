@@ -995,7 +995,7 @@ export function makeVerticalList(cellGlyffs : Glyff<Void>[], cellHeight : Inset1
 
         function startPower() {
             if (glideFrame) {
-                cancelAnimationFrame(glideFrame);
+                clearTimeout(glideFrame);
                 glideFrame = 0;
             }
             listStage = ListStage.POWERED;
@@ -1013,11 +1013,11 @@ export function makeVerticalList(cellGlyffs : Glyff<Void>[], cellHeight : Inset1
                 scrollPixels = currentScrollUp;
                 if (Math.abs(v) > .001 && currentScrollUp != maxScrollUp &&
                     currentScrollUp != minScrollUp) {
-                    glideFrame = requestAnimationFrame(()=> {
+                    glideFrame = setTimeout(()=> {
                         if (listStage === ListStage.GLIDING) {
                             presentView();
                         }
-                    });
+                    }, 1);
                 } else {
                     listStage = ListStage.STABLE;
                 }
