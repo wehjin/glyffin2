@@ -24,12 +24,12 @@ function getAsciiCode(charCode : number) : number {
     } else if (charCode === 0x201C || charCode === 0x201D) {
         return 34;//double quote
     }
-    return charCode;
+    return 0;
 }
 
 function getCharXWeight(charCode : number) : number {
-    charCode = getAsciiCode(charCode);
-    return charCode < x_weights.length ? x_weights[charCode] : x_weight_default;
+    var asciiCode = getAsciiCode(charCode);
+    return x_weights[asciiCode];
 }
 
 function getWordXWeight(word : string) : number {
@@ -42,10 +42,8 @@ function getWordXWeight(word : string) : number {
 }
 
 export function asciiByCode(code : number, base : Glyff<Void>) : Glyff<Void> {
-    code = getAsciiCode(code);
-    var spots = code >= ascii_spots.length ? no_spots : ascii_spots[code];
-    var xWeight = getCharXWeight(code);
-    return base.kaleid(xWeight, 7, spots);
+    var asciiCode = getAsciiCode(code);
+    return base.kaleid(x_weights[asciiCode], 7, ascii_spots[asciiCode]);
 }
 
 class MultiLines {

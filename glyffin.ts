@@ -1349,11 +1349,7 @@ export class Glyff<T> {
                 var left = perimeter.left + colWidth * spot[0];
                 var top = perimeter.top + rowHeight * spot[1];
                 var spotPerimeter = perimeter.at(left, top, left + colWidth, top + rowHeight);
-                new Perimeter(left, top, left + colWidth, top + rowHeight,
-                    perimeter.age, perimeter.level, perimeter.tapHeight, perimeter.readHeight,
-                    perimeter.palette);
-                presenter.addPresentation(upperGlyff.present(spotPerimeter, audience,
-                    presenter));
+                presenter.addPresentation(upperGlyff.present(spotPerimeter, audience, presenter));
             }
         }, this.depth);
     }

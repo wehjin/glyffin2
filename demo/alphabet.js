@@ -10,7 +10,7 @@ define(["require", "exports", "../src/glyffin-all"], function (require, exports,
         "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_\n" +
         "`abcdefghijklmnopqrstuvwxyz{|}~" +
         " !\"#$%&\'()*+,-.0123456789:;<=>?";
-    glyffin_all_1.asciiMultiLine(3, alphabet)
+    glyffin_all_1.asciiMultiLine(3, alphabet, glyffin_all_1.BeigeGlyff)
         .pad2(glyffin_all_1.Inset2.EIGHTH)
         .present(perimeter, audience);
 });
