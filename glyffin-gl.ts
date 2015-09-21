@@ -689,6 +689,10 @@ export class GlAudience implements Audience {
         }, 0);
     }
 
+    willDraw() : boolean {
+        return this.editCount > this.drawCount;
+    }
+
     clearAndRedraw() {
         this.vertices.clearFreedPatches(this.room);
         this.room.redraw(MAX_VERTEX_COUNT, this.vertices.buffer);

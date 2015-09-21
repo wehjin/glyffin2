@@ -563,6 +563,9 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
                 _this.clearAndRedraw();
             }, 0);
         };
+        GlAudience.prototype.willDraw = function () {
+            return this.editCount > this.drawCount;
+        };
         GlAudience.prototype.clearAndRedraw = function () {
             this.vertices.clearFreedPatches(this.room);
             this.room.redraw(MAX_VERTEX_COUNT, this.vertices.buffer);

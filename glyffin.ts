@@ -650,6 +650,7 @@ export class VerticalGesturing implements Gesturing {
 export interface Audience {
     addPatch(bounds : Perimeter, color : Color):Patch;
     addZone(bounds : Perimeter, touchProvider : Gesturable):Zone;
+    willDraw():boolean;
     present<U>(glyff : Glyff<U>, reactionOrOnResult ? : Reaction<U>|OnResult<U>,
                onError? : OnError) : Presentation;
 }
@@ -1015,11 +1016,20 @@ export function makeVerticalList(cellGlyffs : Glyff<Void>[], cellHeight : Inset1
                 scrollPixels = currentScrollUp;
                 if (Math.abs(v) > .001 && currentScrollUp != maxScrollUp &&
                     currentScrollUp != minScrollUp) {
-                    glideFrame = requestAnimationFrame(()=> {
-                        if (listStage === ListStage.GLIDING) {
-                            presentView();
-                        }
-                    });
+                    function schedulePresentView() {
+                        glideFrame = requestAnimationFrame(()=> {
+                            if (listStage === ListStage.GLIDING) {
+                                if (lower.audience.willDraw()) {
+                                    // Let the screen redraw before changing animation.
+                                    schedulePresentView();
+                                } else {
+                                    presentView();
+                                }
+                            }
+                        });
+                    }
+
+                    schedulePresentView();
                 } else {
                     listStage = ListStage.STABLE;
                 }

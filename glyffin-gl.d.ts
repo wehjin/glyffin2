@@ -14,5 +14,7 @@ export declare class GlAudience implements Audience {
 
     addZone(bounds : Perimeter, touchProvider : Gesturable) : Zone;
 
+    willDraw() : boolean;
+
     present<U>(glyff : Glyff<U>, reactionOrOnResult : any, onError : OnError) : Presentation;
 }

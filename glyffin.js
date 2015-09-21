@@ -853,11 +853,20 @@ define(["require", "exports"], function (require, exports) {
                     scrollPixels = currentScrollUp;
                     if (Math.abs(v) > .001 && currentScrollUp != maxScrollUp &&
                         currentScrollUp != minScrollUp) {
-                        glideFrame = requestAnimationFrame(function () {
-                            if (listStage === ListStage.GLIDING) {
-                                presentView();
-                            }
-                        });
+                        function schedulePresentView() {
+                            glideFrame = requestAnimationFrame(function () {
+                                if (listStage === ListStage.GLIDING) {
+                                    if (lower.audience.willDraw()) {
+                                        // Let the screen redraw before changing animation.
+                                        schedulePresentView();
+                                    }
+                                    else {
+                                        presentView();
+                                    }
+                                }
+                            });
+                        }
+                        schedulePresentView();
                     }
                     else {
                         listStage = ListStage.STABLE;
