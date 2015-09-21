@@ -571,12 +571,14 @@ export class VerticalGesturing implements Gesturing {
     private startSpot : Spot;
     private drained : boolean;
     private speedometer : Speedometer;
+    private crossThreshold;
 
     constructor(private downSpot : Spot, private threshold : number, private direction : number,
                 private onStarted : (down : number)=>void,
                 private onCanceled : ()=>void,
                 private onFinished : (velocity : number)=>void) {
         this.drained = false;
+        this.crossThreshold = Math.abs(2 * threshold);
     }
 
     isDrained() : boolean {
@@ -593,7 +595,7 @@ export class VerticalGesturing implements Gesturing {
         }
         if (!this.startSpot) {
             var crossOffset = Math.abs(spot.xDistance(this.downSpot));
-            if (crossOffset > Math.abs(this.threshold)) {
+            if (crossOffset > this.crossThreshold) {
                 this.drained = true;
                 return GestureStatus.DRAINED;
             }

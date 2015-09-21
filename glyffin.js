@@ -480,6 +480,7 @@ define(["require", "exports"], function (require, exports) {
             this.onCanceled = onCanceled;
             this.onFinished = onFinished;
             this.drained = false;
+            this.crossThreshold = Math.abs(2 * threshold);
         }
         VerticalGesturing.prototype.isDrained = function () {
             return this.drained;
@@ -493,7 +494,7 @@ define(["require", "exports"], function (require, exports) {
             }
             if (!this.startSpot) {
                 var crossOffset = Math.abs(spot.xDistance(this.downSpot));
-                if (crossOffset > Math.abs(this.threshold)) {
+                if (crossOffset > this.crossThreshold) {
                     this.drained = true;
                     return GestureStatus.DRAINED;
                 }
