@@ -41,11 +41,11 @@ function getWordXWeight(word : string) : number {
     return letterWeights + spaceWeights;
 }
 
-export function asciiByCode(code : number, base? : Glyff<Void>) : Glyff<Void> {
+export function asciiByCode(code : number, base : Glyff<Void>) : Glyff<Void> {
     code = getAsciiCode(code);
     var spots = code >= ascii_spots.length ? no_spots : ascii_spots[code];
     var xWeight = getCharXWeight(code);
-    return (base ? base : BeigeGlyff).kaleid(xWeight, 7, spots);
+    return base.kaleid(xWeight, 7, spots);
 }
 
 class MultiLines {
@@ -128,7 +128,7 @@ function getMultiLines(maxWidthPixels : number, maxHeightPixels : number, lines 
 }
 
 export function asciiMultiLine(lines : number, paragraph : string,
-                               base? : Glyff<Void>) : Glyff<Void> {
+                               base : Glyff<Void>) : Glyff<Void> {
     return Glyff.create((presenter : Presenter<Void>)=> {
         var perimeter = presenter.perimeter;
         var audience = presenter.audience;
@@ -148,7 +148,7 @@ export function asciiMultiLine(lines : number, paragraph : string,
     }, 0);
 }
 
-export function asciiEntireWord(word : string, ink? : Glyff<Void>) : Glyff<Void> {
+export function asciiEntireWord(word : string, ink : Glyff<Void>) : Glyff<Void> {
     var wordXWeight = getWordXWeight(word);
     return Glyff.create((presenter : Presenter<Void>) => {
         var perimeter = presenter.perimeter;
@@ -161,7 +161,7 @@ export function asciiEntireWord(word : string, ink? : Glyff<Void>) : Glyff<Void>
     }, 0);
 }
 
-export function asciiWord(word : string, xWeightPixels : number, base? : Glyff<Void>) {
+export function asciiWord(word : string, xWeightPixels : number, base : Glyff<Void>) {
     var insertions : Insertion<Void>[] = [];
     for (var i = 0; i < word.length; i++) {
         var code = word.charCodeAt(i);
@@ -174,7 +174,7 @@ export function asciiWord(word : string, xWeightPixels : number, base? : Glyff<V
     return ClearGlyff.addLefts(insertions);
 }
 
-export function asciiChar(ch : string, base? : Glyff<Void>) : Glyff<Void> {
+export function asciiChar(ch : string, base : Glyff<Void>) : Glyff<Void> {
     return asciiByCode(ch.charCodeAt(0), base);
 }
 

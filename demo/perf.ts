@@ -23,18 +23,20 @@ function measure() {
     }
     var start = Date.now();
     for (var i = 0; i < 1; i++) {
-        presentation = GlyffinText.asciiMultiLine(10, word).present(perimeter, audience);
+        presentation =
+            GlyffinText.asciiMultiLine(10, word, Glyffin.BeigeGlyff).present(perimeter, audience);
         audience.clearAndRedraw();
         presentation.end();
     }
     var elapsed = Date.now() - start;
-    presentation = GlyffinText.asciiMultiLine(10, "Elapsed: " + elapsed.toString())
-        .clicken("restart")
-        .present(perimeter, audience, (result : string)=> {
-            if (result == "restart") {
-                measure();
-            }
-        });
+    presentation =
+        GlyffinText.asciiMultiLine(10, "Elapsed: " + elapsed.toString(), Glyffin.BeigeGlyff)
+            .clicken("restart")
+            .present(perimeter, audience, (result : string)=> {
+                if (result == "restart") {
+                    measure();
+                }
+            });
 }
 
 measure();

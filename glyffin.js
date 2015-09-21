@@ -953,6 +953,9 @@ define(["require", "exports"], function (require, exports) {
                     },
                     present: function (glyff, reactionOrOnResult, onError) {
                         return presenter.audience.present(glyff, reactionOrOnResult, onError);
+                    },
+                    willDraw: function () {
+                        return presenter.audience.willDraw();
                     }
                 } : presenter.audience;
                 presenter.addPresentation(_this.present(presenter.perimeter, audience, presenter));
@@ -970,6 +973,9 @@ define(["require", "exports"], function (require, exports) {
                     },
                     present: function (glyff, reactionOrOnResult, onError) {
                         return presenter.audience.present(glyff, reactionOrOnResult, onError);
+                    },
+                    willDraw: function () {
+                        return presenter.audience.willDraw();
                     }
                 } : presenter.audience;
                 presenter.addPresentation(_this.present(presenter.perimeter, audience, presenter));

@@ -51,14 +51,13 @@ Rx.httpGet(hNewsUri).subscribe((response : Rx.HttpResponse)=> {
         var tapHeight = perimeter.tapHeight;
         var readSize = perimeter.readHeight;
         var textSize = readSize * 1.2;
-
-        var textBase = Glyff.color(Color.CYAN);
+        var textBase = Glyff.color(Color.WHITE);
 
         function getCell(background : Glyff<Void>, text : string,
                          subtext : string) : Glyff<Void> {
             function addTitle<T>(background : Glyffin.Glyff<T>) : Glyffin.Glyff<T> {
                 return background.addNearMajor(0.5,
-                    GlyffinText.asciiMultiLine(2, text)
+                    GlyffinText.asciiMultiLine(2, text, Glyffin.BeigeGlyff)
                         .splitHeightYield(-textSize, Glyffin.ClearGlyff)
                         .splitHeightYield(-textSize, GlyffinText.asciiEntireWord(subtext, textBase))
                         .pad(readSize * 2, readSize * 2)
@@ -91,7 +90,8 @@ Rx.httpGet(hNewsUri).subscribe((response : Rx.HttpResponse)=> {
         var item = items[itemIndex];
         var nextItem = items[(itemIndex + 1) % items.length];
         var prevItem = items[getPreviousItemIndex(itemIndex)];
-        var cell = getUnpressedCell(item).stackNearLeft(getRightCell(nextItem), getLeftCell(prevItem));
+        var cell = getUnpressedCell(item).stackNearLeft(getRightCell(nextItem),
+            getLeftCell(prevItem));
 
         var app = Glyffin.colorPath(backgroundColorPath)
             .addNearMajor(1, cell.splitHeightRetain(-tapHeight * 3, Glyffin.ClearGlyff));

@@ -41,7 +41,7 @@ define(["require", "exports", "./glyffin"], function (require, exports, glyffin_
         code = getAsciiCode(code);
         var spots = code >= ascii_spots.length ? no_spots : ascii_spots[code];
         var xWeight = getCharXWeight(code);
-        return (base ? base : glyffin_1.BeigeGlyff).kaleid(xWeight, 7, spots);
+        return base.kaleid(xWeight, 7, spots);
     }
     exports.asciiByCode = asciiByCode;
     var MultiLines = (function () {

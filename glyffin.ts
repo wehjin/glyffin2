@@ -1124,6 +1124,9 @@ export class Glyff<T> {
                 present: <U>(glyff : Glyff<U>, reactionOrOnResult ? : Reaction<U>|OnResult<U>,
                              onError? : OnError) : Presentation => {
                     return presenter.audience.present(glyff, reactionOrOnResult, onError);
+                },
+                willDraw() : boolean {
+                    return presenter.audience.willDraw();
                 }
             } : presenter.audience;
             presenter.addPresentation(this.present(presenter.perimeter, audience, presenter));
@@ -1142,6 +1145,9 @@ export class Glyff<T> {
                 present: <U>(glyff : Glyff<U>, reactionOrOnResult ? : Reaction<U>|OnResult<U>,
                              onError? : OnError) : Presentation => {
                     return presenter.audience.present(glyff, reactionOrOnResult, onError);
+                },
+                willDraw() : boolean {
+                    return presenter.audience.willDraw();
                 }
             } : presenter.audience;
             presenter.addPresentation(this.present(presenter.perimeter, audience, presenter));

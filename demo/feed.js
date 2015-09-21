@@ -39,17 +39,22 @@ define(["require", "exports", "../glyffin", "../glyffin-gl", "../glyffin-ascii",
             var tapHeight = perimeter.tapHeight;
             var readSize = perimeter.readHeight;
             var textSize = readSize * 1.2;
-            var textBase = Glyff.color(Color.CYAN);
+            var textBase = Glyff.color(Color.WHITE);
             function getCell(background, text, subtext) {
                 function addTitle(background) {
-                    return background.addNearMajor(0.5, GlyffinText.asciiMultiLine(2, text).splitHeightYield(-textSize, Glyffin.ClearGlyff).splitHeightYield(-textSize, GlyffinText.asciiEntireWord(subtext, textBase)).pad(readSize * 2, readSize * 2).limitHeight(readSize * 4 + textSize * 5, .4));
+                    return background.addNearMajor(0.5, GlyffinText.asciiMultiLine(2, text, Glyffin.BeigeGlyff)
+                        .splitHeightYield(-textSize, Glyffin.ClearGlyff)
+                        .splitHeightYield(-textSize, GlyffinText.asciiEntireWord(subtext, textBase))
+                        .pad(readSize * 2, readSize * 2)
+                        .limitHeight(readSize * 4 + textSize * 5, .4));
                 }
                 return background.rebuild(addTitle);
             }
             var unpressedBackground = Glyffin.colorPath(midgroundColorPath);
             var pressedBackground = Glyffin.colorPath(midgroundColorPath, .5, backgroundColorPath);
             function getUnpressedCell(item) {
-                return getCell(unpressedBackground, item['title'], item['link']).clicken("drill", getCell(pressedBackground, item['title'], item['link']));
+                return getCell(unpressedBackground, item['title'], item['link'])
+                    .clicken("drill", getCell(pressedBackground, item['title'], item['link']));
             }
             function getRightCell(item) {
                 return getCell(Glyffin.colorPath(midgroundColorPath, .1, backgroundColorPath), item['title'], item['link']);
@@ -62,9 +67,12 @@ define(["require", "exports", "../glyffin", "../glyffin-gl", "../glyffin-ascii",
             var nextItem = items[(itemIndex + 1) % items.length];
             var prevItem = items[getPreviousItemIndex(itemIndex)];
             var cell = getUnpressedCell(item).stackNearLeft(getRightCell(nextItem), getLeftCell(prevItem));
-            var app = Glyffin.colorPath(backgroundColorPath).addNearMajor(1, cell.splitHeightRetain(-tapHeight * 3, Glyffin.ClearGlyff));
+            var app = Glyffin.colorPath(backgroundColorPath)
+                .addNearMajor(1, cell.splitHeightRetain(-tapHeight * 3, Glyffin.ClearGlyff));
             var spinnerSize = tapHeight * 3;
-            var spinner = Glyff.colorAnimation(Color.BLUE, Color.RED).pulseAnimate(1000, 50).limitHeight(spinnerSize, .5).limitWidth(spinnerSize, .5);
+            var spinner = Glyff.colorAnimation(Color.BLUE, Color.RED)
+                .pulseAnimate(1000, 50)
+                .limitHeight(spinnerSize, .5).limitWidth(spinnerSize, .5);
             // TODO: Design better spinner.
             // TODO: Disable app during transition.
             var transition = app.addNearMajor(10, spinner);
