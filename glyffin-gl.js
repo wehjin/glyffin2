@@ -555,9 +555,13 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
                 return;
             }
             this.editCount++;
-            requestAnimationFrame(function () {
+            if (this.redrawTimeout) {
+                clearTimeout(this.redrawTimeout);
+                this.redrawTime = 0;
+            }
+            this.redrawTimeout = setTimeout(function () {
                 _this.clearAndRedraw();
-            });
+            }, 0);
         };
         GlAudience.prototype.clearAndRedraw = function () {
             this.vertices.clearFreedPatches(this.room);

@@ -590,6 +590,7 @@ export class GlAudience implements Audience {
     private editCount : number = 0;
     private unsubscribeSpots : ()=>void;
     private redrawTime;
+    private redrawTimeout;
 
     constructor(private room : GlRoom) {
         this.vertices = new Patches();
@@ -679,9 +680,13 @@ export class GlAudience implements Audience {
             return;
         }
         this.editCount++;
-        requestAnimationFrame(()=> {
+        if (this.redrawTimeout) {
+            clearTimeout(this.redrawTimeout);
+            this.redrawTime = 0;
+        }
+        this.redrawTimeout = setTimeout(()=> {
             this.clearAndRedraw();
-        });
+        }, 0);
     }
 
     clearAndRedraw() {

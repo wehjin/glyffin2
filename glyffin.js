@@ -835,7 +835,7 @@ define(["require", "exports"], function (require, exports) {
             }
             function startPower() {
                 if (glideFrame) {
-                    clearTimeout(glideFrame);
+                    cancelAnimationFrame(glideFrame);
                     glideFrame = 0;
                 }
                 listStage = ListStage.POWERED;
@@ -852,11 +852,11 @@ define(["require", "exports"], function (require, exports) {
                     scrollPixels = currentScrollUp;
                     if (Math.abs(v) > .001 && currentScrollUp != maxScrollUp &&
                         currentScrollUp != minScrollUp) {
-                        glideFrame = setTimeout(function () {
+                        glideFrame = requestAnimationFrame(function () {
                             if (listStage === ListStage.GLIDING) {
                                 presentView();
                             }
-                        }, 1);
+                        });
                     }
                     else {
                         listStage = ListStage.STABLE;
