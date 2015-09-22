@@ -77,6 +77,11 @@ function enableCornerAttribute(gl : WebGLRenderingContext, a_Corner : number) {
     gl.enableVertexAttribArray(a_Corner);
 }
 
+function enableCodePointAttribute(gl : WebGLRenderingContext, a_CodePoint : number) {
+    gl.vertexAttribPointer(a_CodePoint, 1, gl.FLOAT, false, BYTES_PER_VERTEX, BYTES_BEFORE_CODEPOINT);
+    gl.enableVertexAttribArray(a_CodePoint);
+}
+
 class FrameBuffer {
 
     public framebuffer;
@@ -314,8 +319,9 @@ class LightProgram implements Program {
         'varying vec3 v_Normal;\n' +
         'varying vec3 v_Position;\n' +
         'varying vec4 v_PositionFromLight;\n' +
+        'varying float v_UseTex;\n' +
         'varying vec2 v_TexCoord;\n' +
-        'const float spriteWidth = 5.0/256.0;\n' +
+        'const float spriteWidth = 6.0/256.0;\n' +
         'const float spriteStride = 8.0/256.0;\n' +
         'vec2 texturePoint(in float corner, in float index){\n' +
         '  float s = spriteStride * index;\n' +
@@ -337,7 +343,13 @@ class LightProgram implements Program {
         '  v_PositionFromLight = u_MvpMatrixFromLight * a_Position;\n' +
         '  v_Normal = c_Normal;\n' +
         '  v_Color = a_Color;\n' +
-        '  v_TexCoord = texturePoint(a_Corner, 5.0);\n' +
+        '  if (a_CodePoint >= 64.0 && a_CodePoint < 96.0) {\n' +
+        '    float index = a_CodePoint - 64.0;\n' +
+        '    v_UseTex = 1.0;\n' +
+        '    v_TexCoord = texturePoint(a_Corner, index);\n' +
+        '  } else {\n' +
+        '    v_UseTex = 0.0;\n' +
+        '  }\n' +
         '}\n';
 
     private FSHADER_SOURCE : string =
@@ -354,6 +366,7 @@ class LightProgram implements Program {
         'varying vec4 v_Color;\n' +
         'varying vec4 v_PositionFromLight;\n' +
         'varying vec2 v_TexCoord;\n' +
+        'varying float v_UseTex;\n' +
         'float unpack(const in vec4 rgbaDepth) {\n' +
         '  const vec4 bitShift = vec4(1.0, 1.0/256.0, 1.0/(256.0*256.0), 1.0/(256.0*256.0*256.0));\n' +
         '  float depth = dot(rgbaDepth, bitShift);\n' + // Use dot() since the calculations is
@@ -383,7 +396,9 @@ class LightProgram implements Program {
         '    depthAcc += depth;\n' +
         '  }\n' +
         '  float visibility = (shadowCoord.z > depthAcc/4.0 + bias) ? 0.8 : 1.0;\n' +
-        '  color = texture2D(u_AtlasSampler, v_TexCoord);\n' +
+        '  if (v_UseTex > 0.5){\n' +
+        '    color = texture2D(u_AtlasSampler, v_TexCoord);\n' +
+        '  }\n' +
         (redShadow ? '  gl_FragColor = (visibility < 1.0) ? vec4(1.0,0.0,0.0,1.0) : color;\n' :
             '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n') +
         '}\n';
@@ -398,6 +413,7 @@ class LightProgram implements Program {
     public u_ShadowMap : WebGLUniformLocation;
     private u_AtlasSampler : WebGLUniformLocation;
     private a_Corner : number;
+    private a_CodePoint : number;
     private altasTexture : WebGLTexture;
 
     constructor(gl : WebGLRenderingContext, modelMatrix : Matrix4, mvpMatrix : Matrix4) {
@@ -413,10 +429,11 @@ class LightProgram implements Program {
         this.u_ShadowMap = gl.getUniformLocation(program, 'u_ShadowMap');
         this.u_AtlasSampler = gl.getUniformLocation(program, 'u_AtlasSampler');
         this.a_Corner = gl.getAttribLocation(program, 'a_Corner');
+        this.a_CodePoint = gl.getAttribLocation(program, 'a_CodePoint');
 
         if (!this.u_ModelMatrix || !this.u_MvpMatrix || !this.u_AmbientLight || !this.u_LightColor ||
             !this.u_LightPosition || !this.u_MvpMatrixFromLight || !this.u_ShadowMap || !this.u_AtlasSampler ||
-            this.a_Corner < 0) {
+            this.a_Corner < 0 || this.a_CodePoint < 0) {
             console.log('Failed to get storage location');
         }
 
@@ -443,6 +460,7 @@ class LightProgram implements Program {
         enablePositionAttributes(this, gl);
         enableColorAttributes(this, gl);
         enableCornerAttribute(gl, this.a_Corner);
+        enableCodePointAttribute(gl, this.a_CodePoint);
         gl.activeTexture(gl.TEXTURE1);
         gl.bindTexture(gl.TEXTURE_2D, this.altasTexture);
     }

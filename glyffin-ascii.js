@@ -942,7 +942,7 @@ define(["require", "exports", "./glyffin"], function (require, exports, glyffin_
                 data[index] = on ? 255 : 0;
                 data[index + 3] = 255;
             }
-            var pointStart = 48;
+            var pointStart = 64;
             for (var g = 0; g < pageWidthGlyphs; g++) {
                 var point = pointStart + g;
                 var spots = ascii_spots[point];

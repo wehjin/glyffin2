@@ -8,7 +8,8 @@ import {Inset2, GlRoom, GlAudience, Glyff, Color, GrayGlyff} from "../src/glyffi
 var room = new GlRoom(<HTMLCanvasElement>document.getElementById('webgl'));
 var audience = new GlAudience(room);
 var perimeter = room.perimeter;
-var letter = "0";
+var letter = "J";
 Glyff.codePoint(letter.charCodeAt(0), Color.GRAY)
     .pad2(Inset2.EIGHTH)
+    .over(GrayGlyff, -1)
     .present(perimeter, audience);
