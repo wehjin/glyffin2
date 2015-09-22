@@ -35,7 +35,8 @@ var VERTICES_PER_PATCH = 6;
 var MAX_VERTEX_COUNT = MAX_PATCH_COUNT * VERTICES_PER_PATCH;
 var FLOATS_PER_POSITION = 3;
 var FLOATS_PER_COLOR = 4;
-var FLOATS_PER_VERTEX = FLOATS_PER_POSITION + FLOATS_PER_COLOR;
+var FLOATS_PER_CODEPOINT = 2;
+var FLOATS_PER_VERTEX = FLOATS_PER_POSITION + FLOATS_PER_COLOR + FLOATS_PER_CODEPOINT;
 var FLOATS_PER_PATCH = VERTICES_PER_PATCH * FLOATS_PER_VERTEX;
 var BYTES_PER_FLOAT = 4;
 var BYTES_BEFORE_COLOR = FLOATS_PER_POSITION * BYTES_PER_FLOAT;
@@ -162,15 +163,24 @@ class Patches {
         this.freePatchCount = MAX_PATCH_COUNT;
     }
 
-    setVertex(n : number, values : number[]) {
-        var base = n * FLOATS_PER_VERTEX;
-        for (var i = 0; i < FLOATS_PER_VERTEX; i++, base++) {
-            this.patch[base] = values[i];
-        }
+    setVertexFloats(index : number, x : number, y : number, z : number,
+                    red : number, green : number, blue : number, alpha : number,
+                    codePoint : number, corner : number) {
+        var base = index * FLOATS_PER_VERTEX;
+        this.patch[base] = x;
+        this.patch[base + 1] = y;
+        this.patch[base + 2] = z;
+        this.patch[base + 3] = red;
+        this.patch[base + 4] = green;
+        this.patch[base + 5] = blue;
+        this.patch[base + 6] = alpha;
+        this.patch[base + 7] = codePoint;
+        this.patch[base + 8] = corner;
     }
 
+
     getPatch(left : number, top : number, right : number, bottom : number, level : number,
-             color : Color, room : GlRoom) : number {
+             color : Color, codePoint : number, room : GlRoom) : number {
         var patchIndex;
         if (this.freePatchHead === this.freePatchCleared) {
             if (this.freePatchCleared === this.freePatchTail) {
@@ -185,12 +195,12 @@ class Patches {
         }
         this.freePatchList[patchIndex] = -2;
         this.freePatchCount--;
-        this.setVertex(0, [left, top, level, color.red, color.green, color.blue, color.alpha]);
-        this.setVertex(1, [right, top, level, color.red, color.green, color.blue, color.alpha]);
-        this.setVertex(2, [left, bottom, level, color.red, color.green, color.blue, color.alpha]);
-        this.setVertex(3, [right, top, level, color.red, color.green, color.blue, color.alpha]);
-        this.setVertex(4, [right, bottom, level, color.red, color.green, color.blue, color.alpha]);
-        this.setVertex(5, [left, bottom, level, color.red, color.green, color.blue, color.alpha]);
+        this.setVertexFloats(0, left, top, level, color.red, color.green, color.blue, color.alpha, codePoint, 1);
+        this.setVertexFloats(1, right, top, level, color.red, color.green, color.blue, color.alpha, codePoint, 2);
+        this.setVertexFloats(2, left, bottom, level, color.red, color.green, color.blue, color.alpha, codePoint, 3);
+        this.setVertexFloats(3, right, top, level, color.red, color.green, color.blue, color.alpha, codePoint, 2);
+        this.setVertexFloats(4, right, bottom, level, color.red, color.green, color.blue, color.alpha, codePoint, 4);
+        this.setVertexFloats(5, left, bottom, level, color.red, color.green, color.blue, color.alpha, codePoint, 3);
         this.buffer.set(this.patch, patchIndex * FLOATS_PER_PATCH);
         return patchIndex;
     }
@@ -363,9 +373,8 @@ class LightProgram implements Program {
         this.u_MvpMatrixFromLight = gl.getUniformLocation(program, 'u_MvpMatrixFromLight');
         this.u_ShadowMap = gl.getUniformLocation(program, 'u_ShadowMap');
 
-        if (!this.u_ModelMatrix || !this.u_MvpMatrix || !this.u_AmbientLight ||
-            !this.u_LightColor || !this.u_LightPosition || !this.u_MvpMatrixFromLight ||
-            !this.u_ShadowMap) {
+        if (!this.u_ModelMatrix || !this.u_MvpMatrix || !this.u_AmbientLight || !this.u_LightColor ||
+            !this.u_LightPosition || !this.u_MvpMatrixFromLight || !this.u_ShadowMap) {
             console.log('Failed to get uniform storage location');
         }
 
@@ -705,13 +714,16 @@ export class GlAudience implements Audience {
          */
     }
 
-    addPatch(bounds : Perimeter, color : Color) : Patch {
-        if (bounds.left >= bounds.right || bounds.top >= bounds.bottom || color.alpha == 0) {
+    addPatch(bounds : Perimeter, color : Color, codePoint : number) : Patch {
+        var left = bounds.left;
+        var right = bounds.right;
+        var top = bounds.top;
+        var bottom = bounds.bottom;
+
+        if (left >= right || top >= bottom || color.alpha == 0) {
             return EMPTY_PATCH;
         }
-
-        var patch = this.vertices.getPatch(bounds.left, bounds.top, bounds.right,
-            bounds.bottom, bounds.level, color, this.room);
+        var patch = this.vertices.getPatch(left, top, right, bottom, bounds.level, color, codePoint, this.room);
         this.scheduleRedraw();
         return <Patch>{
             remove: ()=> {

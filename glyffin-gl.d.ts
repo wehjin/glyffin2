@@ -1,16 +1,16 @@
+import {Spot} from "./glyffin-type";
 import {
-    Glyff,Color, Spot,Gesturing, Gesturable, GestureStatus, OnError, OnResult, Perimeter,
+    Glyff,Color, Gesturing, Gesturable, GestureStatus, OnError, OnResult, Perimeter,
     Patch, Reaction, Presentation, Zone, Palette, Audience, EMPTY_PRESENTATION, EMPTY_PATCH, Hall
 } from "./glyffin";
 import {SpotObservable} from "./glyffin-html";
 import {Interactive} from "./glyffin-touch";
 
-export declare class GlRoom {
+declare class GlRoom {
 }
 
-
-export declare class GlAudience implements Audience {
-    addPatch(bounds : Perimeter, color : Color) : Patch;
+declare class GlAudience implements Audience {
+    addPatch(bounds : Perimeter, color : Color, codePoint : number) : Patch;
 
     addZone(bounds : Perimeter, touchProvider : Gesturable) : Zone;
 

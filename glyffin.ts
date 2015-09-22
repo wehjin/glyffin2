@@ -1,59 +1,14 @@
+/// <reference path="webglbook.d.ts" />
+
 /**
  * Created by wehjin on 5/24/15.
  */
 
-/// <reference path="webglbook.d.ts" />
+import {
+    Inset1, Inset2, Patch, Presentation, PatchPresentation, Removable, Spot, TexelRect, Void
+} from "./glyffin-type";
 
-export class Void {
-}
-
-export class Inset1 {
-
-    constructor(public fraction : number, public fixed : number) {
-    }
-
-    public getPixels(whole : number) : number {
-        return this.fraction * whole + this.fixed;
-    }
-}
-
-export class Inset2 {
-    public x : Inset1;
-    public y : Inset1;
-
-    constructor(fractionX : number, fixedX : number, fractionY : number, fixedY : number) {
-        this.x = new Inset1(fractionX, fixedX);
-        this.y = new Inset1(fractionY, fixedY);
-    }
-
-    public static QUARTER : Inset2 = new Inset2(.25, 0, .25, 0);
-    public static EIGHTH : Inset2 = new Inset2(.125, 0, .125, 0);
-}
-
-export class Spot {
-    constructor(public x : number, public y : number) {
-    }
-
-    gridDistance(other : Spot) : number {
-        return Math.max(Math.abs(this.x - other.x), Math.abs(this.y - other.y));
-    }
-
-    xDistance(origin : Spot) : number {
-        return this.x - origin.x;
-    }
-
-    yDistance(origin : Spot) : number {
-        return this.y - origin.y;
-    }
-
-    addX(addition : number) : Spot {
-        return new Spot(this.x + addition, this.y);
-    }
-
-    addY(addition : number) : Spot {
-        return new Spot(this.x, this.y + addition);
-    }
-}
+import {makeCodePoint} from "./glyffin-image";
 
 export class Speedometer {
     private positions : number[] = [null, null, null];
@@ -266,11 +221,11 @@ export class Color {
     public static WHITE = new Color(1, 1, 1, 1);
     public static BLACK = new Color(0, 0, 0, 1);
     public static RED = new Color(1, 0, 0, 1);
-    public static YELLOW = new Color(.5, .5, 0, 1);
+    public static YELLOW = new Color(1, 1, 0, 1);
     public static GREEN = new Color(0, 1, 0, 1);
-    public static CYAN = new Color(0, .5, .5, 1);
+    public static CYAN = new Color(0, 1, 1, 1);
     public static BLUE = new Color(0, 0, 1, 1);
-    public static MAGENTA = new Color(.5, 0, .5, 1);
+    public static MAGENTA = new Color(1, 0, 1, 1);
     public static BEIGE = new Color(245 / 255, 245 / 255, 220 / 255, 1);
     public static GRAY = new Color(.5, .5, .5, 1);
 
@@ -336,16 +291,11 @@ export class Stage {
     }
 }
 
-export interface Removable {
-    remove();
-}
-export var EMPTY_REMOVABLE = {
+export var EMPTY_REMOVABLE : Removable = {
     remove() {
     }
 };
 
-export interface Patch extends Removable {
-}
 export interface Zone extends Removable {
 }
 
@@ -384,10 +334,6 @@ export interface OnResult<T> {
 export interface Reaction<T> {
     onResult(result : T);
     onError(error : Error);
-}
-
-export interface Presentation {
-    end();
 }
 
 export var EMPTY_PRESENTATION : Presentation = {
@@ -648,7 +594,7 @@ export class VerticalGesturing implements Gesturing {
 }
 
 export interface Audience {
-    addPatch(bounds : Perimeter, color : Color):Patch;
+    addPatch(bounds : Perimeter, color : Color, codePoint : number):Patch;
     addZone(bounds : Perimeter, touchProvider : Gesturable):Zone;
     willDraw():boolean;
     present<U>(glyff : Glyff<U>, reactionOrOnResult ? : Reaction<U>|OnResult<U>,
@@ -1136,8 +1082,8 @@ export class Glyff<T> {
     isolate(isolated : boolean) : Glyff<T> {
         return Glyff.create<T>((presenter : Presenter<Void>)=> {
             var audience = isolated ? {
-                addPatch(bounds : Perimeter, color : Color) : Patch {
-                    return presenter.audience.addPatch(bounds, color);
+                addPatch(bounds : Perimeter, color : Color, codePoint : number) : Patch {
+                    return presenter.audience.addPatch(bounds, color, codePoint);
                 },
                 addZone(bounds : Perimeter, touchProvider : Gesturable) : Zone {
                     return EMPTY_REMOVABLE;
@@ -1487,15 +1433,15 @@ export class Glyff<T> {
         return this.animateWithPath(new CycleAnimationPath(duration, count));
     }
 
+    static codePoint(cp : number, color : Color) : Glyff<Void> {
+        return makeCodePoint(cp, color);
+    }
+
     static color(color : Color) : Glyff<Void> {
         return Glyff.create<Void>((presenter : Presenter<Void>)=> {
             var audience = presenter.audience;
-            var patch = audience.addPatch(presenter.perimeter, color);
-            presenter.addPresentation({
-                end() {
-                    patch.remove();
-                }
-            });
+            var patch = audience.addPatch(presenter.perimeter, color, 0);
+            presenter.addPresentation(new PatchPresentation(patch));
         }, 0);
     }
 

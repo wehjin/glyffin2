@@ -1,7 +1,7 @@
 /**
  * Created by wehjin on 7/2/15.
  */
-define(["require", "exports", "./glyffin"], function (require, exports, glyffin_1) {
+define(["require", "exports", "./glyffin-type"], function (require, exports, glyffin_type_1) {
     var TouchEvents = (function () {
         function TouchEvents(element) {
             this.element = element;
@@ -62,7 +62,7 @@ define(["require", "exports", "./glyffin"], function (require, exports, glyffin_
             var jsTouch = touches.item(0);
             var canvasX = jsTouch.pageX - this.element.offsetLeft;
             var canvasY = jsTouch.pageY - this.element.offsetTop;
-            return new glyffin_1.Spot(canvasX, canvasY);
+            return new glyffin_type_1.Spot(canvasX, canvasY);
         };
         return TouchEvents;
     })();
@@ -138,7 +138,7 @@ define(["require", "exports", "./glyffin"], function (require, exports, glyffin_
             return unsubscribe;
         };
         SpotObservable.prototype.getMouseSpot = function (ev) {
-            return new glyffin_1.Spot(ev.pageX - this.element.offsetLeft, ev.pageY - this.element.offsetTop);
+            return new glyffin_type_1.Spot(ev.pageX - this.element.offsetLeft, ev.pageY - this.element.offsetTop);
         };
         return SpotObservable;
     })();

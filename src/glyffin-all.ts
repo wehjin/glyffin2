@@ -4,6 +4,7 @@
  */
 
 ///<reference path="./glyffin-all.d.ts"/>
+export * from "../glyffin-type";
 export * from "../glyffin";
 export * from "../glyffin-gl";
 export * from "../glyffin-ascii";

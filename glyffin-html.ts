@@ -2,7 +2,7 @@
  * Created by wehjin on 7/2/15.
  */
 
-import {Spot} from "./glyffin";
+import {Spot} from "./glyffin-type";
 
 interface JsTouch {
     clientX: number;
