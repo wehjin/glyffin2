@@ -2,8 +2,8 @@
  * Created by wehjin on 5/24/15.
  */
 
-
-import {Glyff, Void, Presenter,Insertion,ClearGlyff,BeigeGlyff} from "./glyffin";
+import { Void} from "./glyffin-type";
+import {Glyff, Presenter,Insertion,ClearGlyff} from "./glyffin";
 
 // TODO: Add horizontal alignment
 
@@ -919,8 +919,7 @@ var ascii_spots = [
     x_spots, y_spots, z_spots, obrace_spots, pipe_spots, cbrace_spots, no_spots, no_spots,
 ];
 
-var x_weight_default : number = 5;
-var x_weights : number[] = [
+export var x_weights : number[] = [
     // 0-31
     5, 5, 5, 5, 5, 5, 5, 5,
     5, 5, 5, 5, 5, 5, 5, 5,

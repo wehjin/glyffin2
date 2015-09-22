@@ -11,7 +11,7 @@ define(["require", "exports", "./glyffin"], function (require, exports, glyffin_
         return LineContent;
     })();
     function getAsciiCode(charCode) {
-        if (charCode < x_weights.length) {
+        if (charCode < exports.x_weights.length) {
             return charCode;
         }
         if (charCode == 0x2019) {
@@ -27,7 +27,7 @@ define(["require", "exports", "./glyffin"], function (require, exports, glyffin_
     }
     function getCharXWeight(charCode) {
         var asciiCode = getAsciiCode(charCode);
-        return x_weights[asciiCode];
+        return exports.x_weights[asciiCode];
     }
     function getWordXWeight(word) {
         var spaceWeights = word.length <= 1 ? 0 : (word.length - 1);
@@ -39,7 +39,7 @@ define(["require", "exports", "./glyffin"], function (require, exports, glyffin_
     }
     function asciiByCode(code, base) {
         var asciiCode = getAsciiCode(code);
-        return base.kaleid(x_weights[asciiCode], 7, ascii_spots[asciiCode]);
+        return base.kaleid(exports.x_weights[asciiCode], 7, ascii_spots[asciiCode]);
     }
     exports.asciiByCode = asciiByCode;
     var MultiLines = (function () {
@@ -896,8 +896,7 @@ define(["require", "exports", "./glyffin"], function (require, exports, glyffin_
         p_spots, q_spots, r_spots, s_spots, t_spots, u_spots, v_spots, w_spots,
         x_spots, y_spots, z_spots, obrace_spots, pipe_spots, cbrace_spots, no_spots, no_spots,
     ];
-    var x_weight_default = 5;
-    var x_weights = [
+    exports.x_weights = [
         // 0-31
         5, 5, 5, 5, 5, 5, 5, 5,
         5, 5, 5, 5, 5, 5, 5, 5,
@@ -946,7 +945,7 @@ define(["require", "exports", "./glyffin"], function (require, exports, glyffin_
             for (var g = 0; g < pageWidthGlyphs; g++) {
                 var point = pointStart + g;
                 var spots = ascii_spots[point];
-                var x_weight = x_weights[point];
+                var x_weight = exports.x_weights[point];
                 for (var k = 0; k < spots.length; k++) {
                     var spot = spots[k];
                     var i = spot[0];

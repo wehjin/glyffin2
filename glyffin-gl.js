@@ -242,9 +242,12 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch", 
     var LightProgram = (function () {
         function LightProgram(gl, modelMatrix, mvpMatrix) {
             this.VSHADER_SOURCE = 'const vec3 c_Normal = vec3( 0.0, 0.0, 1.0 );\n' +
+                'const float spriteWidth = 1.0/256.0;\n' +
+                'const float spriteStride = 8.0/256.0;\n' +
                 'uniform mat4 u_ModelMatrix;\n' +
                 'uniform mat4 u_MvpMatrix;\n' +
                 'uniform mat4 u_MvpMatrixFromLight;\n' +
+                'uniform int u_XWeights[128];\n' +
                 'attribute vec4 a_Position;\n' +
                 'attribute vec4 a_Color;\n' +
                 'attribute float a_CodePoint;\n' +
@@ -255,11 +258,9 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch", 
                 'varying vec4 v_PositionFromLight;\n' +
                 'varying float v_UseTex;\n' +
                 'varying vec2 v_TexCoord;\n' +
-                'const float spriteWidth = 6.0/256.0;\n' +
-                'const float spriteStride = 8.0/256.0;\n' +
-                'vec2 texturePoint(in float corner, in float index){\n' +
+                'vec2 texturePoint(in float corner, in float index, in int width){\n' +
                 '  float s = spriteStride * index;\n' +
-                '  float u = s + spriteWidth;\n' +
+                '  float u = s + float(width) * spriteWidth;\n' +
                 '  if (corner == 1.0){\n' +
                 '    return vec2(s, 1.0);\n' +
                 '  }\n' +
@@ -279,8 +280,9 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch", 
                 '  v_Color = a_Color;\n' +
                 '  if (a_CodePoint >= 64.0 && a_CodePoint < 96.0) {\n' +
                 '    float index = a_CodePoint - 64.0;\n' +
+                '    int width = u_XWeights[int(a_CodePoint)];\n' +
                 '    v_UseTex = 1.0;\n' +
-                '    v_TexCoord = texturePoint(a_Corner, index);\n' +
+                '    v_TexCoord = texturePoint(a_Corner, index, width);\n' +
                 '  } else {\n' +
                 '    v_UseTex = 0.0;\n' +
                 '  }\n' +
@@ -347,11 +349,12 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch", 
             this.u_MvpMatrixFromLight = gl.getUniformLocation(program, 'u_MvpMatrixFromLight');
             this.u_ShadowMap = gl.getUniformLocation(program, 'u_ShadowMap');
             this.u_AtlasSampler = gl.getUniformLocation(program, 'u_AtlasSampler');
+            this.u_XWeights = gl.getUniformLocation(program, 'u_XWeights');
             this.a_Corner = gl.getAttribLocation(program, 'a_Corner');
             this.a_CodePoint = gl.getAttribLocation(program, 'a_CodePoint');
             if (!this.u_ModelMatrix || !this.u_MvpMatrix || !this.u_AmbientLight || !this.u_LightColor ||
                 !this.u_LightPosition || !this.u_MvpMatrixFromLight || !this.u_ShadowMap || !this.u_AtlasSampler ||
-                this.a_Corner < 0 || this.a_CodePoint < 0) {
+                !this.u_XWeights || this.a_Corner < 0 || this.a_CodePoint < 0) {
                 console.log('Failed to get storage location');
             }
             gl.useProgram(program);
@@ -360,6 +363,7 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch", 
             gl.uniform3f(this.u_LightPosition, LIGHT_X, LIGHT_Y, LIGHT_Z);
             gl.uniformMatrix4fv(this.u_ModelMatrix, false, modelMatrix.elements);
             gl.uniformMatrix4fv(this.u_MvpMatrix, false, mvpMatrix.elements);
+            gl.uniform1iv(this.u_XWeights, new Int32Array(glyffin_ascii_1.x_weights));
             var texture = gl.createTexture();
             gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
             gl.activeTexture(gl.TEXTURE1);
