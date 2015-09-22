@@ -1,7 +1,7 @@
-import {Spot} from "./glyffin-type";
+import {Patch, Presentation, Spot} from "./glyffin-type";
 import {
     Glyff,Color, Gesturing, Gesturable, GestureStatus, OnError, OnResult, Perimeter,
-    Patch, Reaction, Presentation, Zone, Palette, Audience, EMPTY_PRESENTATION, EMPTY_PATCH, Hall
+    Reaction, Zone, Palette, Audience, EMPTY_PRESENTATION, EMPTY_PATCH, Hall
 } from "./glyffin";
 import {SpotObservable} from "./glyffin-html";
 import {Interactive} from "./glyffin-touch";

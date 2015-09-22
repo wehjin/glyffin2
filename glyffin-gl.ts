@@ -5,8 +5,11 @@
 /// <reference path="webglbook.d.ts" />
 
 import {
-    Glyff,Color, Spot,Gesturing, Gesturable, GestureStatus, OnError, OnResult, Perimeter,
-    Patch, Reaction, Presentation, Zone, Palette, Audience, EMPTY_PRESENTATION, EMPTY_PATCH, Hall
+    Patch, Presentation, Spot
+} from "./glyffin-type";
+import {
+    Glyff,Color, Gesturing, Gesturable, GestureStatus, OnError, OnResult, Perimeter,
+    Reaction, Zone, Palette, Audience, EMPTY_PRESENTATION, EMPTY_PATCH, Hall
 } from "./glyffin";
 import {SpotObservable} from "./glyffin-html";
 import {Interactive} from "./glyffin-touch";
@@ -30,18 +33,18 @@ var stopAfterShadow = false;
 var redShadow = false;
 var includeDepth = true;
 
-var MAX_PATCH_COUNT = 10000;
-var VERTICES_PER_PATCH = 6;
-var MAX_VERTEX_COUNT = MAX_PATCH_COUNT * VERTICES_PER_PATCH;
-var FLOATS_PER_POSITION = 3;
-var FLOATS_PER_COLOR = 4;
-var FLOATS_PER_CODEPOINT = 2;
-var FLOATS_PER_VERTEX = FLOATS_PER_POSITION + FLOATS_PER_COLOR + FLOATS_PER_CODEPOINT;
-var FLOATS_PER_PATCH = VERTICES_PER_PATCH * FLOATS_PER_VERTEX;
-var BYTES_PER_FLOAT = 4;
-var BYTES_BEFORE_COLOR = FLOATS_PER_POSITION * BYTES_PER_FLOAT;
-var BYTES_PER_VERTEX = FLOATS_PER_VERTEX * BYTES_PER_FLOAT;
-var BYTES_PER_PATCH = FLOATS_PER_PATCH * BYTES_PER_FLOAT;
+const MAX_PATCH_COUNT = 10000;
+const VERTICES_PER_PATCH = 6;
+const MAX_VERTEX_COUNT = MAX_PATCH_COUNT * VERTICES_PER_PATCH;
+const FLOATS_PER_POSITION = 3;
+const FLOATS_PER_COLOR = 4;
+const FLOATS_PER_CODEPOINT = 2;
+const FLOATS_PER_VERTEX = FLOATS_PER_POSITION + FLOATS_PER_COLOR + FLOATS_PER_CODEPOINT;
+const FLOATS_PER_PATCH = VERTICES_PER_PATCH * FLOATS_PER_VERTEX;
+const BYTES_PER_FLOAT = 4;
+const BYTES_BEFORE_COLOR = FLOATS_PER_POSITION * BYTES_PER_FLOAT;
+const BYTES_PER_VERTEX = FLOATS_PER_VERTEX * BYTES_PER_FLOAT;
+const BYTES_PER_PATCH = FLOATS_PER_PATCH * BYTES_PER_FLOAT;
 
 interface Program {
     glProgram: WebGLProgram;
