@@ -329,7 +329,10 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch", 
                 '  }\n' +
                 '  float visibility = (shadowCoord.z > depthAcc/4.0 + bias) ? 0.8 : 1.0;\n' +
                 '  if (v_UseTex > 0.5){\n' +
-                '    color = texture2D(u_AtlasSampler, v_TexCoord);\n' +
+                '    vec4 texel = texture2D(u_AtlasSampler, v_TexCoord);\n' +
+                '    if (texel.r < 0.5) {\n' +
+                '      discard;\n' +
+                '    }\n' +
                 '  }\n' +
                 (redShadow ? '  gl_FragColor = (visibility < 1.0) ? vec4(1.0,0.0,0.0,1.0) : color;\n' :
                     '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n') +
