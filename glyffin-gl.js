@@ -1,7 +1,7 @@
 /**
  * Created by wehjin on 5/24/15.
  */
-define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"], function (require, exports, glyffin_1, glyffin_html_1, glyffin_touch_1) {
+define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch", "./glyffin-ascii"], function (require, exports, glyffin_1, glyffin_html_1, glyffin_touch_1, glyffin_ascii_1) {
     var STAGE_SIZE = 256;
     var LIGHT_X = 0;
     var LIGHT_Y = STAGE_SIZE / 2;
@@ -30,8 +30,11 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
     var FLOATS_PER_PATCH = VERTICES_PER_PATCH * FLOATS_PER_VERTEX;
     var BYTES_PER_FLOAT = 4;
     var BYTES_BEFORE_COLOR = FLOATS_PER_POSITION * BYTES_PER_FLOAT;
+    var BYTES_BEFORE_CODEPOINT = BYTES_BEFORE_COLOR + (FLOATS_PER_COLOR) * BYTES_PER_FLOAT;
+    var BYTES_BEFORE_CORNER = BYTES_BEFORE_CODEPOINT + BYTES_PER_FLOAT;
     var BYTES_PER_VERTEX = FLOATS_PER_VERTEX * BYTES_PER_FLOAT;
     var BYTES_PER_PATCH = FLOATS_PER_PATCH * BYTES_PER_FLOAT;
+    var ATLAS = new glyffin_ascii_1.Atlas();
     function enableColorAttributes(program, gl) {
         // TODO Take a_Color as parameter.
         var a_Color = gl.getAttribLocation(program.glProgram, 'a_Color');
@@ -43,6 +46,10 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
         var a_Position = gl.getAttribLocation(program.glProgram, 'a_Position');
         gl.vertexAttribPointer(a_Position, FLOATS_PER_POSITION, gl.FLOAT, false, BYTES_PER_VERTEX, 0);
         gl.enableVertexAttribArray(a_Position);
+    }
+    function enableCornerAttribute(gl, a_Corner) {
+        gl.vertexAttribPointer(a_Corner, 1, gl.FLOAT, false, BYTES_PER_VERTEX, BYTES_BEFORE_CORNER);
+        gl.enableVertexAttribArray(a_Corner);
     }
     var FrameBuffer = (function () {
         function FrameBuffer(gl) {
@@ -236,16 +243,36 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
                 'uniform mat4 u_MvpMatrixFromLight;\n' +
                 'attribute vec4 a_Position;\n' +
                 'attribute vec4 a_Color;\n' +
+                'attribute float a_CodePoint;\n' +
+                'attribute float a_Corner;\n' +
                 'varying vec4 v_Color;\n' +
                 'varying vec3 v_Normal;\n' +
                 'varying vec3 v_Position;\n' +
                 'varying vec4 v_PositionFromLight;\n' +
+                'varying vec2 v_TexCoord;\n' +
+                'const float spriteWidth = 5.0/256.0;\n' +
+                'const float spriteStride = 8.0/256.0;\n' +
+                'vec2 texturePoint(in float corner, in float index){\n' +
+                '  float s = spriteStride * index;\n' +
+                '  float u = s + spriteWidth;\n' +
+                '  if (corner == 1.0){\n' +
+                '    return vec2(s, 1.0);\n' +
+                '  }\n' +
+                '  if (corner == 2.0){\n' +
+                '    return vec2(u, 1.0);\n' +
+                '  }\n' +
+                '  if (corner == 3.0){\n' +
+                '    return vec2(s, 0.0);\n' +
+                '  }\n' +
+                '  return vec2(u, 0.0);\n' +
+                '}\n' +
                 'void main(){\n' +
                 '  gl_Position = u_MvpMatrix * a_Position;\n' +
                 '  v_Position = vec3(u_ModelMatrix * a_Position);\n' +
                 '  v_PositionFromLight = u_MvpMatrixFromLight * a_Position;\n' +
                 '  v_Normal = c_Normal;\n' +
                 '  v_Color = a_Color;\n' +
+                '  v_TexCoord = texturePoint(a_Corner, 5.0);\n' +
                 '}\n';
             this.FSHADER_SOURCE = '#ifdef GL_ES\n' +
                 'precision mediump float;\n' +
@@ -254,10 +281,12 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
                 'uniform vec3 u_LightPosition;\n' +
                 'uniform vec3 u_AmbientLight;\n' +
                 'uniform sampler2D u_ShadowMap;\n' +
+                'uniform sampler2D u_AtlasSampler;\n' +
                 'varying vec3 v_Position;\n' +
                 'varying vec3 v_Normal;\n' +
                 'varying vec4 v_Color;\n' +
                 'varying vec4 v_PositionFromLight;\n' +
+                'varying vec2 v_TexCoord;\n' +
                 'float unpack(const in vec4 rgbaDepth) {\n' +
                 '  const vec4 bitShift = vec4(1.0, 1.0/256.0, 1.0/(256.0*256.0), 1.0/(256.0*256.0*256.0));\n' +
                 '  float depth = dot(rgbaDepth, bitShift);\n' +
@@ -287,6 +316,7 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
                 '    depthAcc += depth;\n' +
                 '  }\n' +
                 '  float visibility = (shadowCoord.z > depthAcc/4.0 + bias) ? 0.8 : 1.0;\n' +
+                '  color = texture2D(u_AtlasSampler, v_TexCoord);\n' +
                 (redShadow ? '  gl_FragColor = (visibility < 1.0) ? vec4(1.0,0.0,0.0,1.0) : color;\n' :
                     '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n') +
                 '}\n';
@@ -299,9 +329,12 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
             this.u_LightPosition = gl.getUniformLocation(program, 'u_LightPosition');
             this.u_MvpMatrixFromLight = gl.getUniformLocation(program, 'u_MvpMatrixFromLight');
             this.u_ShadowMap = gl.getUniformLocation(program, 'u_ShadowMap');
+            this.u_AtlasSampler = gl.getUniformLocation(program, 'u_AtlasSampler');
+            this.a_Corner = gl.getAttribLocation(program, 'a_Corner');
             if (!this.u_ModelMatrix || !this.u_MvpMatrix || !this.u_AmbientLight || !this.u_LightColor ||
-                !this.u_LightPosition || !this.u_MvpMatrixFromLight || !this.u_ShadowMap) {
-                console.log('Failed to get uniform storage location');
+                !this.u_LightPosition || !this.u_MvpMatrixFromLight || !this.u_ShadowMap || !this.u_AtlasSampler ||
+                this.a_Corner < 0) {
+                console.log('Failed to get storage location');
             }
             gl.useProgram(program);
             gl.uniform3f(this.u_AmbientLight, 0.2, 0.2, 0.2);
@@ -309,10 +342,22 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
             gl.uniform3f(this.u_LightPosition, LIGHT_X, LIGHT_Y, LIGHT_Z);
             gl.uniformMatrix4fv(this.u_ModelMatrix, false, modelMatrix.elements);
             gl.uniformMatrix4fv(this.u_MvpMatrix, false, mvpMatrix.elements);
+            var texture = gl.createTexture();
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+            gl.activeTexture(gl.TEXTURE1);
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, ATLAS.image);
+            gl.uniform1i(this.u_AtlasSampler, 1);
+            this.altasTexture = texture;
         }
         LightProgram.prototype.enableVertexAttributes = function (gl) {
             enablePositionAttributes(this, gl);
             enableColorAttributes(this, gl);
+            enableCornerAttribute(gl, this.a_Corner);
+            gl.activeTexture(gl.TEXTURE1);
+            gl.bindTexture(gl.TEXTURE_2D, this.altasTexture);
         };
         return LightProgram;
     })();

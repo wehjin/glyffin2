@@ -13,6 +13,7 @@ import {
 } from "./glyffin";
 import {SpotObservable} from "./glyffin-html";
 import {Interactive} from "./glyffin-touch";
+import {Atlas} from "./glyffin-ascii";
 
 var STAGE_SIZE = 256;
 var LIGHT_X = 0;
@@ -43,8 +44,12 @@ const FLOATS_PER_VERTEX = FLOATS_PER_POSITION + FLOATS_PER_COLOR + FLOATS_PER_CO
 const FLOATS_PER_PATCH = VERTICES_PER_PATCH * FLOATS_PER_VERTEX;
 const BYTES_PER_FLOAT = 4;
 const BYTES_BEFORE_COLOR = FLOATS_PER_POSITION * BYTES_PER_FLOAT;
+const BYTES_BEFORE_CODEPOINT = BYTES_BEFORE_COLOR + (FLOATS_PER_COLOR) * BYTES_PER_FLOAT;
+const BYTES_BEFORE_CORNER = BYTES_BEFORE_CODEPOINT + BYTES_PER_FLOAT;
 const BYTES_PER_VERTEX = FLOATS_PER_VERTEX * BYTES_PER_FLOAT;
 const BYTES_PER_PATCH = FLOATS_PER_PATCH * BYTES_PER_FLOAT;
+
+const ATLAS : Atlas = new Atlas();
 
 interface Program {
     glProgram: WebGLProgram;
@@ -65,6 +70,11 @@ function enablePositionAttributes(program : Program, gl : WebGLRenderingContext)
     gl.vertexAttribPointer(a_Position, FLOATS_PER_POSITION, gl.FLOAT, false,
         BYTES_PER_VERTEX, 0);
     gl.enableVertexAttribArray(a_Position);
+}
+
+function enableCornerAttribute(gl : WebGLRenderingContext, a_Corner : number) {
+    gl.vertexAttribPointer(a_Corner, 1, gl.FLOAT, false, BYTES_PER_VERTEX, BYTES_BEFORE_CORNER);
+    gl.enableVertexAttribArray(a_Corner);
 }
 
 class FrameBuffer {
@@ -298,16 +308,36 @@ class LightProgram implements Program {
         'uniform mat4 u_MvpMatrixFromLight;\n' +
         'attribute vec4 a_Position;\n' +
         'attribute vec4 a_Color;\n' +
+        'attribute float a_CodePoint;\n' +
+        'attribute float a_Corner;\n' +
         'varying vec4 v_Color;\n' +
         'varying vec3 v_Normal;\n' +
         'varying vec3 v_Position;\n' +
         'varying vec4 v_PositionFromLight;\n' +
+        'varying vec2 v_TexCoord;\n' +
+        'const float spriteWidth = 5.0/256.0;\n' +
+        'const float spriteStride = 8.0/256.0;\n' +
+        'vec2 texturePoint(in float corner, in float index){\n' +
+        '  float s = spriteStride * index;\n' +
+        '  float u = s + spriteWidth;\n' +
+        '  if (corner == 1.0){\n' +
+        '    return vec2(s, 1.0);\n' +
+        '  }\n' +
+        '  if (corner == 2.0){\n' +
+        '    return vec2(u, 1.0);\n' +
+        '  }\n' +
+        '  if (corner == 3.0){\n' +
+        '    return vec2(s, 0.0);\n' +
+        '  }\n' +
+        '  return vec2(u, 0.0);\n' +
+        '}\n' +
         'void main(){\n' +
         '  gl_Position = u_MvpMatrix * a_Position;\n' +
         '  v_Position = vec3(u_ModelMatrix * a_Position);\n' +
         '  v_PositionFromLight = u_MvpMatrixFromLight * a_Position;\n' +
         '  v_Normal = c_Normal;\n' +
         '  v_Color = a_Color;\n' +
+        '  v_TexCoord = texturePoint(a_Corner, 5.0);\n' +
         '}\n';
 
     private FSHADER_SOURCE : string =
@@ -318,10 +348,12 @@ class LightProgram implements Program {
         'uniform vec3 u_LightPosition;\n' +
         'uniform vec3 u_AmbientLight;\n' +
         'uniform sampler2D u_ShadowMap;\n' +
+        'uniform sampler2D u_AtlasSampler;\n' +
         'varying vec3 v_Position;\n' +
         'varying vec3 v_Normal;\n' +
         'varying vec4 v_Color;\n' +
         'varying vec4 v_PositionFromLight;\n' +
+        'varying vec2 v_TexCoord;\n' +
         'float unpack(const in vec4 rgbaDepth) {\n' +
         '  const vec4 bitShift = vec4(1.0, 1.0/256.0, 1.0/(256.0*256.0), 1.0/(256.0*256.0*256.0));\n' +
         '  float depth = dot(rgbaDepth, bitShift);\n' + // Use dot() since the calculations is
@@ -351,6 +383,7 @@ class LightProgram implements Program {
         '    depthAcc += depth;\n' +
         '  }\n' +
         '  float visibility = (shadowCoord.z > depthAcc/4.0 + bias) ? 0.8 : 1.0;\n' +
+        '  color = texture2D(u_AtlasSampler, v_TexCoord);\n' +
         (redShadow ? '  gl_FragColor = (visibility < 1.0) ? vec4(1.0,0.0,0.0,1.0) : color;\n' :
             '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n') +
         '}\n';
@@ -363,6 +396,9 @@ class LightProgram implements Program {
     private u_AmbientLight : WebGLUniformLocation;
     public u_MvpMatrixFromLight : WebGLUniformLocation;
     public u_ShadowMap : WebGLUniformLocation;
+    private u_AtlasSampler : WebGLUniformLocation;
+    private a_Corner : number;
+    private altasTexture : WebGLTexture;
 
     constructor(gl : WebGLRenderingContext, modelMatrix : Matrix4, mvpMatrix : Matrix4) {
         var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
@@ -375,10 +411,13 @@ class LightProgram implements Program {
         this.u_LightPosition = gl.getUniformLocation(program, 'u_LightPosition');
         this.u_MvpMatrixFromLight = gl.getUniformLocation(program, 'u_MvpMatrixFromLight');
         this.u_ShadowMap = gl.getUniformLocation(program, 'u_ShadowMap');
+        this.u_AtlasSampler = gl.getUniformLocation(program, 'u_AtlasSampler');
+        this.a_Corner = gl.getAttribLocation(program, 'a_Corner');
 
         if (!this.u_ModelMatrix || !this.u_MvpMatrix || !this.u_AmbientLight || !this.u_LightColor ||
-            !this.u_LightPosition || !this.u_MvpMatrixFromLight || !this.u_ShadowMap) {
-            console.log('Failed to get uniform storage location');
+            !this.u_LightPosition || !this.u_MvpMatrixFromLight || !this.u_ShadowMap || !this.u_AtlasSampler ||
+            this.a_Corner < 0) {
+            console.log('Failed to get storage location');
         }
 
         gl.useProgram(program);
@@ -387,11 +426,25 @@ class LightProgram implements Program {
         gl.uniform3f(this.u_LightPosition, LIGHT_X, LIGHT_Y, LIGHT_Z);
         gl.uniformMatrix4fv(this.u_ModelMatrix, false, modelMatrix.elements);
         gl.uniformMatrix4fv(this.u_MvpMatrix, false, mvpMatrix.elements);
+
+
+        var texture = gl.createTexture();
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, ATLAS.image);
+        gl.uniform1i(this.u_AtlasSampler, 1);
+        this.altasTexture = texture;
     }
 
     public enableVertexAttributes(gl : WebGLRenderingContext) {
         enablePositionAttributes(this, gl);
         enableColorAttributes(this, gl);
+        enableCornerAttribute(gl, this.a_Corner);
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, this.altasTexture);
     }
 }
 
