@@ -1,7 +1,7 @@
 /**
  * Created by wehjin on 5/24/15.
  */
-define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"], function (require, exports, glyffin_1, glyffin_html_1, glyffin_touch_1) {
+define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch", "./glyffin-ascii"], function (require, exports, glyffin_1, glyffin_html_1, glyffin_touch_1, glyffin_ascii_1) {
     var STAGE_SIZE = 256;
     var LIGHT_X = 0;
     var LIGHT_Y = STAGE_SIZE / 2;
@@ -25,12 +25,16 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
     var MAX_VERTEX_COUNT = MAX_PATCH_COUNT * VERTICES_PER_PATCH;
     var FLOATS_PER_POSITION = 3;
     var FLOATS_PER_COLOR = 4;
-    var FLOATS_PER_VERTEX = FLOATS_PER_POSITION + FLOATS_PER_COLOR;
+    var FLOATS_PER_CODEPOINT = 2;
+    var FLOATS_PER_VERTEX = FLOATS_PER_POSITION + FLOATS_PER_COLOR + FLOATS_PER_CODEPOINT;
     var FLOATS_PER_PATCH = VERTICES_PER_PATCH * FLOATS_PER_VERTEX;
     var BYTES_PER_FLOAT = 4;
     var BYTES_BEFORE_COLOR = FLOATS_PER_POSITION * BYTES_PER_FLOAT;
+    var BYTES_BEFORE_CODEPOINT = BYTES_BEFORE_COLOR + (FLOATS_PER_COLOR) * BYTES_PER_FLOAT;
+    var BYTES_BEFORE_CORNER = BYTES_BEFORE_CODEPOINT + BYTES_PER_FLOAT;
     var BYTES_PER_VERTEX = FLOATS_PER_VERTEX * BYTES_PER_FLOAT;
     var BYTES_PER_PATCH = FLOATS_PER_PATCH * BYTES_PER_FLOAT;
+    var ATLAS = new glyffin_ascii_1.Atlas();
     function enableColorAttributes(program, gl) {
         // TODO Take a_Color as parameter.
         var a_Color = gl.getAttribLocation(program.glProgram, 'a_Color');
@@ -42,6 +46,14 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
         var a_Position = gl.getAttribLocation(program.glProgram, 'a_Position');
         gl.vertexAttribPointer(a_Position, FLOATS_PER_POSITION, gl.FLOAT, false, BYTES_PER_VERTEX, 0);
         gl.enableVertexAttribArray(a_Position);
+    }
+    function enableCornerAttribute(gl, a_Corner) {
+        gl.vertexAttribPointer(a_Corner, 1, gl.FLOAT, false, BYTES_PER_VERTEX, BYTES_BEFORE_CORNER);
+        gl.enableVertexAttribArray(a_Corner);
+    }
+    function enableCodePointAttribute(gl, a_CodePoint) {
+        gl.vertexAttribPointer(a_CodePoint, 1, gl.FLOAT, false, BYTES_PER_VERTEX, BYTES_BEFORE_CODEPOINT);
+        gl.enableVertexAttribArray(a_CodePoint);
     }
     var FrameBuffer = (function () {
         function FrameBuffer(gl) {
@@ -122,13 +134,19 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
             this.freePatchCleared = this.freePatchTail;
             this.freePatchCount = MAX_PATCH_COUNT;
         }
-        Patches.prototype.setVertex = function (n, values) {
-            var base = n * FLOATS_PER_VERTEX;
-            for (var i = 0; i < FLOATS_PER_VERTEX; i++, base++) {
-                this.patch[base] = values[i];
-            }
+        Patches.prototype.setVertexFloats = function (index, x, y, z, red, green, blue, alpha, codePoint, corner) {
+            var base = index * FLOATS_PER_VERTEX;
+            this.patch[base] = x;
+            this.patch[base + 1] = y;
+            this.patch[base + 2] = z;
+            this.patch[base + 3] = red;
+            this.patch[base + 4] = green;
+            this.patch[base + 5] = blue;
+            this.patch[base + 6] = alpha;
+            this.patch[base + 7] = codePoint;
+            this.patch[base + 8] = corner;
         };
-        Patches.prototype.getPatch = function (left, top, right, bottom, level, color, room) {
+        Patches.prototype.getPatch = function (left, top, right, bottom, level, color, codePoint, room) {
             var patchIndex;
             if (this.freePatchHead === this.freePatchCleared) {
                 if (this.freePatchCleared === this.freePatchTail) {
@@ -144,12 +162,12 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
             }
             this.freePatchList[patchIndex] = -2;
             this.freePatchCount--;
-            this.setVertex(0, [left, top, level, color.red, color.green, color.blue, color.alpha]);
-            this.setVertex(1, [right, top, level, color.red, color.green, color.blue, color.alpha]);
-            this.setVertex(2, [left, bottom, level, color.red, color.green, color.blue, color.alpha]);
-            this.setVertex(3, [right, top, level, color.red, color.green, color.blue, color.alpha]);
-            this.setVertex(4, [right, bottom, level, color.red, color.green, color.blue, color.alpha]);
-            this.setVertex(5, [left, bottom, level, color.red, color.green, color.blue, color.alpha]);
+            this.setVertexFloats(0, left, top, level, color.red, color.green, color.blue, color.alpha, codePoint, 1);
+            this.setVertexFloats(1, right, top, level, color.red, color.green, color.blue, color.alpha, codePoint, 2);
+            this.setVertexFloats(2, left, bottom, level, color.red, color.green, color.blue, color.alpha, codePoint, 3);
+            this.setVertexFloats(3, right, top, level, color.red, color.green, color.blue, color.alpha, codePoint, 2);
+            this.setVertexFloats(4, right, bottom, level, color.red, color.green, color.blue, color.alpha, codePoint, 4);
+            this.setVertexFloats(5, left, bottom, level, color.red, color.green, color.blue, color.alpha, codePoint, 3);
             this.buffer.set(this.patch, patchIndex * FLOATS_PER_PATCH);
             return patchIndex;
         };
@@ -224,21 +242,59 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
     var LightProgram = (function () {
         function LightProgram(gl, modelMatrix, mvpMatrix) {
             this.VSHADER_SOURCE = 'const vec3 c_Normal = vec3( 0.0, 0.0, 1.0 );\n' +
+                'const float spriteWidth = 1.0/256.0;\n' +
+                'const float spriteStride = 8.0/256.0;\n' +
                 'uniform mat4 u_ModelMatrix;\n' +
                 'uniform mat4 u_MvpMatrix;\n' +
                 'uniform mat4 u_MvpMatrixFromLight;\n' +
+                'uniform int u_XWeights[128];\n' +
                 'attribute vec4 a_Position;\n' +
                 'attribute vec4 a_Color;\n' +
+                'attribute float a_CodePoint;\n' +
+                'attribute float a_Corner;\n' +
                 'varying vec4 v_Color;\n' +
                 'varying vec3 v_Normal;\n' +
                 'varying vec3 v_Position;\n' +
                 'varying vec4 v_PositionFromLight;\n' +
+                'varying float v_UseTex;\n' +
+                'varying vec2 v_TexCoord;\n' +
+                'vec2 texturePoint(in float corner, in float index, in int width){\n' +
+                '  float s = spriteStride * index;\n' +
+                '  float u = s + float(width) * spriteWidth;\n' +
+                '  if (corner == 1.0){\n' +
+                '    return vec2(s, 1.0);\n' +
+                '  }\n' +
+                '  if (corner == 2.0){\n' +
+                '    return vec2(u, 1.0);\n' +
+                '  }\n' +
+                '  if (corner == 3.0){\n' +
+                '    return vec2(s, 0.0);\n' +
+                '  }\n' +
+                '  return vec2(u, 0.0);\n' +
+                '}\n' +
                 'void main(){\n' +
                 '  gl_Position = u_MvpMatrix * a_Position;\n' +
                 '  v_Position = vec3(u_ModelMatrix * a_Position);\n' +
                 '  v_PositionFromLight = u_MvpMatrixFromLight * a_Position;\n' +
                 '  v_Normal = c_Normal;\n' +
                 '  v_Color = a_Color;\n' +
+                '  if (a_CodePoint >= 32.0 && a_CodePoint < 128.0) {\n' +
+                '    float index;\n' +
+                '    if (a_CodePoint >= 96.0) {\n' +
+                '      index = a_CodePoint - 96.0;\n' +
+                '      v_UseTex = 3.0;\n' +
+                '    } else if (a_CodePoint >= 64.0) {\n' +
+                '      index = a_CodePoint - 64.0;\n' +
+                '      v_UseTex = 2.0;\n' +
+                '    } else {\n' +
+                '      index = a_CodePoint - 32.0;\n' +
+                '      v_UseTex = 1.0;\n' +
+                '    }\n' +
+                '    int width = u_XWeights[int(a_CodePoint)];\n' +
+                '    v_TexCoord = texturePoint(a_Corner, index, width);\n' +
+                '  } else {\n' +
+                '    v_UseTex = 0.0;\n' +
+                '  }\n' +
                 '}\n';
             this.FSHADER_SOURCE = '#ifdef GL_ES\n' +
                 'precision mediump float;\n' +
@@ -247,10 +303,13 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
                 'uniform vec3 u_LightPosition;\n' +
                 'uniform vec3 u_AmbientLight;\n' +
                 'uniform sampler2D u_ShadowMap;\n' +
+                'uniform sampler2D u_AtlasSampler;\n' +
                 'varying vec3 v_Position;\n' +
                 'varying vec3 v_Normal;\n' +
                 'varying vec4 v_Color;\n' +
                 'varying vec4 v_PositionFromLight;\n' +
+                'varying vec2 v_TexCoord;\n' +
+                'varying float v_UseTex;\n' +
                 'float unpack(const in vec4 rgbaDepth) {\n' +
                 '  const vec4 bitShift = vec4(1.0, 1.0/256.0, 1.0/(256.0*256.0), 1.0/(256.0*256.0*256.0));\n' +
                 '  float depth = dot(rgbaDepth, bitShift);\n' +
@@ -280,6 +339,20 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
                 '    depthAcc += depth;\n' +
                 '  }\n' +
                 '  float visibility = (shadowCoord.z > depthAcc/4.0 + bias) ? 0.8 : 1.0;\n' +
+                '  if (v_UseTex > 0.5){\n' +
+                '    vec4 texel = texture2D(u_AtlasSampler, v_TexCoord);\n' +
+                '    float value;\n' +
+                '    if (v_UseTex > 2.5) {\n' +
+                '      value = texel.b;\n' +
+                '    } else if (v_UseTex > 1.5) {\n' +
+                '      value = texel.g;\n' +
+                '    } else {\n' +
+                '      value = texel.r;\n' +
+                '    }\n' +
+                '    if (value < 0.5) {\n' +
+                '      discard;\n' +
+                '    }\n' +
+                '  }\n' +
                 (redShadow ? '  gl_FragColor = (visibility < 1.0) ? vec4(1.0,0.0,0.0,1.0) : color;\n' :
                     '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n') +
                 '}\n';
@@ -292,10 +365,14 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
             this.u_LightPosition = gl.getUniformLocation(program, 'u_LightPosition');
             this.u_MvpMatrixFromLight = gl.getUniformLocation(program, 'u_MvpMatrixFromLight');
             this.u_ShadowMap = gl.getUniformLocation(program, 'u_ShadowMap');
-            if (!this.u_ModelMatrix || !this.u_MvpMatrix || !this.u_AmbientLight ||
-                !this.u_LightColor || !this.u_LightPosition || !this.u_MvpMatrixFromLight ||
-                !this.u_ShadowMap) {
-                console.log('Failed to get uniform storage location');
+            this.u_AtlasSampler = gl.getUniformLocation(program, 'u_AtlasSampler');
+            this.u_XWeights = gl.getUniformLocation(program, 'u_XWeights');
+            this.a_Corner = gl.getAttribLocation(program, 'a_Corner');
+            this.a_CodePoint = gl.getAttribLocation(program, 'a_CodePoint');
+            if (!this.u_ModelMatrix || !this.u_MvpMatrix || !this.u_AmbientLight || !this.u_LightColor ||
+                !this.u_LightPosition || !this.u_MvpMatrixFromLight || !this.u_ShadowMap || !this.u_AtlasSampler ||
+                !this.u_XWeights || this.a_Corner < 0 || this.a_CodePoint < 0) {
+                console.log('Failed to get storage location');
             }
             gl.useProgram(program);
             gl.uniform3f(this.u_AmbientLight, 0.2, 0.2, 0.2);
@@ -303,10 +380,24 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
             gl.uniform3f(this.u_LightPosition, LIGHT_X, LIGHT_Y, LIGHT_Z);
             gl.uniformMatrix4fv(this.u_ModelMatrix, false, modelMatrix.elements);
             gl.uniformMatrix4fv(this.u_MvpMatrix, false, mvpMatrix.elements);
+            gl.uniform1iv(this.u_XWeights, new Int32Array(glyffin_ascii_1.x_weights));
+            var texture = gl.createTexture();
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+            gl.activeTexture(gl.TEXTURE1);
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, ATLAS.image);
+            gl.uniform1i(this.u_AtlasSampler, 1);
+            this.altasTexture = texture;
         }
         LightProgram.prototype.enableVertexAttributes = function (gl) {
             enablePositionAttributes(this, gl);
             enableColorAttributes(this, gl);
+            enableCornerAttribute(gl, this.a_Corner);
+            enableCodePointAttribute(gl, this.a_CodePoint);
+            gl.activeTexture(gl.TEXTURE1);
+            gl.bindTexture(gl.TEXTURE_2D, this.altasTexture);
         };
         return LightProgram;
     })();
@@ -316,10 +407,15 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
             this.VSHADER_SOURCE = 'uniform mat4 u_MvpMatrix;\n' +
                 'attribute vec4 a_Position;\n' +
                 'attribute vec4 a_Color;\n' +
+                'attribute float a_CodePoint;\n' +
                 'varying vec4 v_Color;\n' +
                 'const vec4 offset = vec4(0,0.5,.5,0);\n' +
                 'void main(){\n' +
-                '  gl_Position = u_MvpMatrix * a_Position + offset;\n' +
+                '  if (a_CodePoint > 0.0) {\n' +
+                '    gl_Position = vec4(10000,10000,10000,1);\n' +
+                '  } else {\n' +
+                '    gl_Position = u_MvpMatrix * a_Position + offset;\n' +
+                '  }\n' +
                 '  v_Color = a_Color;\n' +
                 '}\n';
             this.FSHADER_SOURCE = '#ifdef GL_ES\n' +
@@ -336,6 +432,7 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
             this.u_MvpMatrix = this.getUniformLocation('u_MvpMatrix');
             this.a_Position = gl.getAttribLocation(program, 'a_Position');
             this.a_Color = gl.getAttribLocation(program, 'a_Color');
+            this.a_CodePoint = gl.getAttribLocation(program, 'a_CodePoint');
             gl.useProgram(program);
             gl.uniformMatrix4fv(this.u_MvpMatrix, false, mvpMatrix.elements);
         }
@@ -354,6 +451,9 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
             var a_Color = this.a_Color;
             gl.vertexAttribPointer(a_Color, FLOATS_PER_COLOR, gl.FLOAT, false, stride, BYTES_BEFORE_COLOR);
             gl.enableVertexAttribArray(a_Color);
+            var a_CodePoint = this.a_CodePoint;
+            gl.vertexAttribPointer(a_CodePoint, 1, gl.FLOAT, false, stride, BYTES_BEFORE_CODEPOINT);
+            gl.enableVertexAttribArray(a_CodePoint);
         };
         return DepthProgram;
     })();
@@ -577,12 +677,16 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch"],
              this.vertices.getFreeVertexCount(), this.vertices.getTotalFreedVertices());
              */
         };
-        GlAudience.prototype.addPatch = function (bounds, color) {
+        GlAudience.prototype.addPatch = function (bounds, color, codePoint) {
             var _this = this;
-            if (bounds.left >= bounds.right || bounds.top >= bounds.bottom || color.alpha == 0) {
+            var left = bounds.left;
+            var right = bounds.right;
+            var top = bounds.top;
+            var bottom = bounds.bottom;
+            if (left >= right || top >= bottom || color.alpha == 0) {
                 return glyffin_1.EMPTY_PATCH;
             }
-            var patch = this.vertices.getPatch(bounds.left, bounds.top, bounds.right, bounds.bottom, bounds.level, color, this.room);
+            var patch = this.vertices.getPatch(left, top, right, bottom, bounds.level, color, codePoint, this.room);
             this.scheduleRedraw();
             return {
                 remove: function () {

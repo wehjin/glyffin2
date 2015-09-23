@@ -11,7 +11,7 @@ define(["require", "exports", "./glyffin"], function (require, exports, glyffin_
         return LineContent;
     })();
     function getAsciiCode(charCode) {
-        if (charCode < x_weights.length) {
+        if (charCode < exports.x_weights.length) {
             return charCode;
         }
         if (charCode == 0x2019) {
@@ -27,7 +27,7 @@ define(["require", "exports", "./glyffin"], function (require, exports, glyffin_
     }
     function getCharXWeight(charCode) {
         var asciiCode = getAsciiCode(charCode);
-        return x_weights[asciiCode];
+        return exports.x_weights[asciiCode];
     }
     function getWordXWeight(word) {
         var spaceWeights = word.length <= 1 ? 0 : (word.length - 1);
@@ -39,7 +39,8 @@ define(["require", "exports", "./glyffin"], function (require, exports, glyffin_
     }
     function asciiByCode(code, base) {
         var asciiCode = getAsciiCode(code);
-        return base.kaleid(x_weights[asciiCode], 7, ascii_spots[asciiCode]);
+        return glyffin_1.Glyff.codePoint(asciiCode, glyffin_1.Color.YELLOW);
+        //return base.kaleid(x_weights[asciiCode], 7, ascii_spots[asciiCode]);
     }
     exports.asciiByCode = asciiByCode;
     var MultiLines = (function () {
@@ -896,8 +897,7 @@ define(["require", "exports", "./glyffin"], function (require, exports, glyffin_
         p_spots, q_spots, r_spots, s_spots, t_spots, u_spots, v_spots, w_spots,
         x_spots, y_spots, z_spots, obrace_spots, pipe_spots, cbrace_spots, no_spots, no_spots,
     ];
-    var x_weight_default = 5;
-    var x_weights = [
+    exports.x_weights = [
         // 0-31
         5, 5, 5, 5, 5, 5, 5, 5,
         5, 5, 5, 5, 5, 5, 5, 5,
@@ -935,23 +935,26 @@ define(["require", "exports", "./glyffin"], function (require, exports, glyffin_
             var imageData = context.createImageData(pageWidthPixels, pageHeightPixels);
             console.log("Width: " + imageData.width);
             var data = imageData.data;
-            function writePixel(glyph, x, y, on) {
+            function writePixel(glyph, x, y, offset) {
                 var pixelStride = 4;
                 var rowIndex = (pageWidthPixels * pixelStride) * y;
                 var index = rowIndex + (glyph * glyphWidthPixels + x) * pixelStride;
-                data[index] = on ? 255 : 0;
+                data[index + offset] = 255;
                 data[index + 3] = 255;
             }
-            var pointStart = 48;
+            var pointStart = 32;
             for (var g = 0; g < pageWidthGlyphs; g++) {
                 var point = pointStart + g;
-                var spots = ascii_spots[point];
-                var x_weight = x_weights[point];
-                for (var k = 0; k < spots.length; k++) {
-                    var spot = spots[k];
-                    var i = spot[0];
-                    var j = spot[1];
-                    writePixel(g, i, j, true);
+                var spots3 = [ascii_spots[point], ascii_spots[point + pageWidthGlyphs],
+                    ascii_spots[point + 2 * pageWidthGlyphs]];
+                for (var l = 0; l < 3; l++) {
+                    var spots = spots3[l];
+                    for (var k = 0; k < spots.length; k++) {
+                        var spot = spots[k];
+                        var i = spot[0];
+                        var j = spot[1];
+                        writePixel(g, i, j, l);
+                    }
                 }
             }
             context.putImageData(imageData, 0, 0);

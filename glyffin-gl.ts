@@ -5,11 +5,15 @@
 /// <reference path="webglbook.d.ts" />
 
 import {
-    Glyff,Color, Spot,Gesturing, Gesturable, GestureStatus, OnError, OnResult, Perimeter,
-    Patch, Reaction, Presentation, Zone, Palette, Audience, EMPTY_PRESENTATION, EMPTY_PATCH, Hall
+    Patch, Presentation, Spot
+} from "./glyffin-type";
+import {
+    Glyff,Color, Gesturing, Gesturable, GestureStatus, OnError, OnResult, Perimeter,
+    Reaction, Zone, Palette, Audience, EMPTY_PRESENTATION, EMPTY_PATCH, Hall
 } from "./glyffin";
 import {SpotObservable} from "./glyffin-html";
 import {Interactive} from "./glyffin-touch";
+import {Atlas, x_weights} from "./glyffin-ascii";
 
 var STAGE_SIZE = 256;
 var LIGHT_X = 0;
@@ -30,17 +34,22 @@ var stopAfterShadow = false;
 var redShadow = false;
 var includeDepth = true;
 
-var MAX_PATCH_COUNT = 10000;
-var VERTICES_PER_PATCH = 6;
-var MAX_VERTEX_COUNT = MAX_PATCH_COUNT * VERTICES_PER_PATCH;
-var FLOATS_PER_POSITION = 3;
-var FLOATS_PER_COLOR = 4;
-var FLOATS_PER_VERTEX = FLOATS_PER_POSITION + FLOATS_PER_COLOR;
-var FLOATS_PER_PATCH = VERTICES_PER_PATCH * FLOATS_PER_VERTEX;
-var BYTES_PER_FLOAT = 4;
-var BYTES_BEFORE_COLOR = FLOATS_PER_POSITION * BYTES_PER_FLOAT;
-var BYTES_PER_VERTEX = FLOATS_PER_VERTEX * BYTES_PER_FLOAT;
-var BYTES_PER_PATCH = FLOATS_PER_PATCH * BYTES_PER_FLOAT;
+const MAX_PATCH_COUNT = 10000;
+const VERTICES_PER_PATCH = 6;
+const MAX_VERTEX_COUNT = MAX_PATCH_COUNT * VERTICES_PER_PATCH;
+const FLOATS_PER_POSITION = 3;
+const FLOATS_PER_COLOR = 4;
+const FLOATS_PER_CODEPOINT = 2;
+const FLOATS_PER_VERTEX = FLOATS_PER_POSITION + FLOATS_PER_COLOR + FLOATS_PER_CODEPOINT;
+const FLOATS_PER_PATCH = VERTICES_PER_PATCH * FLOATS_PER_VERTEX;
+const BYTES_PER_FLOAT = 4;
+const BYTES_BEFORE_COLOR = FLOATS_PER_POSITION * BYTES_PER_FLOAT;
+const BYTES_BEFORE_CODEPOINT = BYTES_BEFORE_COLOR + (FLOATS_PER_COLOR) * BYTES_PER_FLOAT;
+const BYTES_BEFORE_CORNER = BYTES_BEFORE_CODEPOINT + BYTES_PER_FLOAT;
+const BYTES_PER_VERTEX = FLOATS_PER_VERTEX * BYTES_PER_FLOAT;
+const BYTES_PER_PATCH = FLOATS_PER_PATCH * BYTES_PER_FLOAT;
+
+const ATLAS : Atlas = new Atlas();
 
 interface Program {
     glProgram: WebGLProgram;
@@ -61,6 +70,16 @@ function enablePositionAttributes(program : Program, gl : WebGLRenderingContext)
     gl.vertexAttribPointer(a_Position, FLOATS_PER_POSITION, gl.FLOAT, false,
         BYTES_PER_VERTEX, 0);
     gl.enableVertexAttribArray(a_Position);
+}
+
+function enableCornerAttribute(gl : WebGLRenderingContext, a_Corner : number) {
+    gl.vertexAttribPointer(a_Corner, 1, gl.FLOAT, false, BYTES_PER_VERTEX, BYTES_BEFORE_CORNER);
+    gl.enableVertexAttribArray(a_Corner);
+}
+
+function enableCodePointAttribute(gl : WebGLRenderingContext, a_CodePoint : number) {
+    gl.vertexAttribPointer(a_CodePoint, 1, gl.FLOAT, false, BYTES_PER_VERTEX, BYTES_BEFORE_CODEPOINT);
+    gl.enableVertexAttribArray(a_CodePoint);
 }
 
 class FrameBuffer {
@@ -162,15 +181,24 @@ class Patches {
         this.freePatchCount = MAX_PATCH_COUNT;
     }
 
-    setVertex(n : number, values : number[]) {
-        var base = n * FLOATS_PER_VERTEX;
-        for (var i = 0; i < FLOATS_PER_VERTEX; i++, base++) {
-            this.patch[base] = values[i];
-        }
+    setVertexFloats(index : number, x : number, y : number, z : number,
+                    red : number, green : number, blue : number, alpha : number,
+                    codePoint : number, corner : number) {
+        var base = index * FLOATS_PER_VERTEX;
+        this.patch[base] = x;
+        this.patch[base + 1] = y;
+        this.patch[base + 2] = z;
+        this.patch[base + 3] = red;
+        this.patch[base + 4] = green;
+        this.patch[base + 5] = blue;
+        this.patch[base + 6] = alpha;
+        this.patch[base + 7] = codePoint;
+        this.patch[base + 8] = corner;
     }
 
+
     getPatch(left : number, top : number, right : number, bottom : number, level : number,
-             color : Color, room : GlRoom) : number {
+             color : Color, codePoint : number, room : GlRoom) : number {
         var patchIndex;
         if (this.freePatchHead === this.freePatchCleared) {
             if (this.freePatchCleared === this.freePatchTail) {
@@ -185,12 +213,12 @@ class Patches {
         }
         this.freePatchList[patchIndex] = -2;
         this.freePatchCount--;
-        this.setVertex(0, [left, top, level, color.red, color.green, color.blue, color.alpha]);
-        this.setVertex(1, [right, top, level, color.red, color.green, color.blue, color.alpha]);
-        this.setVertex(2, [left, bottom, level, color.red, color.green, color.blue, color.alpha]);
-        this.setVertex(3, [right, top, level, color.red, color.green, color.blue, color.alpha]);
-        this.setVertex(4, [right, bottom, level, color.red, color.green, color.blue, color.alpha]);
-        this.setVertex(5, [left, bottom, level, color.red, color.green, color.blue, color.alpha]);
+        this.setVertexFloats(0, left, top, level, color.red, color.green, color.blue, color.alpha, codePoint, 1);
+        this.setVertexFloats(1, right, top, level, color.red, color.green, color.blue, color.alpha, codePoint, 2);
+        this.setVertexFloats(2, left, bottom, level, color.red, color.green, color.blue, color.alpha, codePoint, 3);
+        this.setVertexFloats(3, right, top, level, color.red, color.green, color.blue, color.alpha, codePoint, 2);
+        this.setVertexFloats(4, right, bottom, level, color.red, color.green, color.blue, color.alpha, codePoint, 4);
+        this.setVertexFloats(5, left, bottom, level, color.red, color.green, color.blue, color.alpha, codePoint, 3);
         this.buffer.set(this.patch, patchIndex * FLOATS_PER_PATCH);
         return patchIndex;
     }
@@ -280,21 +308,59 @@ class ShadowProgram implements Program {
 class LightProgram implements Program {
     private VSHADER_SOURCE : string =
         'const vec3 c_Normal = vec3( 0.0, 0.0, 1.0 );\n' +
+        'const float spriteWidth = 1.0/256.0;\n' +
+        'const float spriteStride = 8.0/256.0;\n' +
         'uniform mat4 u_ModelMatrix;\n' +
         'uniform mat4 u_MvpMatrix;\n' +
         'uniform mat4 u_MvpMatrixFromLight;\n' +
+        'uniform int u_XWeights[128];\n' +
         'attribute vec4 a_Position;\n' +
         'attribute vec4 a_Color;\n' +
+        'attribute float a_CodePoint;\n' +
+        'attribute float a_Corner;\n' +
         'varying vec4 v_Color;\n' +
         'varying vec3 v_Normal;\n' +
         'varying vec3 v_Position;\n' +
         'varying vec4 v_PositionFromLight;\n' +
+        'varying float v_UseTex;\n' +
+        'varying vec2 v_TexCoord;\n' +
+        'vec2 texturePoint(in float corner, in float index, in int width){\n' +
+        '  float s = spriteStride * index;\n' +
+        '  float u = s + float(width) * spriteWidth;\n' +
+        '  if (corner == 1.0){\n' +
+        '    return vec2(s, 1.0);\n' +
+        '  }\n' +
+        '  if (corner == 2.0){\n' +
+        '    return vec2(u, 1.0);\n' +
+        '  }\n' +
+        '  if (corner == 3.0){\n' +
+        '    return vec2(s, 0.0);\n' +
+        '  }\n' +
+        '  return vec2(u, 0.0);\n' +
+        '}\n' +
         'void main(){\n' +
         '  gl_Position = u_MvpMatrix * a_Position;\n' +
         '  v_Position = vec3(u_ModelMatrix * a_Position);\n' +
         '  v_PositionFromLight = u_MvpMatrixFromLight * a_Position;\n' +
         '  v_Normal = c_Normal;\n' +
         '  v_Color = a_Color;\n' +
+        '  if (a_CodePoint >= 32.0 && a_CodePoint < 128.0) {\n' +
+        '    float index;\n' +
+        '    if (a_CodePoint >= 96.0) {\n' +
+        '      index = a_CodePoint - 96.0;\n' +
+        '      v_UseTex = 3.0;\n' +
+        '    } else if (a_CodePoint >= 64.0) {\n' +
+        '      index = a_CodePoint - 64.0;\n' +
+        '      v_UseTex = 2.0;\n' +
+        '    } else {\n' +
+        '      index = a_CodePoint - 32.0;\n' +
+        '      v_UseTex = 1.0;\n' +
+        '    }\n' +
+        '    int width = u_XWeights[int(a_CodePoint)];\n' +
+        '    v_TexCoord = texturePoint(a_Corner, index, width);\n' +
+        '  } else {\n' +
+        '    v_UseTex = 0.0;\n' +
+        '  }\n' +
         '}\n';
 
     private FSHADER_SOURCE : string =
@@ -305,10 +371,13 @@ class LightProgram implements Program {
         'uniform vec3 u_LightPosition;\n' +
         'uniform vec3 u_AmbientLight;\n' +
         'uniform sampler2D u_ShadowMap;\n' +
+        'uniform sampler2D u_AtlasSampler;\n' +
         'varying vec3 v_Position;\n' +
         'varying vec3 v_Normal;\n' +
         'varying vec4 v_Color;\n' +
         'varying vec4 v_PositionFromLight;\n' +
+        'varying vec2 v_TexCoord;\n' +
+        'varying float v_UseTex;\n' +
         'float unpack(const in vec4 rgbaDepth) {\n' +
         '  const vec4 bitShift = vec4(1.0, 1.0/256.0, 1.0/(256.0*256.0), 1.0/(256.0*256.0*256.0));\n' +
         '  float depth = dot(rgbaDepth, bitShift);\n' + // Use dot() since the calculations is
@@ -338,6 +407,20 @@ class LightProgram implements Program {
         '    depthAcc += depth;\n' +
         '  }\n' +
         '  float visibility = (shadowCoord.z > depthAcc/4.0 + bias) ? 0.8 : 1.0;\n' +
+        '  if (v_UseTex > 0.5){\n' +
+        '    vec4 texel = texture2D(u_AtlasSampler, v_TexCoord);\n' +
+        '    float value;\n' +
+        '    if (v_UseTex > 2.5) {\n' +
+        '      value = texel.b;\n' +
+        '    } else if (v_UseTex > 1.5) {\n' +
+        '      value = texel.g;\n' +
+        '    } else {\n' +
+        '      value = texel.r;\n' +
+        '    }\n' +
+        '    if (value < 0.5) {\n' +
+        '      discard;\n' +
+        '    }\n' +
+        '  }\n' +
         (redShadow ? '  gl_FragColor = (visibility < 1.0) ? vec4(1.0,0.0,0.0,1.0) : color;\n' :
             '  gl_FragColor = vec4(color.rgb * visibility, color.a);\n') +
         '}\n';
@@ -350,6 +433,11 @@ class LightProgram implements Program {
     private u_AmbientLight : WebGLUniformLocation;
     public u_MvpMatrixFromLight : WebGLUniformLocation;
     public u_ShadowMap : WebGLUniformLocation;
+    private u_AtlasSampler : WebGLUniformLocation;
+    private a_Corner : number;
+    private a_CodePoint : number;
+    private altasTexture : WebGLTexture;
+    private u_XWeights : WebGLUniformLocation;
 
     constructor(gl : WebGLRenderingContext, modelMatrix : Matrix4, mvpMatrix : Matrix4) {
         var program = createProgram(gl, this.VSHADER_SOURCE, this.FSHADER_SOURCE);
@@ -362,11 +450,16 @@ class LightProgram implements Program {
         this.u_LightPosition = gl.getUniformLocation(program, 'u_LightPosition');
         this.u_MvpMatrixFromLight = gl.getUniformLocation(program, 'u_MvpMatrixFromLight');
         this.u_ShadowMap = gl.getUniformLocation(program, 'u_ShadowMap');
+        this.u_AtlasSampler = gl.getUniformLocation(program, 'u_AtlasSampler');
+        this.u_XWeights = gl.getUniformLocation(program, 'u_XWeights');
+        this.a_Corner = gl.getAttribLocation(program, 'a_Corner');
+        this.a_CodePoint = gl.getAttribLocation(program, 'a_CodePoint');
 
-        if (!this.u_ModelMatrix || !this.u_MvpMatrix || !this.u_AmbientLight ||
-            !this.u_LightColor || !this.u_LightPosition || !this.u_MvpMatrixFromLight ||
-            !this.u_ShadowMap) {
-            console.log('Failed to get uniform storage location');
+        if (!this.u_ModelMatrix || !this.u_MvpMatrix || !this.u_AmbientLight || !this.u_LightColor ||
+            !this.u_LightPosition || !this.u_MvpMatrixFromLight || !this.u_ShadowMap || !this.u_AtlasSampler ||
+            !this.u_XWeights || this.a_Corner < 0 || this.a_CodePoint < 0
+        ) {
+            console.log('Failed to get storage location');
         }
 
         gl.useProgram(program);
@@ -375,11 +468,26 @@ class LightProgram implements Program {
         gl.uniform3f(this.u_LightPosition, LIGHT_X, LIGHT_Y, LIGHT_Z);
         gl.uniformMatrix4fv(this.u_ModelMatrix, false, modelMatrix.elements);
         gl.uniformMatrix4fv(this.u_MvpMatrix, false, mvpMatrix.elements);
+        gl.uniform1iv(this.u_XWeights, new Int32Array(x_weights));
+
+        var texture = gl.createTexture();
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, ATLAS.image);
+        gl.uniform1i(this.u_AtlasSampler, 1);
+        this.altasTexture = texture;
     }
 
     public enableVertexAttributes(gl : WebGLRenderingContext) {
         enablePositionAttributes(this, gl);
         enableColorAttributes(this, gl);
+        enableCornerAttribute(gl, this.a_Corner);
+        enableCodePointAttribute(gl, this.a_CodePoint);
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, this.altasTexture);
     }
 }
 
@@ -388,10 +496,15 @@ class DepthProgram implements Program {
         'uniform mat4 u_MvpMatrix;\n' +
         'attribute vec4 a_Position;\n' +
         'attribute vec4 a_Color;\n' +
+        'attribute float a_CodePoint;\n' +
         'varying vec4 v_Color;\n' +
         'const vec4 offset = vec4(0,0.5,.5,0);\n' +
         'void main(){\n' +
-        '  gl_Position = u_MvpMatrix * a_Position + offset;\n' +
+        '  if (a_CodePoint > 0.0) {\n' +
+        '    gl_Position = vec4(10000,10000,10000,1);\n' +
+        '  } else {\n' +
+        '    gl_Position = u_MvpMatrix * a_Position + offset;\n' +
+        '  }\n' +
         '  v_Color = a_Color;\n' +
         '}\n';
 
@@ -409,6 +522,7 @@ class DepthProgram implements Program {
     private u_MvpMatrix : WebGLUniformLocation;
     private a_Position : number;
     private a_Color : number;
+    private a_CodePoint : number;
 
     constructor(private gl : WebGLRenderingContext, modelMatrix : Matrix4, mvpMatrix : Matrix4) {
         gl.lineWidth(2.0);
@@ -418,6 +532,7 @@ class DepthProgram implements Program {
         this.u_MvpMatrix = this.getUniformLocation('u_MvpMatrix');
         this.a_Position = gl.getAttribLocation(program, 'a_Position');
         this.a_Color = gl.getAttribLocation(program, 'a_Color');
+        this.a_CodePoint = gl.getAttribLocation(program, 'a_CodePoint');
 
         gl.useProgram(program);
         gl.uniformMatrix4fv(this.u_MvpMatrix, false, mvpMatrix.elements);
@@ -439,9 +554,12 @@ class DepthProgram implements Program {
         gl.enableVertexAttribArray(a_Position);
 
         var a_Color = this.a_Color;
-        gl.vertexAttribPointer(a_Color, FLOATS_PER_COLOR, gl.FLOAT, false, stride,
-            BYTES_BEFORE_COLOR);
+        gl.vertexAttribPointer(a_Color, FLOATS_PER_COLOR, gl.FLOAT, false, stride, BYTES_BEFORE_COLOR);
         gl.enableVertexAttribArray(a_Color);
+
+        var a_CodePoint = this.a_CodePoint;
+        gl.vertexAttribPointer(a_CodePoint, 1, gl.FLOAT, false, stride, BYTES_BEFORE_CODEPOINT);
+        gl.enableVertexAttribArray(a_CodePoint);
     }
 }
 
@@ -705,13 +823,16 @@ export class GlAudience implements Audience {
          */
     }
 
-    addPatch(bounds : Perimeter, color : Color) : Patch {
-        if (bounds.left >= bounds.right || bounds.top >= bounds.bottom || color.alpha == 0) {
+    addPatch(bounds : Perimeter, color : Color, codePoint : number) : Patch {
+        var left = bounds.left;
+        var right = bounds.right;
+        var top = bounds.top;
+        var bottom = bounds.bottom;
+
+        if (left >= right || top >= bottom || color.alpha == 0) {
             return EMPTY_PATCH;
         }
-
-        var patch = this.vertices.getPatch(bounds.left, bounds.top, bounds.right,
-            bounds.bottom, bounds.level, color, this.room);
+        var patch = this.vertices.getPatch(left, top, right, bottom, bounds.level, color, codePoint, this.room);
         this.scheduleRedraw();
         return <Patch>{
             remove: ()=> {

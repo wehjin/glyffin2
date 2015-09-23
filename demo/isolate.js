@@ -1,7 +1,7 @@
 /**
  * Created by wehjin on 5/24/15.
  */
-define(["require", "exports", "../glyffin", "../glyffin-gl", "../glyffin-ascii"], function (require, exports, Glyffin, GlyffinGl, GlyffinText) {
+define(["require", "exports", "../glyffin-type", "../glyffin", "../glyffin-gl", "../glyffin-ascii"], function (require, exports, glyffin_type_1, Glyffin, GlyffinGl, GlyffinText) {
     var Glyff = Glyffin.Glyff;
     var Color = Glyffin.Color;
     var room = new GlyffinGl.GlRoom(document.getElementById('webgl'));
@@ -11,13 +11,16 @@ define(["require", "exports", "../glyffin", "../glyffin-gl", "../glyffin-ascii"]
     var coverIndex = 0;
     var margin = perimeter.readHeight;
     var makeButton = function (label, ink, back) {
-        var text = GlyffinText.asciiEntireWord(label, ink).pad2(new Glyffin.Inset2(0, margin, .25, 0));
+        var text = GlyffinText.asciiEntireWord(label, ink)
+            .pad2(new glyffin_type_1.Inset2(0, margin, .25, 0));
         var unpressed = back.addNearMajor(1, text);
         var pressed = Glyffin.BlackGlyff.addNearMajor(1, text);
         return unpressed.clicken("click", pressed);
     };
-    var regular = makeButton("Clickable", Glyffin.BeigeGlyff, Glyff.color(Color.BLUE.lighten(.2))).isolate(false);
-    var isolated = makeButton("Isolated", Glyffin.BeigeGlyff, Glyff.color(Color.BLUE.darken(.2))).isolate(true);
+    var regular = makeButton("Clickable", Glyffin.BeigeGlyff, Glyff.color(Color.BLUE.lighten(.2)))
+        .isolate(false);
+    var isolated = makeButton("Isolated", Glyffin.BeigeGlyff, Glyff.color(Color.BLUE.darken(.2)))
+        .isolate(true);
     var buttons = regular.splitWidthCombine(100, isolated);
     var presentation;
     function represent() {

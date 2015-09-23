@@ -2,6 +2,7 @@
  * Created by wehjin on 5/24/15.
  */
 
+import {Inset2} from "../glyffin-type";
 import Glyffin = require("../glyffin");
 import GlyffinGl = require("../glyffin-gl");
 import GlyffinText = require("../glyffin-ascii");
@@ -18,7 +19,7 @@ var coverIndex = 0;
 var margin = perimeter.readHeight;
 var makeButton = function (label : string, ink : Glyff<Void>, back : Glyff<Void>) {
     var text = GlyffinText.asciiEntireWord(label, ink)
-        .pad2(new Glyffin.Inset2(0, margin, .25, 0));
+        .pad2(new Inset2(0, margin, .25, 0));
     var unpressed = back.addNearMajor(1, text);
     var pressed = Glyffin.BlackGlyff.addNearMajor(1, text);
     return unpressed.clicken("click", pressed);

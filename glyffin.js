@@ -1,64 +1,11 @@
-/**
- * Created by wehjin on 5/24/15.
- */
+/// <reference path="webglbook.d.ts" />
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define(["require", "exports"], function (require, exports) {
-    /// <reference path="webglbook.d.ts" />
-    var Void = (function () {
-        function Void() {
-        }
-        return Void;
-    })();
-    exports.Void = Void;
-    var Inset1 = (function () {
-        function Inset1(fraction, fixed) {
-            this.fraction = fraction;
-            this.fixed = fixed;
-        }
-        Inset1.prototype.getPixels = function (whole) {
-            return this.fraction * whole + this.fixed;
-        };
-        return Inset1;
-    })();
-    exports.Inset1 = Inset1;
-    var Inset2 = (function () {
-        function Inset2(fractionX, fixedX, fractionY, fixedY) {
-            this.x = new Inset1(fractionX, fixedX);
-            this.y = new Inset1(fractionY, fixedY);
-        }
-        Inset2.QUARTER = new Inset2(.25, 0, .25, 0);
-        Inset2.EIGHTH = new Inset2(.125, 0, .125, 0);
-        return Inset2;
-    })();
-    exports.Inset2 = Inset2;
-    var Spot = (function () {
-        function Spot(x, y) {
-            this.x = x;
-            this.y = y;
-        }
-        Spot.prototype.gridDistance = function (other) {
-            return Math.max(Math.abs(this.x - other.x), Math.abs(this.y - other.y));
-        };
-        Spot.prototype.xDistance = function (origin) {
-            return this.x - origin.x;
-        };
-        Spot.prototype.yDistance = function (origin) {
-            return this.y - origin.y;
-        };
-        Spot.prototype.addX = function (addition) {
-            return new Spot(this.x + addition, this.y);
-        };
-        Spot.prototype.addY = function (addition) {
-            return new Spot(this.x, this.y + addition);
-        };
-        return Spot;
-    })();
-    exports.Spot = Spot;
+define(["require", "exports", "./glyffin-type", "./glyffin-image"], function (require, exports, glyffin_type_1, glyffin_image_1) {
     var Speedometer = (function () {
         function Speedometer(position) {
             this.positions = [null, null, null];
@@ -187,6 +134,9 @@ define(["require", "exports"], function (require, exports) {
         Perimeter.prototype.resizeFromTop = function (pixelsHigh) {
             return new Perimeter(this.left, this.top, this.right, this.top + pixelsHigh, this.age, this.level, this.tapHeight, this.readHeight, this.palette);
         };
+        Perimeter.prototype.scaleDown = function (scale) {
+            return new Perimeter(this.left, this.top, this.right, this.top + (this.bottom - this.top) * scale, this.age, this.level, this.tapHeight, this.readHeight, this.palette);
+        };
         Perimeter.prototype.splitHeight = function (pixels) {
             if (pixels >= 0) {
                 var split = this.top + pixels;
@@ -259,11 +209,11 @@ define(["require", "exports"], function (require, exports) {
         Color.WHITE = new Color(1, 1, 1, 1);
         Color.BLACK = new Color(0, 0, 0, 1);
         Color.RED = new Color(1, 0, 0, 1);
-        Color.YELLOW = new Color(.5, .5, 0, 1);
+        Color.YELLOW = new Color(1, 1, 0, 1);
         Color.GREEN = new Color(0, 1, 0, 1);
-        Color.CYAN = new Color(0, .5, .5, 1);
+        Color.CYAN = new Color(0, 1, 1, 1);
         Color.BLUE = new Color(0, 0, 1, 1);
-        Color.MAGENTA = new Color(.5, 0, .5, 1);
+        Color.MAGENTA = new Color(1, 0, 1, 1);
         Color.BEIGE = new Color(245 / 255, 245 / 255, 220 / 255, 1);
         Color.GRAY = new Color(.5, .5, .5, 1);
         return Color;
@@ -965,8 +915,8 @@ define(["require", "exports"], function (require, exports) {
             var _this = this;
             return Glyff.create(function (presenter) {
                 var audience = isolated ? {
-                    addPatch: function (bounds, color) {
-                        return presenter.audience.addPatch(bounds, color);
+                    addPatch: function (bounds, color, codePoint) {
+                        return presenter.audience.addPatch(bounds, color, codePoint);
                     },
                     addZone: function (bounds, touchProvider) {
                         return exports.EMPTY_REMOVABLE;
@@ -1167,7 +1117,7 @@ define(["require", "exports"], function (require, exports) {
         };
         // TODO: Think about removing
         Glyff.prototype.pad = function (xPixels, yPixels) {
-            return this.pad2(new Inset2(0, xPixels, 0, yPixels));
+            return this.pad2(new glyffin_type_1.Inset2(0, xPixels, 0, yPixels));
         };
         Glyff.prototype.pad2 = function (inset) {
             return this.lift(function (lowerPresenter) {
@@ -1286,15 +1236,14 @@ define(["require", "exports"], function (require, exports) {
         Glyff.prototype.pulseAnimate = function (duration, count) {
             return this.animateWithPath(new CycleAnimationPath(duration, count));
         };
+        Glyff.codePoint = function (cp, color) {
+            return glyffin_image_1.makeCodePoint(cp, color);
+        };
         Glyff.color = function (color) {
             return Glyff.create(function (presenter) {
                 var audience = presenter.audience;
-                var patch = audience.addPatch(presenter.perimeter, color);
-                presenter.addPresentation({
-                    end: function () {
-                        patch.remove();
-                    }
-                });
+                var patch = audience.addPatch(presenter.perimeter, color, 0);
+                presenter.addPresentation(new glyffin_type_1.PatchPresentation(patch));
             }, 0);
         };
         Glyff.colorAnimation = function (first, last) {
