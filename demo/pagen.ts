@@ -4,6 +4,7 @@
 
 /// <reference path="../rx.ts" />
 
+import {Inset1} from "../glyffin-type";
 import Glyffin=require("../glyffin");
 import GlyffinGl = require("../glyffin-gl");
 import Void = Glyffin.Void;
@@ -24,7 +25,7 @@ function getPageGlyff(index : number) : Glyff<string> {
     if (!page) {
         return null;
     }
-    return page.clicken("drill").revealDown(new Glyffin.Inset1(.3, 0), Glyffin.BlackGlyff);
+    return page.clicken("drill").revealDown(new Inset1(.3, 0), Glyffin.BlackGlyff);
 }
 
 room.perimeter.readHeight = 13;

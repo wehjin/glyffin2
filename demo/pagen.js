@@ -1,7 +1,7 @@
 /**
  * Created by wehjin on 5/24/15.
  */
-define(["require", "exports", "../glyffin", "../glyffin-gl"], function (require, exports, Glyffin, GlyffinGl) {
+define(["require", "exports", "../glyffin-type", "../glyffin", "../glyffin-gl"], function (require, exports, glyffin_type_1, Glyffin, GlyffinGl) {
     var Glyff = Glyffin.Glyff;
     var Color = Glyffin.Color;
     var room = new GlyffinGl.GlRoom(document.getElementById('webgl'));
@@ -16,7 +16,7 @@ define(["require", "exports", "../glyffin", "../glyffin-gl"], function (require,
         if (!page) {
             return null;
         }
-        return page.clicken("drill").revealDown(new Glyffin.Inset1(.3, 0), Glyffin.BlackGlyff);
+        return page.clicken("drill").revealDown(new glyffin_type_1.Inset1(.3, 0), Glyffin.BlackGlyff);
     }
     room.perimeter.readHeight = 13;
     var perimeter = room.perimeter;

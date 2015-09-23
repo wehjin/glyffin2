@@ -41,10 +41,9 @@ function getWordXWeight(word : string) : number {
     return letterWeights + spaceWeights;
 }
 
-export function asciiByCode(code : number, base : Glyff<Void>) : Glyff<Void> {
+export function asciiByCode(code : number, color : Color) : Glyff<Void> {
     var asciiCode = getAsciiCode(code);
-    return Glyff.codePoint(asciiCode, Color.YELLOW);
-    //return base.kaleid(x_weights[asciiCode], 7, ascii_spots[asciiCode]);
+    return Glyff.codePoint(asciiCode, color);
 }
 
 class MultiLines {
@@ -126,8 +125,7 @@ function getMultiLines(maxWidthPixels : number, maxHeightPixels : number, lines 
     }
 }
 
-export function asciiMultiLine(lines : number, paragraph : string,
-                               base : Glyff<Void>) : Glyff<Void> {
+export function asciiMultiLine(lines : number, paragraph : string, color : Color) : Glyff<Void> {
     return Glyff.create((presenter : Presenter<Void>)=> {
         var perimeter = presenter.perimeter;
         var audience = presenter.audience;
@@ -141,13 +139,13 @@ export function asciiMultiLine(lines : number, paragraph : string,
         var lineContentCount = lineContents.length;
         for (var i = 0; i < lineContentCount; i++) {
             var linePerimeter = perimeter.downFromTop(i * lineStride, lineHeight);
-            presenter.addPresentation(asciiEntireWord(lineContents[i].text, base)
+            presenter.addPresentation(asciiEntireWord(lineContents[i].text, color)
                 .present(linePerimeter, audience, presenter));
         }
     }, 0);
 }
 
-export function asciiEntireWord(word : string, ink : Glyff<Void>) : Glyff<Void> {
+export function asciiEntireWord(word : string, color : Color) : Glyff<Void> {
     var wordXWeight = getWordXWeight(word);
     return Glyff.create((presenter : Presenter<Void>) => {
         var perimeter = presenter.perimeter;
@@ -155,12 +153,12 @@ export function asciiEntireWord(word : string, ink : Glyff<Void>) : Glyff<Void> 
         var wordXWeightPixels = perimeter.getWidth() / wordXWeight;
         var preferredWeightPixels = perimeter.getHeight() / 7;
         var fittedWeightPixels = Math.min(preferredWeightPixels, wordXWeightPixels);
-        presenter.addPresentation(asciiWord(word, fittedWeightPixels, ink)
+        presenter.addPresentation(asciiWord(word, fittedWeightPixels, color)
             .present(perimeter, audience, presenter));
     }, 0);
 }
 
-export function asciiWord(word : string, xWeightPixels : number, base : Glyff<Void>) {
+export function asciiWord(word : string, xWeightPixels : number, color : Color) {
     var insertions : Insertion<Void>[] = [];
     for (var i = 0; i < word.length; i++) {
         var code = word.charCodeAt(i);
@@ -168,13 +166,13 @@ export function asciiWord(word : string, xWeightPixels : number, base : Glyff<Vo
         if (i > 0) {
             insertions.push(new Insertion(xWeightPixels, ClearGlyff));
         }
-        insertions.push(new Insertion(charWidth, asciiByCode(code, base)));
+        insertions.push(new Insertion(charWidth, asciiByCode(code, color)));
     }
     return ClearGlyff.addLefts(insertions);
 }
 
-export function asciiChar(ch : string, base : Glyff<Void>) : Glyff<Void> {
-    return asciiByCode(ch.charCodeAt(0), base);
+export function asciiChar(ch : string, color : Color) : Glyff<Void> {
+    return asciiByCode(ch.charCodeAt(0), color);
 }
 
 var no_spots = [];
