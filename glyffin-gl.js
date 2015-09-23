@@ -262,15 +262,15 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch", 
                 '  float s = spriteStride * index;\n' +
                 '  float u = s + float(width) * spriteWidth;\n' +
                 '  if (corner == 1.0){\n' +
-                '    return vec2(s, 1.0);\n' +
+                '    return vec2(s, 0.99);\n' +
                 '  }\n' +
                 '  if (corner == 2.0){\n' +
-                '    return vec2(u, 1.0);\n' +
+                '    return vec2(u, 0.99);\n' +
                 '  }\n' +
                 '  if (corner == 3.0){\n' +
-                '    return vec2(s, 0.0);\n' +
+                '    return vec2(s, 0.01);\n' +
                 '  }\n' +
-                '  return vec2(u, 0.0);\n' +
+                '  return vec2(u, 0.01);\n' +
                 '}\n' +
                 'void main(){\n' +
                 '  gl_Position = u_MvpMatrix * a_Position;\n' +
