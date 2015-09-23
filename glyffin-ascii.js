@@ -39,7 +39,8 @@ define(["require", "exports", "./glyffin"], function (require, exports, glyffin_
     }
     function asciiByCode(code, base) {
         var asciiCode = getAsciiCode(code);
-        return base.kaleid(exports.x_weights[asciiCode], 7, ascii_spots[asciiCode]);
+        return glyffin_1.Glyff.codePoint(asciiCode, glyffin_1.Color.YELLOW);
+        //return base.kaleid(x_weights[asciiCode], 7, ascii_spots[asciiCode]);
     }
     exports.asciiByCode = asciiByCode;
     var MultiLines = (function () {

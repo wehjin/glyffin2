@@ -407,10 +407,15 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch", 
             this.VSHADER_SOURCE = 'uniform mat4 u_MvpMatrix;\n' +
                 'attribute vec4 a_Position;\n' +
                 'attribute vec4 a_Color;\n' +
+                'attribute float a_CodePoint;\n' +
                 'varying vec4 v_Color;\n' +
                 'const vec4 offset = vec4(0,0.5,.5,0);\n' +
                 'void main(){\n' +
-                '  gl_Position = u_MvpMatrix * a_Position + offset;\n' +
+                '  if (a_CodePoint > 0.0) {\n' +
+                '    gl_Position = vec4(10000,10000,10000,1);\n' +
+                '  } else {\n' +
+                '    gl_Position = u_MvpMatrix * a_Position + offset;\n' +
+                '  }\n' +
                 '  v_Color = a_Color;\n' +
                 '}\n';
             this.FSHADER_SOURCE = '#ifdef GL_ES\n' +
@@ -427,6 +432,7 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch", 
             this.u_MvpMatrix = this.getUniformLocation('u_MvpMatrix');
             this.a_Position = gl.getAttribLocation(program, 'a_Position');
             this.a_Color = gl.getAttribLocation(program, 'a_Color');
+            this.a_CodePoint = gl.getAttribLocation(program, 'a_CodePoint');
             gl.useProgram(program);
             gl.uniformMatrix4fv(this.u_MvpMatrix, false, mvpMatrix.elements);
         }
@@ -445,6 +451,9 @@ define(["require", "exports", "./glyffin", "./glyffin-html", "./glyffin-touch", 
             var a_Color = this.a_Color;
             gl.vertexAttribPointer(a_Color, FLOATS_PER_COLOR, gl.FLOAT, false, stride, BYTES_BEFORE_COLOR);
             gl.enableVertexAttribArray(a_Color);
+            var a_CodePoint = this.a_CodePoint;
+            gl.vertexAttribPointer(a_CodePoint, 1, gl.FLOAT, false, stride, BYTES_BEFORE_CODEPOINT);
+            gl.enableVertexAttribArray(a_CodePoint);
         };
         return DepthProgram;
     })();

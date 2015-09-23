@@ -3,7 +3,7 @@
  */
 
 import {Void} from "./glyffin-type";
-import {Glyff, Presenter,Insertion,ClearGlyff} from "./glyffin";
+import {Glyff, Presenter,Insertion,ClearGlyff, Color} from "./glyffin";
 
 // TODO: Add horizontal alignment
 
@@ -43,7 +43,8 @@ function getWordXWeight(word : string) : number {
 
 export function asciiByCode(code : number, base : Glyff<Void>) : Glyff<Void> {
     var asciiCode = getAsciiCode(code);
-    return base.kaleid(x_weights[asciiCode], 7, ascii_spots[asciiCode]);
+    return Glyff.codePoint(asciiCode, Color.YELLOW);
+    //return base.kaleid(x_weights[asciiCode], 7, ascii_spots[asciiCode]);
 }
 
 class MultiLines {
