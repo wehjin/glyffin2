@@ -1,9 +1,7 @@
 /**
  * Created by wehjin on 5/24/15.
  */
-define(["require", "exports", "../glyffin", "../glyffin-gl", "../glyffin-ascii", "../rx"], function (require, exports, Glyffin, GlyffinGl, GlyffinText, Rx) {
-    var Glyff = Glyffin.Glyff;
-    var Color = Glyffin.Color;
+define(["require", "exports", "../glyffin", "../glyffin", "../glyffin-gl", "../glyffin-ascii", "../rx"], function (require, exports, glyffin_1, Glyffin, GlyffinGl, GlyffinText, Rx) {
     function getPreviousIndex(index, count) {
         return index == 0 ? (count - 1) : (index - 1);
     }
@@ -39,10 +37,10 @@ define(["require", "exports", "../glyffin", "../glyffin-gl", "../glyffin-ascii",
             var tapHeight = perimeter.tapHeight;
             var readSize = perimeter.readHeight;
             var textSize = readSize * 1.2;
-            var textBase = Glyff.color(Color.WHITE);
+            var textBase = glyffin_1.Color.WHITE;
             function getCell(background, text, subtext) {
                 function addTitle(background) {
-                    return background.addNearMajor(0.5, GlyffinText.asciiMultiLine(2, text, Glyffin.BeigeGlyff)
+                    return background.addNearMajor(0.5, GlyffinText.asciiMultiLine(2, text, glyffin_1.Color.BEIGE)
                         .splitHeightYield(-textSize, Glyffin.ClearGlyff)
                         .splitHeightYield(-textSize, GlyffinText.asciiEntireWord(subtext, textBase))
                         .pad(readSize * 2, readSize * 2)
@@ -70,7 +68,7 @@ define(["require", "exports", "../glyffin", "../glyffin-gl", "../glyffin-ascii",
             var app = Glyffin.colorPath(backgroundColorPath)
                 .addNearMajor(1, cell.splitHeightRetain(-tapHeight * 3, Glyffin.ClearGlyff));
             var spinnerSize = tapHeight * 3;
-            var spinner = Glyff.colorAnimation(Color.BLUE, Color.RED)
+            var spinner = glyffin_1.Glyff.colorAnimation(glyffin_1.Color.BLUE, glyffin_1.Color.RED)
                 .pulseAnimate(1000, 50)
                 .limitHeight(spinnerSize, .5).limitWidth(spinnerSize, .5);
             // TODO: Design better spinner.

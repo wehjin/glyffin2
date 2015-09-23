@@ -2,13 +2,12 @@
  * Created by wehjin on 5/24/15.
  */
 
+import {Void} from "../glyffin-type";
+import {Color,Glyff} from "../glyffin";
 import Glyffin=require("../glyffin");
 import GlyffinGl=require("../glyffin-gl");
 import GlyffinText=require("../glyffin-ascii");
 import Rx = require("../rx");
-import Void = Glyffin.Void;
-import Glyff = Glyffin.Glyff;
-import Color = Glyffin.Color;
 
 function getPreviousIndex(index, count) {
     return index == 0 ? (count - 1) : (index - 1);
@@ -51,13 +50,13 @@ Rx.httpGet(hNewsUri).subscribe((response : Rx.HttpResponse)=> {
         var tapHeight = perimeter.tapHeight;
         var readSize = perimeter.readHeight;
         var textSize = readSize * 1.2;
-        var textBase = Glyff.color(Color.WHITE);
+        var textBase = Color.WHITE;
 
         function getCell(background : Glyff<Void>, text : string,
                          subtext : string) : Glyff<Void> {
             function addTitle<T>(background : Glyffin.Glyff<T>) : Glyffin.Glyff<T> {
                 return background.addNearMajor(0.5,
-                    GlyffinText.asciiMultiLine(2, text, Glyffin.BeigeGlyff)
+                    GlyffinText.asciiMultiLine(2, text, Color.BEIGE)
                         .splitHeightYield(-textSize, Glyffin.ClearGlyff)
                         .splitHeightYield(-textSize, GlyffinText.asciiEntireWord(subtext, textBase))
                         .pad(readSize * 2, readSize * 2)

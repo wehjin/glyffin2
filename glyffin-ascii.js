@@ -37,10 +37,9 @@ define(["require", "exports", "./glyffin"], function (require, exports, glyffin_
         }
         return letterWeights + spaceWeights;
     }
-    function asciiByCode(code, base) {
+    function asciiByCode(code, color) {
         var asciiCode = getAsciiCode(code);
-        return glyffin_1.Glyff.codePoint(asciiCode, glyffin_1.Color.YELLOW);
-        //return base.kaleid(x_weights[asciiCode], 7, ascii_spots[asciiCode]);
+        return glyffin_1.Glyff.codePoint(asciiCode, color);
     }
     exports.asciiByCode = asciiByCode;
     var MultiLines = (function () {
@@ -106,7 +105,7 @@ define(["require", "exports", "./glyffin"], function (require, exports, glyffin_
             return multiLines;
         }
     }
-    function asciiMultiLine(lines, paragraph, base) {
+    function asciiMultiLine(lines, paragraph, color) {
         return glyffin_1.Glyff.create(function (presenter) {
             var perimeter = presenter.perimeter;
             var audience = presenter.audience;
@@ -119,13 +118,13 @@ define(["require", "exports", "./glyffin"], function (require, exports, glyffin_
             var lineContentCount = lineContents.length;
             for (var i = 0; i < lineContentCount; i++) {
                 var linePerimeter = perimeter.downFromTop(i * lineStride, lineHeight);
-                presenter.addPresentation(asciiEntireWord(lineContents[i].text, base)
+                presenter.addPresentation(asciiEntireWord(lineContents[i].text, color)
                     .present(linePerimeter, audience, presenter));
             }
         }, 0);
     }
     exports.asciiMultiLine = asciiMultiLine;
-    function asciiEntireWord(word, ink) {
+    function asciiEntireWord(word, color) {
         var wordXWeight = getWordXWeight(word);
         return glyffin_1.Glyff.create(function (presenter) {
             var perimeter = presenter.perimeter;
@@ -133,12 +132,12 @@ define(["require", "exports", "./glyffin"], function (require, exports, glyffin_
             var wordXWeightPixels = perimeter.getWidth() / wordXWeight;
             var preferredWeightPixels = perimeter.getHeight() / 7;
             var fittedWeightPixels = Math.min(preferredWeightPixels, wordXWeightPixels);
-            presenter.addPresentation(asciiWord(word, fittedWeightPixels, ink)
+            presenter.addPresentation(asciiWord(word, fittedWeightPixels, color)
                 .present(perimeter, audience, presenter));
         }, 0);
     }
     exports.asciiEntireWord = asciiEntireWord;
-    function asciiWord(word, xWeightPixels, base) {
+    function asciiWord(word, xWeightPixels, color) {
         var insertions = [];
         for (var i = 0; i < word.length; i++) {
             var code = word.charCodeAt(i);
@@ -146,13 +145,13 @@ define(["require", "exports", "./glyffin"], function (require, exports, glyffin_
             if (i > 0) {
                 insertions.push(new glyffin_1.Insertion(xWeightPixels, glyffin_1.ClearGlyff));
             }
-            insertions.push(new glyffin_1.Insertion(charWidth, asciiByCode(code, base)));
+            insertions.push(new glyffin_1.Insertion(charWidth, asciiByCode(code, color)));
         }
         return glyffin_1.ClearGlyff.addLefts(insertions);
     }
     exports.asciiWord = asciiWord;
-    function asciiChar(ch, base) {
-        return asciiByCode(ch.charCodeAt(0), base);
+    function asciiChar(ch, color) {
+        return asciiByCode(ch.charCodeAt(0), color);
     }
     exports.asciiChar = asciiChar;
     var no_spots = [];
