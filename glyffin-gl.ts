@@ -344,10 +344,19 @@ class LightProgram implements Program {
         '  v_PositionFromLight = u_MvpMatrixFromLight * a_Position;\n' +
         '  v_Normal = c_Normal;\n' +
         '  v_Color = a_Color;\n' +
-        '  if (a_CodePoint >= 64.0 && a_CodePoint < 96.0) {\n' +
-        '    float index = a_CodePoint - 64.0;\n' +
+        '  if (a_CodePoint >= 32.0 && a_CodePoint < 128.0) {\n' +
+        '    float index;\n' +
+        '    if (a_CodePoint >= 96.0) {\n' +
+        '      index = a_CodePoint - 96.0;\n' +
+        '      v_UseTex = 3.0;\n' +
+        '    } else if (a_CodePoint >= 64.0) {\n' +
+        '      index = a_CodePoint - 64.0;\n' +
+        '      v_UseTex = 2.0;\n' +
+        '    } else {\n' +
+        '      index = a_CodePoint - 32.0;\n' +
+        '      v_UseTex = 1.0;\n' +
+        '    }\n' +
         '    int width = u_XWeights[int(a_CodePoint)];\n' +
-        '    v_UseTex = 1.0;\n' +
         '    v_TexCoord = texturePoint(a_Corner, index, width);\n' +
         '  } else {\n' +
         '    v_UseTex = 0.0;\n' +
@@ -400,7 +409,15 @@ class LightProgram implements Program {
         '  float visibility = (shadowCoord.z > depthAcc/4.0 + bias) ? 0.8 : 1.0;\n' +
         '  if (v_UseTex > 0.5){\n' +
         '    vec4 texel = texture2D(u_AtlasSampler, v_TexCoord);\n' +
-        '    if (texel.r < 0.5) {\n' +
+        '    float value;\n' +
+        '    if (v_UseTex > 2.5) {\n' +
+        '      value = texel.b;\n' +
+        '    } else if (v_UseTex > 1.5) {\n' +
+        '      value = texel.g;\n' +
+        '    } else {\n' +
+        '      value = texel.r;\n' +
+        '    }\n' +
+        '    if (value < 0.5) {\n' +
         '      discard;\n' +
         '    }\n' +
         '  }\n' +

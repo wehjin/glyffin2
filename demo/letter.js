@@ -6,7 +6,7 @@ define(["require", "exports", "../src/glyffin-all"], function (require, exports,
     var room = new glyffin_all_1.GlRoom(document.getElementById('webgl'));
     var audience = new glyffin_all_1.GlAudience(room);
     var perimeter = room.perimeter;
-    var letter = "U";
+    var letter = "j";
     var pixelsHigh = 8;
     var pixelsWide = 6;
     var smallLetter = new glyffin_all_1.Inset2(.5, -pixelsWide / 2, .5, -pixelsHigh / 2);

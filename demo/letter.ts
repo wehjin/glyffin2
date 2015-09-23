@@ -8,7 +8,7 @@ import {Inset2, GlRoom, GlAudience, Glyff, Color, BeigeGlyff} from "../src/glyff
 var room = new GlRoom(<HTMLCanvasElement>document.getElementById('webgl'));
 var audience = new GlAudience(room);
 var perimeter = room.perimeter;
-var letter = "U";
+var letter = "j";
 var pixelsHigh = 8;
 var pixelsWide = 6;
 var smallLetter = new Inset2(.5, -pixelsWide / 2, .5, -pixelsHigh / 2);

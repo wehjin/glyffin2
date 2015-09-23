@@ -87,6 +87,8 @@ declare class Perimeter {
 
     resizeFromTop(pixelsHigh : number) : Perimeter;
 
+    scaleDown(scale : number) : Perimeter;
+
     splitHeight(pixels : number) : Perimeter[];
 
     splitWidth(pixels : number) : Perimeter[];
@@ -94,6 +96,7 @@ declare class Perimeter {
     limitHeight(maxHeight : number, align : number) : Perimeter;
 
     limitWidth(maxWidth : number, align : number) : Perimeter;
+
 }
 
 export declare class Stage {

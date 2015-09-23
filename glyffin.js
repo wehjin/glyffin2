@@ -134,6 +134,9 @@ define(["require", "exports", "./glyffin-type", "./glyffin-image"], function (re
         Perimeter.prototype.resizeFromTop = function (pixelsHigh) {
             return new Perimeter(this.left, this.top, this.right, this.top + pixelsHigh, this.age, this.level, this.tapHeight, this.readHeight, this.palette);
         };
+        Perimeter.prototype.scaleDown = function (scale) {
+            return new Perimeter(this.left, this.top, this.right, this.top + (this.bottom - this.top) * scale, this.age, this.level, this.tapHeight, this.readHeight, this.palette);
+        };
         Perimeter.prototype.splitHeight = function (pixels) {
             if (pixels >= 0) {
                 var split = this.top + pixels;

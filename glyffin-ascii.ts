@@ -2,7 +2,7 @@
  * Created by wehjin on 5/24/15.
  */
 
-import { Void} from "./glyffin-type";
+import {Void} from "./glyffin-type";
 import {Glyff, Presenter,Insertion,ClearGlyff} from "./glyffin";
 
 // TODO: Add horizontal alignment
@@ -964,24 +964,27 @@ export class Atlas {
 
         var data = imageData.data;
 
-        function writePixel(glyph : number, x : number, y : number, on : boolean) {
+        function writePixel(glyph : number, x : number, y : number, offset : number) {
             var pixelStride = 4;
             var rowIndex = (pageWidthPixels * pixelStride) * y;
             var index = rowIndex + (glyph * glyphWidthPixels + x) * pixelStride;
-            data[index] = on ? 255 : 0;
+            data[index + offset] = 255;
             data[index + 3] = 255;
         }
 
-        var pointStart = 64;
+        var pointStart = 32;
         for (var g = 0; g < pageWidthGlyphs; g++) {
             var point = pointStart + g;
-            var spots = ascii_spots[point];
-            var x_weight = x_weights[point];
-            for (var k = 0; k < spots.length; k++) {
-                var spot : number[] = spots[k];
-                var i = spot[0];
-                var j = spot[1];
-                writePixel(g, i, j, true);
+            var spots3 = [ascii_spots[point], ascii_spots[point + pageWidthGlyphs],
+                          ascii_spots[point + 2 * pageWidthGlyphs]];
+            for (var l = 0; l < 3; l++) {
+                var spots = spots3[l];
+                for (var k = 0; k < spots.length; k++) {
+                    var spot : number[] = spots[k];
+                    var i = spot[0];
+                    var j = spot[1];
+                    writePixel(g, i, j, l);
+                }
             }
         }
         context.putImageData(imageData, 0, 0);

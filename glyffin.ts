@@ -167,6 +167,11 @@ export class Perimeter {
             this.level, this.tapHeight, this.readHeight, this.palette);
     }
 
+    scaleDown(scale : number) : Perimeter {
+        return new Perimeter(this.left, this.top, this.right, this.top + (this.bottom - this.top) * scale, this.age,
+            this.level, this.tapHeight, this.readHeight, this.palette);
+    }
+
     splitHeight(pixels : number) : Perimeter[] {
         if (pixels >= 0) {
             var split = this.top + pixels;
